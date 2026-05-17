@@ -12,20 +12,23 @@ contract.
 ## Install
 
 ```bash
-bun add @pders01/chatworks
+bun add @jpahd/chatworks
 # or
-npm i  @pders01/chatworks
+npm i  @jpahd/chatworks
 ```
 
 Peer dependencies: `lit`, `@bufbuild/protobuf`, `@connectrpc/connect`,
 `@connectrpc/connect-web`.
 
+> The npm scope is `@jpahd` even though this repo lives under the
+> `pders01` GitHub org — the npm username is `jpahd`.
+
 ## Usage
 
 ```ts
 // main.ts — boot the chat surface
-import "@pders01/chatworks";              // registers all custom elements
-import { settings } from "@pders01/chatworks";
+import "@jpahd/chatworks";              // registers all custom elements
+import { settings } from "@jpahd/chatworks";
 
 settings.applyAll();                      // apply persisted theme + CSS vars
 ```
@@ -55,7 +58,7 @@ pieces they need:
 
 | Subpath                | What it gives you                                    |
 |------------------------|------------------------------------------------------|
-| `@pders01/chatworks`              | Default barrel — registers components, re-exports runtime singletons |
+| `@jpahd/chatworks`              | Default barrel — registers components, re-exports runtime singletons |
 | `.../chat-view`        | `<gc-chat-view>` registration                        |
 | `.../settings-panel`   | `<gc-settings-panel>` registration                   |
 | `.../toast`, `.../loading-indicator`, `.../combobox` | Standalone UI primitives          |
@@ -90,7 +93,7 @@ tokens posted from a host (e.g. a VS Code webview). Wire them up at
 boot:
 
 ```ts
-import { settings } from "@pders01/chatworks";
+import { settings } from "@jpahd/chatworks";
 
 window.addEventListener("message", (e) => {
   if (e.source !== window.parent) return;

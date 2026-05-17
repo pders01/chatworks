@@ -36,10 +36,10 @@ interface ArgSuggestion {
   description?: string;
 }
 
-@customElement("gc-composer")
+@customElement("cw-composer")
 export class GcComposer extends LitElement {
   @consume({ context: repoHostContext, subscribe: true })
-  private repoHost!: RepoHost;
+  private repoHost?: RepoHost;
   @consume({ context: llmConfigHostContext, subscribe: true })
   private llmConfigHost!: LlmConfigHost;
 
@@ -265,6 +265,10 @@ export class GcComposer extends LitElement {
       { value: "HEAD~5", label: "HEAD~5", description: "five commits back" },
       { value: "HEAD~10", label: "HEAD~10", description: "ten commits back" },
     ];
+    if (!this.repoHost) {
+      this.refSuggestionCache = shortcuts;
+      return shortcuts;
+    }
     try {
       const resp = await this.repoHost.listBranches({ repoId: this.repoId });
       const branches: ArgSuggestion[] = (resp.branches ?? []).map((b) => ({
@@ -292,6 +296,7 @@ export class GcComposer extends LitElement {
   private async loadPathSuggestions(partial: string): Promise<ArgSuggestion[]> {
     const lastSlash = partial.lastIndexOf("/");
     const dirPath = lastSlash >= 0 ? partial.slice(0, lastSlash) : "";
+    if (!this.repoHost) return [];
     if (!this.dirCache.has(dirPath)) {
       try {
         const resp = await this.repoHost.listTree({ repoId: this.repoId, path: dirPath });
@@ -432,6 +437,11 @@ export class GcComposer extends LitElement {
     const lastSlash = query.lastIndexOf("/");
     const dirPath = lastSlash >= 0 ? query.slice(0, lastSlash) : "";
     const filterPart = (lastSlash >= 0 ? query.slice(lastSlash + 1) : query).toLowerCase();
+    if (!this.repoHost) {
+      this.mentionResults = [];
+      this.showMentions = false;
+      return;
+    }
     if (!this.dirCache.has(dirPath)) {
       this.mentionResults = [];
       this.showMentions = false;
@@ -1269,7 +1279,7 @@ function helpToastMessage(): string {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "gc-composer": GcComposer;
+    "cw-composer": GcComposer;
   }
   // Event payloads are declared centrally in web/src/lib/events.ts so
   // every consumer sees the same contract.

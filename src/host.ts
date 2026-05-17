@@ -256,6 +256,9 @@ export interface ChatHost {
   sendMessage(
     req: {
       sessionId: string;
+      /** Empty string is allowed when the consumer has no repo
+       * concept (e.g. a standalone chat). Hosts that route by repo
+       * should treat empty as "default / single-tenant". */
       repoId: string;
       text: string;
       replaceFromMessageId?: string;

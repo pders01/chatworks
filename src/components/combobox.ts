@@ -12,7 +12,7 @@ export interface ComboboxOption {
 }
 
 /**
- * <gc-combobox> — an accessible combobox (autocomplete) component.
+ * <cw-combobox> — an accessible combobox (autocomplete) component.
  *
  * Follows the WAI-ARIA Combobox pattern:
  *   - role="combobox" on the input
@@ -30,16 +30,16 @@ export interface ComboboxOption {
  *
  * @example
  * ```html
- * <gc-combobox
+ * <cw-combobox
  *   .options=${[{ value: "openai", label: "OpenAI", description: "GPT models" }]}
  *   .value=${"openai"}
  *   placeholder="Select provider"
  *   @gc-select=${(e) => console.log(e.detail)}
  *   @gc-input=${(e) => console.log(e.detail)}
- * ></gc-combobox>
+ * ></cw-combobox>
  * ```
  */
-@customElement("gc-combobox")
+@customElement("cw-combobox")
 export class GcCombobox extends LitElement {
   @property({ type: Array }) options: ComboboxOption[] = [];
   @property({ type: String }) value = "";

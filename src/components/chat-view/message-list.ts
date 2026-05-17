@@ -15,7 +15,7 @@ import {
   fmtJSON,
 } from "../../lib/chat-types.js";
 
-@customElement("gc-message-list")
+@customElement("cw-message-list")
 export class GcMessageList extends LitElement {
   @property({ type: Array }) turns: Turn[] = [];
   @property({ type: Boolean }) sending = false;
@@ -998,6 +998,6 @@ export { MessageRole };
 
 declare global {
   interface HTMLElementTagNameMap {
-    "gc-message-list": GcMessageList;
+    "cw-message-list": GcMessageList;
   }
 }

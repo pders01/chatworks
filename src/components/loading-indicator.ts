@@ -8,7 +8,7 @@ import { customElement, property } from "lit/decorators.js";
  * The parent component is responsible for positioning; this element only
  * owns the spin animation and shape.
  */
-@customElement("gc-spinner")
+@customElement("cw-spinner")
 export class GcSpinner extends LitElement {
   @property({ type: String }) size: "sm" | "lg" = "sm";
 
@@ -57,7 +57,7 @@ export class GcSpinner extends LitElement {
  * context ("this can take a while on large files"). Use the default
  * slot to pass richer content instead of the two props.
  */
-@customElement("gc-loading-banner")
+@customElement("cw-loading-banner")
 export class GcLoadingBanner extends LitElement {
   @property({ type: String }) heading = "loading…";
   @property({ type: String }) detail = "";
@@ -93,7 +93,7 @@ export class GcLoadingBanner extends LitElement {
   override render() {
     return html`
       <div class="wrap" role="status" aria-live="polite">
-        <gc-spinner size="lg"></gc-spinner>
+        <cw-spinner size="lg"></cw-spinner>
         <div class="txt">
           <div class="heading">${this.heading}</div>
           ${this.detail ? html`<div class="detail">${this.detail}</div>` : nothing}
@@ -106,7 +106,7 @@ export class GcLoadingBanner extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "gc-spinner": GcSpinner;
-    "gc-loading-banner": GcLoadingBanner;
+    "cw-spinner": GcSpinner;
+    "cw-loading-banner": GcLoadingBanner;
   }
 }

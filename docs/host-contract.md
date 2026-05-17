@@ -29,8 +29,8 @@ import {
   type ChatHost,
   type LlmConfigHost,
   type AuthHost,
-} from "@pders01/chatworks";
-import "@pders01/chatworks/chat-view";
+} from "@jpahd/chatworks";
+import "@jpahd/chatworks/chat-view";
 
 @customElement("my-app")
 export class MyApp extends LitElement {
@@ -111,11 +111,16 @@ resolution, `checkModelAvailability`).
 
 ### `AuthHost` — session establishment
 
-No chatworks component consumes `AuthHost` directly today. It exists
+No chatworks component consumes `AuthHost` directly today, so
+providing it is **optional**: consumers without an auth-aware shell
+(e.g. a local-only demo) can skip the `@provide` for
+`authHostContext` and chatworks renders fine. The interface exists
 so consumer-supplied login/pairing views can route auth through the
-same context plumbing. The shape covers the two flows the Connect-RPC
-adapter supports (solo-local claim, multi-user ssh pairing) but
-nothing in chatworks's component tree requires either.
+same context plumbing, and so future versions can add components
+that consume it without forcing every consumer to re-wire. The
+shape covers the two flows the Connect-RPC adapter supports
+(solo-local claim, multi-user ssh pairing) but nothing in
+chatworks's component tree requires either.
 
 | method | semantics |
 | --- | --- |
@@ -132,7 +137,7 @@ Each interface is a plain TS interface — no `$typeName`, no runtime
 classes. Returning the same shape is enough. Example mock for tests:
 
 ```ts
-import type { ChatHost, MessageChunk } from "@pders01/chatworks";
+import type { ChatHost, MessageChunk } from "@jpahd/chatworks";
 
 const mockChat: ChatHost = {
   async listSessions() { return { sessions: [] }; },

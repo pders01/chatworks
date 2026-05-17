@@ -17,7 +17,7 @@ import type { ComboboxOption } from "./combobox.js";
 type Step = "provider" | "auth" | "model" | "save";
 
 /**
- * <gc-connection-wizard> — stepped form for creating/editing LLM profiles.
+ * <cw-connection-wizard> — stepped form for creating/editing LLM profiles.
  *
  * Flow: provider → auth → model → save
  * Also supports a "manual" mode that shows all fields at once.
@@ -26,7 +26,7 @@ type Step = "provider" | "auth" | "model" | "save";
  *   gc-profile-save: { profile: {...} }   — user clicked save/save & activate
  *   gc-profile-cancel                     — user clicked cancel
  */
-@customElement("gc-connection-wizard")
+@customElement("cw-connection-wizard")
 export class GcConnectionWizard extends LitElement {
   @consume({ context: llmConfigHostContext, subscribe: true })
   private llmConfigHost!: LlmConfigHost;
@@ -383,12 +383,12 @@ export class GcConnectionWizard extends LitElement {
           : nothing}
         <label class="field">
           <span>Search providers</span>
-          <gc-combobox
+          <cw-combobox
             .options=${this.providerOptions}
             .value=${""}
             placeholder="Type to search or paste a base URL…"
             @gc-select=${(e: CustomEvent) => this.selectProvider(e.detail)}
-          ></gc-combobox>
+          ></cw-combobox>
         </label>
         <label class="field">
           <span>Or paste a base URL directly</span>
@@ -497,7 +497,7 @@ export class GcConnectionWizard extends LitElement {
         <p class="step-desc">Choose a model</p>
         <label class="field">
           <span>Model</span>
-          <gc-combobox
+          <cw-combobox
             .options=${this.modelOptions}
             .value=${this.model}
             placeholder="Search models…"
@@ -507,7 +507,7 @@ export class GcConnectionWizard extends LitElement {
             @gc-input=${(e: CustomEvent) => {
               this.model = e.detail;
             }}
-          ></gc-combobox>
+          ></cw-combobox>
         </label>
         <details class="advanced">
           <summary>Advanced</summary>
@@ -602,7 +602,7 @@ export class GcConnectionWizard extends LitElement {
           </label>
           <label class="field"
             ><span>Backend</span>
-            <gc-combobox
+            <cw-combobox
               .options=${[
                 { value: "openai", label: "openai" },
                 { value: "anthropic", label: "anthropic" },
@@ -615,7 +615,7 @@ export class GcConnectionWizard extends LitElement {
               @gc-input=${(e: CustomEvent) => {
                 this.backend = e.detail;
               }}
-            ></gc-combobox>
+            ></cw-combobox>
           </label>
           <label class="field"
             ><span>Base URL</span>

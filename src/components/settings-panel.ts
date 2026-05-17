@@ -23,7 +23,7 @@ import "./connection-wizard.js";
 import "./loading-indicator.js";
 import type { ComboboxOption } from "./combobox.js";
 
-@customElement("gc-settings-panel")
+@customElement("cw-settings-panel")
 export class GcSettingsPanel extends LitElement {
   @consume({ context: llmConfigHostContext, subscribe: true })
   private llmConfigHost!: LlmConfigHost;
@@ -542,7 +542,7 @@ export class GcSettingsPanel extends LitElement {
   private renderConfigGroup(group: string) {
     const entries = this.configGroupEntries(group);
     if (this.configLoading) {
-      return html`<gc-spinner></gc-spinner><span>loading…</span>`;
+      return html`<cw-spinner></cw-spinner><span>loading…</span>`;
     }
     if (entries.length === 0) {
       return html`<p class="config-empty">no entries</p>`;
@@ -586,7 +586,7 @@ export class GcSettingsPanel extends LitElement {
                     }}
                   />`
                 : suggestions.length > 0 || this.comboboxEmptyHint(entry.key)
-                  ? html`<gc-combobox
+                  ? html`<cw-combobox
                       .options=${suggestions}
                       .value=${entry.value}
                       empty-hint=${this.comboboxEmptyHint(entry.key)}
@@ -596,7 +596,7 @@ export class GcSettingsPanel extends LitElement {
                       @gc-input=${(e: CustomEvent) => {
                         this.updateConfigEntry(entry.key, e.detail);
                       }}
-                    ></gc-combobox>`
+                    ></cw-combobox>`
                   : html`<input
                       id="cfg-${entry.key}"
                       class="config-input"
@@ -862,7 +862,7 @@ export class GcSettingsPanel extends LitElement {
       </div>
 
       ${this.editingProfile
-        ? html`<gc-connection-wizard
+        ? html`<cw-connection-wizard
             .catalog=${this.catalog}
             .localEndpoints=${this.localEndpoints}
             .profile=${this.editingProfile.id ? this.editingProfile : null}
@@ -878,7 +878,7 @@ export class GcSettingsPanel extends LitElement {
             @gc-profile-cancel=${() => {
               this.editingProfile = null;
             }}
-          ></gc-connection-wizard>`
+          ></cw-connection-wizard>`
         : nothing}
 
       <details class="advanced-config">
@@ -1396,6 +1396,6 @@ export class GcSettingsPanel extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "gc-settings-panel": GcSettingsPanel;
+    "cw-settings-panel": GcSettingsPanel;
   }
 }

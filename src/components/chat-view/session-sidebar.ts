@@ -4,7 +4,7 @@ import { consume } from "@lit/context";
 import { chatHostContext, type ChatHost, type ChatSession } from "../../host.js";
 import { messageOf } from "../../lib/chat-types.js";
 
-@customElement("gc-session-sidebar")
+@customElement("cw-session-sidebar")
 export class GcSessionSidebar extends LitElement {
   @consume({ context: chatHostContext, subscribe: true })
   private chatHost!: ChatHost;
@@ -431,6 +431,6 @@ export class GcSessionSidebar extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "gc-session-sidebar": GcSessionSidebar;
+    "cw-session-sidebar": GcSessionSidebar;
   }
 }

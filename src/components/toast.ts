@@ -28,7 +28,7 @@ const DISMISS_MS: Record<ToastKind, number> = {
 
 let nextId = 0;
 
-// gc-toast is a singleton mounted at the app level. Any component can
+// cw-toast is a singleton mounted at the app level. Any component can
 // dispatch a gc:toast CustomEvent (bubbles + composed) and the toast
 // will appear. Auto-dismisses after 4s; click to dismiss early.
 //
@@ -38,7 +38,7 @@ let nextId = 0;
 //     detail: { message: "Copied!", kind: "success" },
 //   }));
 
-@customElement("gc-toast")
+@customElement("cw-toast")
 export class GcToast extends LitElement {
   @state() private items: ToastItem[] = [];
 

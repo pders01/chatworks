@@ -17,10 +17,10 @@ function loadMarkdown() {
   return markdownModule;
 }
 
-@customElement("gc-chat-dashboard")
+@customElement("cw-chat-dashboard")
 export class GcChatDashboard extends LitElement {
   @consume({ context: repoHostContext, subscribe: true })
-  private repoHost!: RepoHost;
+  private repoHost?: RepoHost;
   @consume({ context: chatHostContext, subscribe: true })
   private chatHost!: ChatHost;
 
@@ -36,15 +36,17 @@ export class GcChatDashboard extends LitElement {
   @state() private suggestions: Array<{ label: string; prompt: string }> = [];
 
   override updated(changed: Map<string, unknown>) {
-    if (changed.has("repoId") && this.repoId) {
+    if (changed.has("repoId") && this.repoId && this.repoHost) {
       void this.loadDashboard();
     }
   }
 
   private async loadDashboard() {
+    const repoHost = this.repoHost;
+    if (!repoHost) return;
     // 1. Suggestions from commits — instant, no LLM.
     try {
-      const commits = await this.repoHost.listCommits({
+      const commits = await repoHost.listCommits({
         repoId: this.repoId,
         limit: 5,
         offset: 0,
@@ -71,7 +73,7 @@ export class GcChatDashboard extends LitElement {
 
     // 2. LLM summary — cached by HEAD SHA, only re-fetch on new commits.
     try {
-      const repos = await this.repoHost.listRepos({});
+      const repos = await repoHost.listRepos({});
       const repo = repos.repos.find((r) => r.id === this.repoId);
       const headSha = repo?.headCommit ?? "";
       const cacheKey = `${this.repoId}:${headSha}`;
@@ -108,10 +110,12 @@ export class GcChatDashboard extends LitElement {
   override render() {
     return html`
       <div class="empty-chat">
-        <div class="empty-title">ready when you are</div>
-        <p class="empty-sub">
-          ask about the repo — use <code>@path/to/file</code> to include file contents
-        </p>
+        <slot name="empty-state">
+          <div class="empty-title">ready when you are</div>
+          <p class="empty-sub">
+            ask about the repo — use <code>@path/to/file</code> to include file contents
+          </p>
+        </slot>
 
         ${this.suggestions.length > 0
           ? html`
@@ -132,7 +136,7 @@ export class GcChatDashboard extends LitElement {
           <div class="recent-title">recent activity</div>
           ${this.summaryLoading
             ? html`<p class="activity-text loading">
-                <gc-spinner></gc-spinner>
+                <cw-spinner></cw-spinner>
                 summarizing recent changes…
               </p>`
             : this.activityHtml
@@ -268,6 +272,6 @@ export class GcChatDashboard extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "gc-chat-dashboard": GcChatDashboard;
+    "cw-chat-dashboard": GcChatDashboard;
   }
 }

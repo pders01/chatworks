@@ -77,10 +77,10 @@ function routeKey(r: RouteInfo): string {
   return `${r.backend}::${r.baseUrl}::${r.model}::${r.profileId}`;
 }
 
-@customElement("gc-chat-view")
+@customElement("cw-chat-view")
 export class GcChatView extends LitElement {
   @consume({ context: repoHostContext, subscribe: true })
-  private repoHost!: RepoHost;
+  private repoHost?: RepoHost;
   @consume({ context: chatHostContext, subscribe: true })
   private chatHost!: ChatHost;
   @consume({ context: llmConfigHostContext, subscribe: true })
@@ -94,10 +94,11 @@ export class GcChatView extends LitElement {
   @property({ type: Number }) newChatNonce = 0;
   @property({ type: Number }) focusNonce = 0;
   /** Name of the LlmConfigHost.getConfig() entry that holds the per-
-   * session USD spend cap. Empty string disables the lookup; the
-   * compiled default in `sessionMaxCostUsd` is used instead. The
-   * default matches git-chat's config key for back-compat. */
-  @property({ type: String }) sessionMaxCostKey = "GITCHAT_SESSION_MAX_COST_USD";
+   * session USD spend cap. Empty string (default) disables the
+   * lookup and uses the compiled `sessionMaxCostUsd` value instead.
+   * git-chat sets this to "GITCHAT_SESSION_MAX_COST_USD" at the
+   * call site to keep its existing config key. */
+  @property({ type: String }) sessionMaxCostKey = "";
 
   @state() private state: ViewState = { phase: "loading" };
   @state() private turns: Turn[] = [];
@@ -289,13 +290,13 @@ export class GcChatView extends LitElement {
   };
 
   private getComposer(): GcComposer | null {
-    return this.renderRoot.querySelector<GcComposer>("gc-composer");
+    return this.renderRoot.querySelector<GcComposer>("cw-composer");
   }
   private getMessageList(): GcMessageList | null {
-    return this.renderRoot.querySelector<GcMessageList>("gc-message-list");
+    return this.renderRoot.querySelector<GcMessageList>("cw-message-list");
   }
   private getSidebar(): GcSessionSidebar | null {
-    return this.renderRoot.querySelector<GcSessionSidebar>("gc-session-sidebar");
+    return this.renderRoot.querySelector<GcSessionSidebar>("cw-session-sidebar");
   }
 
   private async loadSessions() {
@@ -374,10 +375,11 @@ export class GcChatView extends LitElement {
 
   private diffResolver() {
     const repoId = this.repoId;
-    if (!repoId) return undefined;
+    const repoHost = this.repoHost;
+    if (!repoId || !repoHost) return undefined;
     return async (ref: { from: string; to: string; path: string }) => {
       try {
-        const resp = await this.repoHost.getDiff({
+        const resp = await repoHost.getDiff({
           repoId,
           fromRef: ref.from,
           toRef: ref.to,
@@ -1094,7 +1096,7 @@ export class GcChatView extends LitElement {
 
   override render() {
     if (this.state.phase === "loading") {
-      return html`<gc-loading-banner heading="loading chat…"></gc-loading-banner>`;
+      return html`<cw-loading-banner heading="loading chat…"></cw-loading-banner>`;
     }
     if (this.state.phase === "error") {
       return html`<div class="boot">
@@ -1130,7 +1132,7 @@ export class GcChatView extends LitElement {
           ? html`<div class="drawer-backdrop" @click=${() => (this.drawerOpen = false)}></div>`
           : nothing}
         <aside class="sidebar" aria-label="Chat sessions" tabindex="-1">
-          <gc-session-sidebar
+          <cw-session-sidebar
             .sessions=${s.sessions}
             .selected=${s.selected ?? ""}
             .repoId=${this.repoId}
@@ -1139,7 +1141,7 @@ export class GcChatView extends LitElement {
             @gc:delete-session=${this.onSidebarDelete}
             @gc:sessions-changed=${this.onSidebarSessionsChanged}
             @gc:error=${this.onComposerError}
-          ></gc-session-sidebar>
+          ></cw-session-sidebar>
         </aside>
 
         <section class="pane">
@@ -1174,12 +1176,14 @@ export class GcChatView extends LitElement {
 
           ${this.turns.length === 0
             ? html`<div class="dashboard-wrap">
-                <gc-chat-dashboard
+                <cw-chat-dashboard
                   .repoId=${this.repoId}
                   @gc:prefill-example=${this.onPrefillExample}
-                ></gc-chat-dashboard>
+                >
+                  <slot name="empty-state" slot="empty-state"></slot>
+                </cw-chat-dashboard>
               </div>`
-            : html`<gc-message-list
+            : html`<cw-message-list
                 .turns=${this.turns}
                 .sending=${this.sending}
                 ?unfocused=${this.focusMode === "focus"}
@@ -1187,7 +1191,7 @@ export class GcChatView extends LitElement {
                 @gc:regenerate=${this.onMessageRegenerate}
                 @gc:edit-turn=${this.onMessageEdit}
                 @gc:update-turns=${this.onUpdateTurns}
-              ></gc-message-list>`}
+              ></cw-message-list>`}
           ${this.pendingSend ? this.renderPendingConfirmation() : nothing}
           ${this.activeModel
             ? html`<div class="model-indicator" role="status" aria-live="polite">
@@ -1200,7 +1204,7 @@ export class GcChatView extends LitElement {
                 ${this.renderCostEstimate()}
               </div>`
             : nothing}
-          <gc-composer
+          <cw-composer
             .repoId=${this.repoId}
             .sending=${this.sending}
             .errorMsg=${this.error}
@@ -1211,7 +1215,7 @@ export class GcChatView extends LitElement {
             @gc:announce=${this.onComposerAnnounce}
             @gc:slash-action=${this.onComposerSlashAction}
             @gc:input-changed=${this.onComposerInputChanged}
-          ></gc-composer>
+          ></cw-composer>
         </section>
         <div class="sr-only" role="status" aria-live="assertive">${this.announcement}</div>
       </div>
@@ -1275,7 +1279,7 @@ export class GcChatView extends LitElement {
       border-right: 1px solid var(--surface-4);
       background: var(--surface-0);
     }
-    .sidebar gc-session-sidebar {
+    .sidebar cw-session-sidebar {
       display: flex;
       flex-direction: column;
       flex: 1;
@@ -1472,7 +1476,7 @@ export class GcChatView extends LitElement {
       overflow-y: auto;
       padding: var(--space-6) var(--space-7) var(--space-4);
     }
-    gc-message-list {
+    cw-message-list {
       flex: 1;
       min-height: 0;
       display: flex;

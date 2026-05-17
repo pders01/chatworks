@@ -223,9 +223,7 @@ export class GcChatView extends LitElement {
 
   override connectedCallback() {
     super.connectedCallback();
-    if (this.repoId) {
-      void this.loadSessions();
-    }
+    void this.loadSessions();
     void this.loadActiveModel();
     this.addEventListener("keydown", this.onKeydownLocal);
   }

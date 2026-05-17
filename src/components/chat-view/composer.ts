@@ -1,6 +1,12 @@
 import { LitElement, html, css, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { repoClient } from "../../lib/transport.js";
+import { consume } from "@lit/context";
+import {
+  llmConfigHostContext,
+  repoHostContext,
+  type LlmConfigHost,
+  type RepoHost,
+} from "../../host.js";
 import { EntryType } from "../../gen/gitchat/v1/repo_pb.js";
 import { type ClientAttachment, fmtBytes, messageOf } from "../../lib/chat-types.js";
 import {
@@ -32,6 +38,11 @@ interface ArgSuggestion {
 
 @customElement("gc-composer")
 export class GcComposer extends LitElement {
+  @consume({ context: repoHostContext, subscribe: true })
+  private repoHost!: RepoHost;
+  @consume({ context: llmConfigHostContext, subscribe: true })
+  private llmConfigHost!: LlmConfigHost;
+
   @property({ type: String }) repoId = "";
   @property({ type: Boolean }) sending = false;
   @property({ type: String }) errorMsg = "";
@@ -171,7 +182,7 @@ export class GcComposer extends LitElement {
     if (trigger === "profile") {
       if (this.profileSuggestionCache) return this.profileSuggestionCache;
       try {
-        const resp = await repoClient.listProfiles({});
+        const resp = await this.llmConfigHost.listProfiles({});
         const list = (resp.profiles ?? []).map((p) => ({
           value: p.name,
           label: p.name,
@@ -193,10 +204,10 @@ export class GcComposer extends LitElement {
         // picking one just leaves the config in a broken state or,
         // worse, sends a key meant for another provider.
         const [catResp, localResp, profilesResp, configResp] = await Promise.all([
-          repoClient.getProviderCatalog({}).catch(() => null),
-          repoClient.discoverLocalEndpoints({}).catch(() => null),
-          repoClient.listProfiles({}).catch(() => null),
-          repoClient.getConfig({}).catch(() => null),
+          this.llmConfigHost.getProviderCatalog({}).catch(() => null),
+          this.llmConfigHost.discoverLocalEndpoints({}).catch(() => null),
+          this.llmConfigHost.listProfiles({}).catch(() => null),
+          this.llmConfigHost.getConfig({}).catch(() => null),
         ]);
         const ctx = buildAvailabilityContext(
           localResp?.endpoints ?? [],
@@ -255,7 +266,7 @@ export class GcComposer extends LitElement {
       { value: "HEAD~10", label: "HEAD~10", description: "ten commits back" },
     ];
     try {
-      const resp = await repoClient.listBranches({ repoId: this.repoId });
+      const resp = await this.repoHost.listBranches({ repoId: this.repoId });
       const branches: ArgSuggestion[] = (resp.branches ?? []).map((b) => ({
         value: b.name,
         label: b.name,
@@ -283,7 +294,7 @@ export class GcComposer extends LitElement {
     const dirPath = lastSlash >= 0 ? partial.slice(0, lastSlash) : "";
     if (!this.dirCache.has(dirPath)) {
       try {
-        const resp = await repoClient.listTree({ repoId: this.repoId, path: dirPath });
+        const resp = await this.repoHost.listTree({ repoId: this.repoId, path: dirPath });
         const prefix = dirPath ? dirPath + "/" : "";
         this.dirCache.set(
           dirPath,
@@ -425,7 +436,7 @@ export class GcComposer extends LitElement {
       this.mentionResults = [];
       this.showMentions = false;
       try {
-        const resp = await repoClient.listTree({ repoId: this.repoId, path: dirPath });
+        const resp = await this.repoHost.listTree({ repoId: this.repoId, path: dirPath });
         const prefix = dirPath ? dirPath + "/" : "";
         this.dirCache.set(
           dirPath,

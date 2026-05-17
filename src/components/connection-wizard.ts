@@ -1,13 +1,15 @@
 import { LitElement, html, css, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { consume } from "@lit/context";
 import { classMap } from "lit/directives/class-map.js";
-import { repoClient } from "../lib/transport.js";
-import type {
-  CatalogModel,
-  CatalogProvider,
-  LLMProfile,
-  LocalEndpoint,
-} from "../gen/gitchat/v1/repo_pb.js";
+import {
+  llmConfigHostContext,
+  type CatalogModel,
+  type CatalogProvider,
+  type LLMProfile,
+  type LlmConfigHost,
+  type LocalEndpoint,
+} from "../host.js";
 import { formatSources, providerSources, isLocalhostURL } from "../lib/catalog.js";
 import "./combobox.js";
 import type { ComboboxOption } from "./combobox.js";
@@ -26,6 +28,9 @@ type Step = "provider" | "auth" | "model" | "save";
  */
 @customElement("gc-connection-wizard")
 export class GcConnectionWizard extends LitElement {
+  @consume({ context: llmConfigHostContext, subscribe: true })
+  private llmConfigHost!: LlmConfigHost;
+
   /** Catalog providers for the combobox. */
   @property({ type: Array }) catalog: CatalogProvider[] = [];
 
@@ -100,7 +105,7 @@ export class GcConnectionWizard extends LitElement {
    */
   private async discoverModelsForEdit() {
     try {
-      const resp = await repoClient.discoverModels({
+      const resp = await this.llmConfigHost.discoverModels({
         baseUrl: this.baseUrl,
         apiKey: this.apiKey,
       });
@@ -149,8 +154,8 @@ export class GcConnectionWizard extends LitElement {
   /**
    * True when the current page is served over plain HTTP to a non-loopback
    * host. In that case the API key would travel in clear-text between
-   * browser and git-chat server and the user deserves a warning before
-   * entering one.
+   * the browser and the host server, and the user deserves a warning
+   * before entering one.
    */
   private get uiIsPlaintext(): boolean {
     if (typeof window === "undefined") return false;
@@ -234,7 +239,7 @@ export class GcConnectionWizard extends LitElement {
     this.discoverError = "";
     this.discoveredModels = [];
     try {
-      const resp = await repoClient.discoverModels({
+      const resp = await this.llmConfigHost.discoverModels({
         baseUrl: this.baseUrl,
         apiKey: this.apiKey,
       });

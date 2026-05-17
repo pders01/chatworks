@@ -1,11 +1,14 @@
 import { LitElement, html, css } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { chatClient } from "../../lib/transport.js";
+import { consume } from "@lit/context";
+import { chatHostContext, type ChatHost, type ChatSession } from "../../host.js";
 import { messageOf } from "../../lib/chat-types.js";
-import type { ChatSession } from "../../gen/gitchat/v1/chat_pb.js";
 
 @customElement("gc-session-sidebar")
 export class GcSessionSidebar extends LitElement {
+  @consume({ context: chatHostContext, subscribe: true })
+  private chatHost!: ChatHost;
+
   @property({ type: Array }) sessions: ChatSession[] = [];
   @property({ type: String }) selected = "";
   @property({ type: String }) repoId = "";
@@ -43,7 +46,7 @@ export class GcSessionSidebar extends LitElement {
     title = title.trim();
     if (!title) return;
     try {
-      await chatClient.renameSession({ sessionId, title });
+      await this.chatHost.renameSession({ sessionId, title });
       this.fire("gc:sessions-changed", {});
     } catch {
       // Silently fail — title stays as-is.
@@ -63,7 +66,7 @@ export class GcSessionSidebar extends LitElement {
 
   private async pinSession(sessionId: string, pinned: boolean) {
     try {
-      await chatClient.pinSession({ sessionId, pinned });
+      await this.chatHost.pinSession({ sessionId, pinned });
       this.fire("gc:sessions-changed", {});
     } catch (e) {
       this.fire("gc:error", { message: messageOf(e) });

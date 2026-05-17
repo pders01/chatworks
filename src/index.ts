@@ -1,6 +1,14 @@
 // Public entry. Side-effect imports register the custom elements; named
-// re-exports surface the runtime singletons and shared helpers a host
-// shell typically wires up at boot.
+// re-exports surface the host contracts and shared helpers a consumer
+// typically wires up at boot.
+//
+// The primary integration path is host injection: build hosts with
+// `createConnectRpcHosts()` (or your own implementation of the host
+// interfaces) and `@provide` them on a root element via @lit/context.
+// The components @consume them automatically. Importing transport
+// clients directly is still possible via the "/transport" subpath
+// export, but it bypasses the seam the components are built around
+// and is no longer the recommended path.
 
 // ── Custom-element registrations ─────────────────────────────────
 import "./components/toast.js";
@@ -13,8 +21,11 @@ import "./components/settings-panel.js";
 // ── Event-map augmentations ──────────────────────────────────────
 import "./lib/events.js";
 
-// ── Runtime singletons + helpers ─────────────────────────────────
-export { authClient, chatClient, repoClient } from "./lib/transport.js";
+// ── Host contract + default adapter ──────────────────────────────
+export * from "./host.js";
+export { createConnectRpcHosts, type ConnectRpcHosts } from "./adapters/connect-rpc.js";
+
+// ── Runtime helpers ──────────────────────────────────────────────
 export * as settings from "./lib/settings.js";
 export {
   readFocus,

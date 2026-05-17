@@ -1,6 +1,6 @@
 {
   "name": "@pders01/chatworks",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Drop-in chat surface — Lit web components, a Connect-RPC transport layer, model-catalog discovery, slash-command engine, markdown + Shiki rendering, and a runtime settings panel — for embedding an LLM chat into any web app.",
   "license": "MIT",
   "author": "Paul Derscheid",
@@ -23,6 +23,8 @@
     "./toast": "./src/components/toast.ts",
     "./loading-indicator": "./src/components/loading-indicator.ts",
     "./combobox": "./src/components/combobox.ts",
+    "./host": "./src/host.ts",
+    "./adapters/connect-rpc": "./src/adapters/connect-rpc.ts",
     "./transport": "./src/lib/transport.ts",
     "./settings": "./src/lib/settings.ts",
     "./events": "./src/lib/events.ts",
@@ -49,6 +51,7 @@
     "@bufbuild/protobuf": "^2.11.0",
     "@connectrpc/connect": "^2.1.1",
     "@connectrpc/connect-web": "^2.1.1",
+    "@lit/context": "^1.1.3",
     "lit": "^3.2.1"
   },
   "dependencies": {
@@ -61,6 +64,7 @@
     "@connectrpc/connect": "^2.1.1",
     "@connectrpc/connect-web": "^2.1.1",
     "@happy-dom/global-registrator": "^20.9.0",
+    "@lit/context": "^1.1.3",
     "@types/dompurify": "^3.2.0",
     "bun-types": "^1.2.0",
     "lit": "^3.2.1",

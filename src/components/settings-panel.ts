@@ -1,12 +1,14 @@
 import { LitElement, html, css, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { repoClient } from "../lib/transport.js";
-import type {
-  ConfigEntry,
-  LLMProfile,
-  CatalogProvider,
-  LocalEndpoint,
-} from "../gen/gitchat/v1/repo_pb.js";
+import { consume } from "@lit/context";
+import {
+  llmConfigHostContext,
+  type CatalogProvider,
+  type ConfigEntry,
+  type LLMProfile,
+  type LlmConfigHost,
+  type LocalEndpoint,
+} from "../host.js";
 import * as settings from "../lib/settings.js";
 import {
   buildAvailabilityContext,
@@ -23,7 +25,14 @@ import type { ComboboxOption } from "./combobox.js";
 
 @customElement("gc-settings-panel")
 export class GcSettingsPanel extends LitElement {
+  @consume({ context: llmConfigHostContext, subscribe: true })
+  private llmConfigHost!: LlmConfigHost;
+
   @property({ type: Boolean }) open = false;
+  /** Prefix stripped from config keys when rendered as human labels.
+   * E.g. with "GITCHAT_" set, "GITCHAT_SESSION_MAX_COST_USD" displays
+   * as "session max cost usd". Empty string disables the stripping. */
+  @property({ type: String }) configKeyPrefix = "GITCHAT_";
 
   @state() private configEntries: ConfigEntry[] = [];
   @state() private configLoading = false;
@@ -94,7 +103,7 @@ export class GcSettingsPanel extends LitElement {
   private async loadConfig() {
     this.configLoading = true;
     try {
-      const resp = await repoClient.getConfig({});
+      const resp = await this.llmConfigHost.getConfig({});
       this.configEntries = resp.entries ?? [];
     } catch {
       this.configEntries = [];
@@ -105,7 +114,7 @@ export class GcSettingsPanel extends LitElement {
 
   private async loadProfiles() {
     try {
-      const resp = await repoClient.listProfiles({});
+      const resp = await this.llmConfigHost.listProfiles({});
       this.profiles = resp.profiles ?? [];
       this.activeProfileId = resp.activeProfileId ?? "";
     } catch {
@@ -133,7 +142,7 @@ export class GcSettingsPanel extends LitElement {
 
   private async saveProfile(profile: any) {
     try {
-      const resp = await repoClient.saveProfile({ profile });
+      const resp = await this.llmConfigHost.saveProfile({ profile });
       if (!profile.id) profile.id = resp.id;
       await this.loadProfiles();
       this.editingProfile = null;
@@ -145,7 +154,7 @@ export class GcSettingsPanel extends LitElement {
 
   private async deleteProfile(id: string) {
     try {
-      await repoClient.deleteProfile({ id });
+      await this.llmConfigHost.deleteProfile({ id });
       await this.loadProfiles();
       await this.loadConfig();
       this.editingProfile = null;
@@ -156,7 +165,7 @@ export class GcSettingsPanel extends LitElement {
 
   private async loadCatalog() {
     try {
-      const resp = await repoClient.getProviderCatalog({});
+      const resp = await this.llmConfigHost.getProviderCatalog({});
       this.catalog = resp.providers ?? [];
     } catch {
       // Initial load is silent — the user hasn't asked for anything yet.
@@ -168,7 +177,7 @@ export class GcSettingsPanel extends LitElement {
   private async refreshCatalog() {
     this.catalogLoading = true;
     try {
-      const resp = await repoClient.refreshProviderCatalog({});
+      const resp = await this.llmConfigHost.refreshProviderCatalog({});
       this.catalog = resp.providers ?? [];
       this.toast("success", `catalog refreshed · ${this.catalog.length} providers`);
     } catch (e) {
@@ -181,7 +190,7 @@ export class GcSettingsPanel extends LitElement {
   private async discoverLocal() {
     this.localDiscovering = true;
     try {
-      const resp = await repoClient.discoverLocalEndpoints({});
+      const resp = await this.llmConfigHost.discoverLocalEndpoints({});
       this.localEndpoints = resp.endpoints ?? [];
       if (this.localEndpoints.length === 0) {
         this.toast("info", "no local endpoints detected on the usual ports");
@@ -196,7 +205,7 @@ export class GcSettingsPanel extends LitElement {
 
   private async activateProfile(id: string) {
     try {
-      await repoClient.activateProfile({ id });
+      await this.llmConfigHost.activateProfile({ id });
       await this.loadProfiles();
       await this.loadConfig();
     } catch (e) {
@@ -216,7 +225,7 @@ export class GcSettingsPanel extends LitElement {
       key,
       setTimeout(async () => {
         try {
-          await repoClient.updateConfig({ key, value });
+          await this.llmConfigHost.updateConfig({ key, value });
         } catch (e) {
           this.toast("error", this.errorMessage(e, `could not save ${key}`));
         }
@@ -286,7 +295,7 @@ export class GcSettingsPanel extends LitElement {
     const apiKey = this.configEntries.find((e) => e.key === "LLM_API_KEY")?.value ?? "";
     this.discoveringModelsForUrl = baseUrl;
     try {
-      const resp = await repoClient.discoverModels({ baseUrl, apiKey });
+      const resp = await this.llmConfigHost.discoverModels({ baseUrl, apiKey });
       if (!resp.error && resp.modelIds?.length) {
         this.discoveredModelsByUrl = new Map(this.discoveredModelsByUrl).set(
           baseUrl,
@@ -309,10 +318,11 @@ export class GcSettingsPanel extends LitElement {
   }
 
   private humanizeKey(key: string): string {
-    return key
-      .replace(/^GITCHAT_/, "")
-      .toLowerCase()
-      .replace(/_/g, " ");
+    const stripped =
+      this.configKeyPrefix && key.startsWith(this.configKeyPrefix)
+        ? key.slice(this.configKeyPrefix.length)
+        : key;
+    return stripped.toLowerCase().replace(/_/g, " ");
   }
 
   private isSecretEntry(entry: ConfigEntry): boolean {

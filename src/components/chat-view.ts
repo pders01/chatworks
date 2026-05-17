@@ -1,7 +1,15 @@
 import { LitElement, html, css, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { consume } from "@lit/context";
 import { classMap } from "lit/directives/class-map.js";
-import { chatClient, repoClient } from "../lib/transport.js";
+import {
+  chatHostContext,
+  llmConfigHostContext,
+  repoHostContext,
+  type ChatHost,
+  type LlmConfigHost,
+  type RepoHost,
+} from "../host.js";
 import {
   readFocus,
   writeFocus,
@@ -71,6 +79,13 @@ function routeKey(r: RouteInfo): string {
 
 @customElement("gc-chat-view")
 export class GcChatView extends LitElement {
+  @consume({ context: repoHostContext, subscribe: true })
+  private repoHost!: RepoHost;
+  @consume({ context: chatHostContext, subscribe: true })
+  private chatHost!: ChatHost;
+  @consume({ context: llmConfigHostContext, subscribe: true })
+  private llmConfigHost!: LlmConfigHost;
+
   @property({ type: String }) repoId = "";
   @property({ type: String }) branch = "";
   @property({ type: String }) initialSessionId = "";
@@ -78,6 +93,11 @@ export class GcChatView extends LitElement {
   @property({ attribute: false }) pendingFileMention: { path: string; nonce: number } | null = null;
   @property({ type: Number }) newChatNonce = 0;
   @property({ type: Number }) focusNonce = 0;
+  /** Name of the LlmConfigHost.getConfig() entry that holds the per-
+   * session USD spend cap. Empty string disables the lookup; the
+   * compiled default in `sessionMaxCostUsd` is used instead. The
+   * default matches git-chat's config key for back-compat. */
+  @property({ type: String }) sessionMaxCostKey = "GITCHAT_SESSION_MAX_COST_USD";
 
   @state() private state: ViewState = { phase: "loading" };
   @state() private turns: Turn[] = [];
@@ -217,8 +237,8 @@ export class GcChatView extends LitElement {
   private async loadActiveModel() {
     try {
       const [cfg, profs] = await Promise.all([
-        repoClient.getConfig({}),
-        repoClient.listProfiles({}),
+        this.llmConfigHost.getConfig({}),
+        this.llmConfigHost.listProfiles({}),
       ]);
       const modelEntry = cfg.entries?.find((e) => e.key === "LLM_MODEL");
       const activeId = profs.activeProfileId ?? "";
@@ -235,11 +255,13 @@ export class GcChatView extends LitElement {
       // Session cost cap — pre-send check compares projected spend
       // against this value. Stored as a float; falls back to the
       // compiled default if the config value is missing or unparseable.
-      const capEntry = cfg.entries?.find((e) => e.key === "GITCHAT_SESSION_MAX_COST_USD");
-      const capStr = capEntry?.value || capEntry?.defaultValue || "1.00";
-      const capVal = parseFloat(capStr);
-      if (Number.isFinite(capVal) && capVal > 0) {
-        this.sessionMaxCostUsd = capVal;
+      if (this.sessionMaxCostKey) {
+        const capEntry = cfg.entries?.find((e) => e.key === this.sessionMaxCostKey);
+        const capStr = capEntry?.value || capEntry?.defaultValue || "1.00";
+        const capVal = parseFloat(capStr);
+        if (Number.isFinite(capVal) && capVal > 0) {
+          this.sessionMaxCostUsd = capVal;
+        }
       }
     } catch {
       // Unreachable backend → leave indicator blank rather than error.
@@ -278,7 +300,7 @@ export class GcChatView extends LitElement {
 
   private async loadSessions() {
     try {
-      const resp = await chatClient.listSessions({ repoId: this.repoId });
+      const resp = await this.chatHost.listSessions({ repoId: this.repoId });
       this.state = {
         phase: "ready",
         sessions: resp.sessions,
@@ -294,7 +316,7 @@ export class GcChatView extends LitElement {
   private async refreshSessions() {
     if (this.state.phase !== "ready") return;
     try {
-      const resp = await chatClient.listSessions({ repoId: this.repoId });
+      const resp = await this.chatHost.listSessions({ repoId: this.repoId });
       this.state = { ...this.state, sessions: resp.sessions };
     } catch (e) {
       this.error = messageOf(e);
@@ -318,7 +340,7 @@ export class GcChatView extends LitElement {
     this.sessionTokensIn = 0;
     this.sessionTokensOut = 0;
     try {
-      const resp = await chatClient.getSession({ sessionId });
+      const resp = await this.chatHost.getSession({ sessionId });
       this.turns = resp.messages.map(turnFromMessage);
       for (const m of resp.messages) {
         this.sessionTokensIn += Number(m.tokenCountIn) || 0;
@@ -355,7 +377,7 @@ export class GcChatView extends LitElement {
     if (!repoId) return undefined;
     return async (ref: { from: string; to: string; path: string }) => {
       try {
-        const resp = await repoClient.getDiff({
+        const resp = await this.repoHost.getDiff({
           repoId,
           fromRef: ref.from,
           toRef: ref.to,
@@ -390,7 +412,7 @@ export class GcChatView extends LitElement {
 
   private async handleDeleteSession(sessionId: string) {
     try {
-      await chatClient.deleteSession({ sessionId });
+      await this.chatHost.deleteSession({ sessionId });
       if (this.state.phase === "ready" && this.state.selected === sessionId) {
         this.state = { ...this.state, selected: null };
         this.turns = [];
@@ -515,7 +537,7 @@ export class GcChatView extends LitElement {
     this.abortController = ac;
 
     try {
-      const stream = chatClient.sendMessage(
+      const stream = this.chatHost.sendMessage(
         {
           sessionId,
           repoId: this.repoId,
@@ -628,7 +650,7 @@ export class GcChatView extends LitElement {
             });
           if (!sessionId && chunk.kind.value.sessionId) {
             const newId = chunk.kind.value.sessionId;
-            chatClient
+            this.chatHost
               .listSessions({ repoId: this.repoId })
               .then((list) => {
                 this.state = {
@@ -674,8 +696,8 @@ export class GcChatView extends LitElement {
   private async resolveRoute(): Promise<RouteInfo> {
     try {
       const [cfg, profs] = await Promise.all([
-        repoClient.getConfig({}),
-        repoClient.listProfiles({}),
+        this.llmConfigHost.getConfig({}),
+        this.llmConfigHost.listProfiles({}),
       ]);
       const readConfig = (key: string) => cfg.entries?.find((e) => e.key === key)?.value ?? "";
 
@@ -724,7 +746,7 @@ export class GcChatView extends LitElement {
   private async priceFor(modelId: string) {
     if (!modelId) return null;
     try {
-      const cat = await repoClient.getProviderCatalog({});
+      const cat = await this.llmConfigHost.getProviderCatalog({});
       return findModelPricing(modelId, cat.providers ?? []);
     } catch {
       return null;
@@ -820,10 +842,10 @@ export class GcChatView extends LitElement {
         </dl>
         <p class="presend-note">
           ${p.overCap
-            ? html`This turn would push session spend past the
-                <code>GITCHAT_SESSION_MAX_COST_USD</code> cap. Confirming proceeds with this turn;
-                the next over-cap turn will prompt again. Raise the cap in settings if you want to
-                turn the prompts off.`
+            ? html`This turn would push session spend past the configured
+                <code>$${this.sessionMaxCostUsd.toFixed(2)}</code> session cap. Confirming proceeds
+                with this turn; the next over-cap turn will prompt again. Raise the cap in your
+                app's settings if you want to turn the prompts off.`
             : html`Your API key + this prompt will be sent to
                 <code>${p.route.destinationHost}</code>. Confirming remembers the route for this
                 session — subsequent turns on the same route don't re-prompt until the model, base
@@ -937,7 +959,7 @@ export class GcChatView extends LitElement {
           this.toast("warn", availability.reason);
           return;
         }
-        await repoClient.updateConfig({ key: "LLM_MODEL", value: modelId });
+        await this.llmConfigHost.updateConfig({ key: "LLM_MODEL", value: modelId });
         this.toast("success", `model set to ${modelId}`);
       } else if (command === "profile") {
         const name = args[0] ?? "";
@@ -945,13 +967,13 @@ export class GcChatView extends LitElement {
           this.toast("warn", "usage: /profile <name>");
           return;
         }
-        const resp = await repoClient.listProfiles({});
+        const resp = await this.llmConfigHost.listProfiles({});
         const match = resp.profiles?.find((p) => p.name === name);
         if (!match) {
           this.toast("warn", `no profile named "${name}" — check spelling`);
           return;
         }
-        await repoClient.activateProfile({ id: match.id });
+        await this.llmConfigHost.activateProfile({ id: match.id });
         this.toast("success", `profile "${name}" activated`);
       } else {
         this.toast("warn", `unknown slash command: /${command}`);
@@ -981,10 +1003,10 @@ export class GcChatView extends LitElement {
   ): Promise<{ ok: true } | { ok: false; reason: string }> {
     try {
       const [catResp, localResp, profilesResp, configResp] = await Promise.all([
-        repoClient.getProviderCatalog({}).catch(() => null),
-        repoClient.discoverLocalEndpoints({}).catch(() => null),
-        repoClient.listProfiles({}).catch(() => null),
-        repoClient.getConfig({}).catch(() => null),
+        this.llmConfigHost.getProviderCatalog({}).catch(() => null),
+        this.llmConfigHost.discoverLocalEndpoints({}).catch(() => null),
+        this.llmConfigHost.listProfiles({}).catch(() => null),
+        this.llmConfigHost.getConfig({}).catch(() => null),
       ]);
 
       // Any local endpoint advertising this model id → always ok

@@ -1,7 +1,8 @@
 import { LitElement, html, css, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { consume } from "@lit/context";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
-import { chatClient, repoClient } from "../../lib/transport.js";
+import { chatHostContext, repoHostContext, type ChatHost, type RepoHost } from "../../host.js";
 import "./../../components/loading-indicator.js";
 
 // Lazy-import markdown because it pulls marked + Shiki (~270 kB
@@ -18,6 +19,11 @@ function loadMarkdown() {
 
 @customElement("gc-chat-dashboard")
 export class GcChatDashboard extends LitElement {
+  @consume({ context: repoHostContext, subscribe: true })
+  private repoHost!: RepoHost;
+  @consume({ context: chatHostContext, subscribe: true })
+  private chatHost!: ChatHost;
+
   @property({ type: String }) repoId = "";
 
   @state() private activitySummary = "";
@@ -38,7 +44,11 @@ export class GcChatDashboard extends LitElement {
   private async loadDashboard() {
     // 1. Suggestions from commits — instant, no LLM.
     try {
-      const commits = await repoClient.listCommits({ repoId: this.repoId, limit: 5, offset: 0 });
+      const commits = await this.repoHost.listCommits({
+        repoId: this.repoId,
+        limit: 5,
+        offset: 0,
+      });
       const sug: Array<{ label: string; prompt: string }> = [];
       sug.push({ label: "overview", prompt: "What is this project about?" });
       if (commits.commits.length > 0) {
@@ -61,14 +71,14 @@ export class GcChatDashboard extends LitElement {
 
     // 2. LLM summary — cached by HEAD SHA, only re-fetch on new commits.
     try {
-      const repos = await repoClient.listRepos({});
+      const repos = await this.repoHost.listRepos({});
       const repo = repos.repos.find((r) => r.id === this.repoId);
       const headSha = repo?.headCommit ?? "";
       const cacheKey = `${this.repoId}:${headSha}`;
       if (cacheKey === this.cachedSummaryKey && this.activitySummary) return;
 
       this.summaryLoading = true;
-      const resp = await chatClient.summarizeActivity({ repoId: this.repoId });
+      const resp = await this.chatHost.summarizeActivity({ repoId: this.repoId });
       this.activitySummary = resp.summary || "";
       if (this.activitySummary) {
         const { renderMarkdown } = await loadMarkdown();

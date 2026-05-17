@@ -1,6 +1,14 @@
-import { MessageRole } from "../gen/gitchat/v1/chat_pb.js";
-
-export { MessageRole };
+// MessageRole mirrors the proto enum's numeric values without dragging
+// in the gen/* module. Components use it both as a type and as a value
+// (e.g. `t.role === MessageRole.USER`). Defined as a const-object so
+// import { MessageRole } continues to behave as a runtime value.
+export const MessageRole = {
+  UNSPECIFIED: 0,
+  USER: 1,
+  ASSISTANT: 2,
+  SYSTEM: 3,
+} as const;
+export type MessageRole = (typeof MessageRole)[keyof typeof MessageRole];
 
 // A turn in the in-memory transcript. For messages loaded from history it
 // maps 1:1 onto ChatMessage; for the in-flight assistant turn, `streaming`
@@ -126,15 +134,15 @@ export type ViewState =
   | { phase: "loading" }
   | {
       phase: "ready";
-      sessions: import("../gen/gitchat/v1/chat_pb.js").ChatSession[];
+      sessions: import("../host.js").ChatSession[];
       selected: string | null;
     }
   | { phase: "error"; message: string };
 
-export function turnFromMessage(m: import("../gen/gitchat/v1/chat_pb.js").ChatMessage): Turn {
+export function turnFromMessage(m: import("../host.js").ChatMessage): Turn {
   return {
     id: m.id,
-    role: m.role,
+    role: m.role as MessageRole,
     content: m.content,
     model: m.model || undefined,
     tokensIn: Number(m.tokenCountIn) || undefined,

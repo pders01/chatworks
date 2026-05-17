@@ -2,7 +2,7 @@
 // across the settings panel, composer slash-command autocomplete, and
 // anywhere else a catalog entry is surfaced.
 
-import type { CatalogProvider } from "../gen/gitchat/v1/repo_pb.js";
+import type { CatalogProvider } from "../host.js";
 
 /**
  * Render the set of catalog sources that contributed a model into a
@@ -44,7 +44,7 @@ export function providerSources(c: CatalogProvider): string[] {
 
 /**
  * Context needed to decide whether a catalog provider can actually be
- * called with the current git-chat config. Pure data — no RPC calls —
+ * called with the current host config. Pure data — no RPC calls —
  * so isProviderAvailable() is testable in isolation.
  */
 export interface AvailabilityContext {

@@ -21,14 +21,10 @@ import { provide } from "@lit/context";
 import { customElement } from "lit/decorators.js";
 import {
   createConnectRpcHosts,
-  repoHostContext,
   chatHostContext,
   llmConfigHostContext,
-  authHostContext,
-  type RepoHost,
   type ChatHost,
   type LlmConfigHost,
-  type AuthHost,
 } from "@jpahd/chatworks";
 import "@jpahd/chatworks/chat-view";
 
@@ -36,20 +32,14 @@ import "@jpahd/chatworks/chat-view";
 export class MyApp extends LitElement {
   private hosts = createConnectRpcHosts(); // same-origin, cookies included
 
-  @provide({ context: repoHostContext })
-  private repoHost: RepoHost = this.hosts.repoHost;
-
   @provide({ context: chatHostContext })
   private chatHost: ChatHost = this.hosts.chatHost;
 
   @provide({ context: llmConfigHostContext })
   private llmConfigHost: LlmConfigHost = this.hosts.llmConfigHost;
 
-  @provide({ context: authHostContext })
-  private authHost: AuthHost = this.hosts.authHost;
-
   override render() {
-    return html`<gc-chat-view repoId="myrepo"></gc-chat-view>`;
+    return html`<cw-chat-view></cw-chat-view>`;
   }
 }
 ```
@@ -58,13 +48,22 @@ export class MyApp extends LitElement {
 the transport's base URL. Pass `{ transport }` to supply a fully custom
 Connect transport (interceptors, custom fetch, etc.).
 
+`RepoHost` and `AuthHost` are optional — chatworks components degrade
+gracefully when either context is absent. Provide `RepoHost` when your
+app has a git repo concept (enables `@`-mention autocomplete, commit
+suggestions, and `[[diff]]` markers). Provide `AuthHost` when you have
+an authentication shell (login, pairing, etc.).
+
 ## The four hosts
 
-### `RepoHost` — read-only git access
+### `RepoHost` — read-only git access (optional)
 
 Used by: composer (`@`-mention autocomplete, `/diff` ref completion),
 chat dashboard (commit list for suggestion seeding), chat view
 (`[[diff]]` marker expansion).
+
+Omitting `RepoHost` is safe — components that need repo data simply
+render without file mentions or commit suggestions.
 
 | method | semantics |
 | --- | --- |

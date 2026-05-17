@@ -29,9 +29,18 @@ export interface Branch {
   subject: string;
 }
 
+export const EntryType = {
+  UNSPECIFIED: 0,
+  FILE: 1,
+  DIR: 2,
+  SYMLINK: 3,
+  SUBMODULE: 4,
+} as const;
+export type EntryType = (typeof EntryType)[keyof typeof EntryType];
+
 export interface TreeEntry {
   name: string;
-  type: number; // EntryType: 1=FILE, 2=DIR, 3=SYMLINK, 4=SUBMODULE
+  type: EntryType;
   size: bigint;
   blobSha: string;
 }

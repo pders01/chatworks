@@ -2,12 +2,12 @@ import { LitElement, html, css, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { consume } from "@lit/context";
 import {
+  EntryType,
   llmConfigHostContext,
   repoHostContext,
   type LlmConfigHost,
   type RepoHost,
 } from "../../host.js";
-import { EntryType } from "../../gen/gitchat/v1/repo_pb.js";
 import { type ClientAttachment, fmtBytes, messageOf } from "../../lib/chat-types.js";
 import {
   ALLOWED_ATTACHMENT_MIMES,

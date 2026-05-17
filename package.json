@@ -1,0 +1,71 @@
+{
+  "name": "@pders01/chatworks",
+  "version": "0.1.0",
+  "description": "Drop-in chat surface — Lit web components, a Connect-RPC transport layer, model-catalog discovery, slash-command engine, markdown + Shiki rendering, and a runtime settings panel — for embedding an LLM chat into any web app.",
+  "license": "MIT",
+  "author": "Paul Derscheid",
+  "type": "module",
+  "sideEffects": [
+    "./src/components/*.ts",
+    "./src/components/**/*.ts",
+    "./src/index.ts",
+    "./src/lib/events.ts"
+  ],
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": "./src/index.ts",
+    "./chat-view": "./src/components/chat-view.ts",
+    "./settings-panel": "./src/components/settings-panel.ts",
+    "./toast": "./src/components/toast.ts",
+    "./loading-indicator": "./src/components/loading-indicator.ts",
+    "./combobox": "./src/components/combobox.ts",
+    "./transport": "./src/lib/transport.ts",
+    "./settings": "./src/lib/settings.ts",
+    "./events": "./src/lib/events.ts",
+    "./focus": "./src/lib/focus.ts",
+    "./catalog": "./src/lib/catalog.ts",
+    "./chat-types": "./src/lib/chat-types.ts",
+    "./markdown": "./src/lib/markdown.ts",
+    "./highlight": "./src/lib/highlight.ts",
+    "./clipboard": "./src/lib/clipboard.ts",
+    "./slash": "./src/lib/slash.ts",
+    "./attachments": "./src/lib/attachments.ts",
+    "./proto/auth": "./src/gen/gitchat/v1/auth_pb.ts",
+    "./proto/chat": "./src/gen/gitchat/v1/chat_pb.ts",
+    "./proto/repo": "./src/gen/gitchat/v1/repo_pb.ts"
+  },
+  "scripts": {
+    "check": "tsc --noEmit",
+    "test": "bun test src/",
+    "lint": "oxlint -c oxlintrc.json src/",
+    "fmt": "oxfmt --write src/",
+    "fmt:check": "oxfmt --check src/"
+  },
+  "peerDependencies": {
+    "@bufbuild/protobuf": "^2.11.0",
+    "@connectrpc/connect": "^2.1.1",
+    "@connectrpc/connect-web": "^2.1.1",
+    "lit": "^3.2.1"
+  },
+  "dependencies": {
+    "dompurify": "^3.3.3",
+    "marked": "^18.0.0",
+    "shiki": "^4.0.2"
+  },
+  "devDependencies": {
+    "@bufbuild/protobuf": "^2.11.0",
+    "@connectrpc/connect": "^2.1.1",
+    "@connectrpc/connect-web": "^2.1.1",
+    "@happy-dom/global-registrator": "^20.9.0",
+    "@types/dompurify": "^3.2.0",
+    "bun-types": "^1.2.0",
+    "lit": "^3.2.1",
+    "oxfmt": "^0.44.0",
+    "oxlint": "^1.59.0",
+    "typescript": "^5.7.2"
+  }
+}

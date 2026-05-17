@@ -131,18 +131,19 @@ export class GcChatDashboard extends LitElement {
               </div>
             `
           : nothing}
-
-        <div class="recent-activity">
-          <div class="recent-title">recent activity</div>
-          ${this.summaryLoading
-            ? html`<p class="activity-text loading">
-                <cw-spinner></cw-spinner>
-                summarizing recent changes…
-              </p>`
-            : this.activityHtml
-              ? html`<div class="activity-text">${unsafeHTML(this.activityHtml)}</div>`
-              : nothing}
-        </div>
+        ${this.summaryLoading || this.activityHtml
+          ? html`
+              <div class="recent-activity">
+                <div class="recent-title">recent activity</div>
+                ${this.summaryLoading
+                  ? html`<p class="activity-text loading">
+                      <cw-spinner></cw-spinner>
+                      summarizing recent changes…
+                    </p>`
+                  : html`<div class="activity-text">${unsafeHTML(this.activityHtml)}</div>`}
+              </div>
+            `
+          : nothing}
       </div>
     `;
   }

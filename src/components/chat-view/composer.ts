@@ -46,6 +46,11 @@ export class GcComposer extends LitElement {
   @property({ type: String }) repoId = "";
   @property({ type: Boolean }) sending = false;
   @property({ type: String }) errorMsg = "";
+  // Consumer-overridable placeholder. Empty string falls back to the
+  // canonical default so existing call sites that don't set this keep
+  // their current copy; non-repo consumers (chat-standalone, future
+  // shells) can pass a product-appropriate prompt.
+  @property({ type: String }) placeholder = "";
 
   @state() private input = "";
   @state() private pendingAttachments: ClientAttachment[] = [];
@@ -733,7 +738,8 @@ export class GcComposer extends LitElement {
             @input=${this.onInput}
             @keydown=${this.onKeydown}
             @paste=${this.onPasteAttach}
-            placeholder="ask about the repo — use @path/to/file to pin content"
+            placeholder=${this.placeholder ||
+            "ask about the repo — use @path/to/file to pin content"}
             ?disabled=${this.sending}
             rows="1"
             aria-label="Message input — type @ for file autocomplete or / for slash commands, Enter to send, drop files to attach"

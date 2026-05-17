@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.2.1 — additive: EntryType, import-rule guard, CI
+
+No breaking changes; safe drop-in over v0.2.0.
+
+- `EntryType` promoted to a host-side const + type in
+  `src/host.ts`. `TreeEntry.type` is now typed instead of bare
+  `number`. Existing proto-shaped data still satisfies the contract;
+  consumers that compare against numeric literals get a
+  type-narrowing benefit.
+- The v0.2.0 internal rule (`src/components/*` and `src/host.ts`
+  MUST NOT import from `src/adapters/*` or `src/gen/*`) is now
+  enforced by `src/import-rules.test.ts`. Caught a real regression
+  in `composer.ts` (which imported `EntryType` from `src/gen/`);
+  fixed in the same release.
+- GitHub Actions CI workflow (`.github/workflows/ci.yml`): runs
+  `bun install --frozen-lockfile`, then `bun run check / test /
+  lint / fmt:check` on push to main and pull requests.
+
 ## v0.2.0 — host injection
 
 ### Breaking changes

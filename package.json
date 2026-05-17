@@ -1,6 +1,6 @@
 {
   "name": "@pders01/chatworks",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Drop-in chat surface — Lit web components, a Connect-RPC transport layer, model-catalog discovery, slash-command engine, markdown + Shiki rendering, and a runtime settings panel — for embedding an LLM chat into any web app.",
   "license": "MIT",
   "author": "Paul Derscheid",

@@ -100,6 +100,12 @@ export class GcChatView extends LitElement {
    * call site to keep its existing config key. */
   @property({ type: String }) sessionMaxCostKey = "";
 
+  // Composer placeholder. Empty string keeps the composer's canonical
+  // default ("ask about the repo — …"); non-repo consumers can pass a
+  // product-appropriate prompt without forking the composer.
+  @property({ type: String, attribute: "composer-placeholder" })
+  composerPlaceholder = "";
+
   @state() private state: ViewState = { phase: "loading" };
   @state() private turns: Turn[] = [];
   @state() private sending = false;
@@ -1206,6 +1212,7 @@ export class GcChatView extends LitElement {
             .repoId=${this.repoId}
             .sending=${this.sending}
             .errorMsg=${this.error}
+            .placeholder=${this.composerPlaceholder}
             ?unfocused=${this.focusMode === "focus"}
             @gc:send=${this.onComposerSend}
             @gc:stop=${this.onComposerStop}

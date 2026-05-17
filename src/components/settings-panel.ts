@@ -526,9 +526,7 @@ export class GcSettingsPanel extends LitElement {
     { id: "appearance", label: "Appearance" },
     { id: "llm", label: "LLM" },
     { id: "chat", label: "Chat" },
-    { id: "repo", label: "Repository" },
     { id: "session", label: "Session" },
-    { id: "webhook", label: "Webhook" },
   ] as const;
 
   private configGroupEntries(group: string): ConfigEntry[] {

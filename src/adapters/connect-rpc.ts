@@ -52,15 +52,54 @@ export function createConnectRpcHosts(opts: CreateConnectRpcHostsOptions = {}): 
   const repoClient = createClient(RepoService, transport);
   const chatClient = createClient(ChatService, transport);
 
-  // The Connect-generated clients are structurally compatible with the
-  // host interfaces — same method names, same request/response shapes.
-  // Casting is safe here because the proto types are a superset (they
-  // carry $typeName / Message symbols the host interfaces don't care
-  // about) and TS structural width-subtyping accepts the assignment.
-  return {
-    repoHost: repoClient as unknown as RepoHost,
-    chatHost: chatClient as unknown as ChatHost,
-    llmConfigHost: repoClient as unknown as LlmConfigHost,
-    authHost: authClient as unknown as AuthHost,
-  };
+  // Keep generated clients behind explicit Host implementations. This
+  // makes the adapter the single place that knows which RPC service owns
+  // each host operation, while `satisfies` catches contract drift without
+  // exposing generated client types to consumers.
+  const repoHost = {
+    listRepos: (req) => repoClient.listRepos(req),
+    listBranches: (req) => repoClient.listBranches(req),
+    listCommits: (req) => repoClient.listCommits(req),
+    listTree: (req) => repoClient.listTree(req),
+    getDiff: (req) => repoClient.getDiff(req),
+  } satisfies RepoHost;
+
+  const chatHost = {
+    listSessions: (req) => chatClient.listSessions(req),
+    getSession: async (req) => {
+      const response = await chatClient.getSession(req);
+      return { session: response.session, messages: response.messages };
+    },
+    sendMessage: (req, opts) => chatClient.sendMessage(req, opts),
+    renameSession: (req) => chatClient.renameSession(req),
+    deleteSession: (req) => chatClient.deleteSession(req),
+    pinSession: (req) => chatClient.pinSession(req),
+    summarizeActivity: (req) => chatClient.summarizeActivity(req),
+  } satisfies ChatHost;
+
+  // The current wire contract serves LLM configuration through RepoService.
+  // That backend-specific grouping belongs here, not in components or hosts.
+  const llmConfigHost = {
+    getConfig: (req) => repoClient.getConfig(req),
+    updateConfig: (req) => repoClient.updateConfig(req),
+    listProfiles: (req) => repoClient.listProfiles(req),
+    saveProfile: (req) => repoClient.saveProfile(req),
+    deleteProfile: (req) => repoClient.deleteProfile(req),
+    activateProfile: (req) => repoClient.activateProfile(req),
+    getProviderCatalog: (req) => repoClient.getProviderCatalog(req),
+    refreshProviderCatalog: (req) => repoClient.refreshProviderCatalog(req),
+    discoverLocalEndpoints: (req) => repoClient.discoverLocalEndpoints(req),
+    discoverModels: (req) => repoClient.discoverModels(req),
+  } satisfies LlmConfigHost;
+
+  const authHost = {
+    whoami: (req) => authClient.whoami(req),
+    logout: (req) => authClient.logout(req),
+    localClaim: (req) => authClient.localClaim(req),
+    startPairing: (req) => authClient.startPairing(req),
+    watchPairing: (req) => authClient.watchPairing(req),
+    claim: (req) => authClient.claim(req),
+  } satisfies AuthHost;
+
+  return { repoHost, chatHost, llmConfigHost, authHost };
 }

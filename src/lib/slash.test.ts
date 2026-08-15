@@ -83,6 +83,23 @@ describe("transformSlashCommands", () => {
     const expected = "[[diff from=HEAD~1 to=HEAD]]\n[[diff from=HEAD~2 to=HEAD path=web/foo.ts]]";
     expect(transformSlashCommands(input)).toBe(expected);
   });
+
+  test("supports a namespaced visible trigger", () => {
+    const commands = [
+      {
+        trigger: "web:diff",
+        command: "diff",
+        label: "/web:diff",
+        hint: "insert a diff marker",
+        example: "/web:diff HEAD~1..HEAD",
+        kind: "transform" as const,
+      },
+    ];
+    expect(transformSlashCommands("/web:diff HEAD~1..HEAD", commands)).toBe(
+      "[[diff from=HEAD~1 to=HEAD]]",
+    );
+    expect(transformSlashCommands("/diff HEAD~1..HEAD", commands)).toBe("/diff HEAD~1..HEAD");
+  });
 });
 
 describe("SLASH_COMMANDS", () => {
@@ -95,7 +112,7 @@ describe("SLASH_COMMANDS", () => {
 
   test("each command has a kind", () => {
     for (const c of SLASH_COMMANDS) {
-      expect(c.kind === "transform" || c.kind === "action").toBe(true);
+      expect(c.kind === "transform" || c.kind === "action" || c.kind === "passthrough").toBe(true);
     }
   });
 });
@@ -143,6 +160,36 @@ describe("parseSlashAction", () => {
       args: ["gpt-4o"],
     });
   });
+
+  test("returns the stable name for a namespaced action", () => {
+    const commands = [
+      {
+        trigger: "web:model",
+        command: "model",
+        label: "/web:model",
+        hint: "switch model",
+        example: "/web:model sonnet",
+        kind: "action" as const,
+      },
+    ];
+    expect(parseSlashAction("/web:model sonnet", commands)).toEqual({
+      command: "model",
+      args: ["sonnet"],
+    });
+  });
+
+  test("does not intercept passthrough commands", () => {
+    const commands = [
+      {
+        trigger: "skill:commits",
+        label: "/skill:commits",
+        hint: "load commit guidance",
+        example: "/skill:commits",
+        kind: "passthrough" as const,
+      },
+    ];
+    expect(parseSlashAction("/skill:commits", commands)).toBeNull();
+  });
 });
 
 describe("matchActionArgContext", () => {
@@ -185,6 +232,23 @@ describe("matchActionArgContext", () => {
     const ctx = matchActionArgContext("  /model gp");
     expect(ctx?.command.trigger).toBe("model");
     expect(ctx?.partial).toBe("gp");
+  });
+
+  test("matches namespaced command triggers", () => {
+    const commands = [
+      {
+        trigger: "web:model",
+        command: "model",
+        label: "/web:model",
+        hint: "switch model",
+        example: "/web:model sonnet",
+        kind: "action" as const,
+        argCompletion: "word" as const,
+      },
+    ];
+    const ctx = matchActionArgContext("/web:model son", commands);
+    expect(ctx?.command.command).toBe("model");
+    expect(ctx?.partial).toBe("son");
   });
 });
 

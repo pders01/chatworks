@@ -54,6 +54,8 @@ export class GcComposer extends LitElement {
   // shells) can pass a product-appropriate prompt.
   @property({ type: String }) placeholder = "";
   @property({ type: Boolean, reflect: true }) compact = false;
+  /** Commands shown and interpreted by slash completion. */
+  @property({ attribute: false }) slashCommands: readonly SlashCommand[] = SLASH_COMMANDS;
 
   @state() private input = "";
   @state() private pendingAttachments: ClientAttachment[] = [];
@@ -73,6 +75,7 @@ export class GcComposer extends LitElement {
   @state() private slashResults: SlashCommand[] = [];
   @state() private showSlash = false;
   @state() private slashIdx = 0;
+  @state() private commandHelpQuery = "";
 
   // Arg-completion mode: engaged after the user types a space following
   // an action command (e.g. `/model `). Suggestions come from RPC calls
@@ -164,7 +167,7 @@ export class GcComposer extends LitElement {
     const before = this.input.slice(0, pos);
     const lineStart = before.lastIndexOf("\n") + 1;
     const currentLine = before.slice(lineStart);
-    const ctx = matchActionArgContext(currentLine);
+    const ctx = matchActionArgContext(currentLine, this.slashCommands);
     if (!ctx || !ctx.command.argCompletion) {
       this.argCtx = null;
       this.argResults = [];
@@ -177,7 +180,11 @@ export class GcComposer extends LitElement {
     this.argCtx = ctx;
     const { priorArgs, currentToken } = splitArgPartial(ctx.command.argCompletion, ctx.partial);
     const seq = ++this.argFetchSeq;
-    const all = await this.loadArgSuggestions(ctx.command.trigger, priorArgs, currentToken);
+    const all = await this.loadArgSuggestions(
+      ctx.command.command ?? ctx.command.trigger,
+      priorArgs,
+      currentToken,
+    );
     if (seq !== this.argFetchSeq) return;
     const q = currentToken.toLowerCase();
     this.argResults = q
@@ -392,19 +399,70 @@ export class GcComposer extends LitElement {
     const before = this.input.slice(0, pos);
     const lineStart = before.lastIndexOf("\n") + 1;
     const currentLine = before.slice(lineStart);
-    // Only trigger on "/word" at the very start of a line (no whitespace
-    // before). Once the user types a space, the slash command is "armed"
+    // Only trigger on a slash token at the very start of a line (no
+    // whitespace before). Once the user types a space, the command is "armed"
     // and the menu stays hidden until the line is edited back.
-    const m = currentLine.match(/^\/(\w*)$/);
+    const m = currentLine.match(/^\/([^\s/]*)$/);
     if (!m) {
       this.showSlash = false;
       this.slashResults = [];
       return;
     }
     const q = m[1].toLowerCase();
-    this.slashResults = SLASH_COMMANDS.filter((c) => c.trigger.startsWith(q));
+    this.slashResults = this.slashCommands.filter((c) => c.trigger.toLowerCase().startsWith(q));
     this.slashIdx = 0;
     this.showSlash = this.slashResults.length > 0;
+  }
+
+  private openCommandHelp() {
+    this.commandHelpQuery = "";
+    this.showSlash = false;
+    void this.updateComplete.then(() => {
+      const dialog = this.renderRoot.querySelector<HTMLDialogElement>(".command-help");
+      if (!dialog?.open) dialog?.showModal();
+      requestAnimationFrame(() =>
+        dialog?.querySelector<HTMLInputElement>(".command-help-search")?.focus(),
+      );
+    });
+  }
+
+  private closeCommandHelp() {
+    this.renderRoot.querySelector<HTMLDialogElement>(".command-help")?.close();
+  }
+
+  private restoreComposerFocus() {
+    requestAnimationFrame(() => this.focusInput());
+  }
+
+  private chooseHelpCommand(command: SlashCommand) {
+    this.input = `/${command.trigger} `;
+    this.closeCommandHelp();
+    requestAnimationFrame(() => {
+      const textarea = this.renderRoot.querySelector<HTMLTextAreaElement>("textarea");
+      textarea?.focus();
+      textarea?.setSelectionRange(this.input.length, this.input.length);
+      if (command.kind === "action") void this.checkArgContext();
+    });
+  }
+
+  private commandHelpGroups(): Array<[string, SlashCommand[]]> {
+    const query = this.commandHelpQuery.trim().toLowerCase();
+    const groups = new Map<string, SlashCommand[]>();
+    for (const command of this.slashCommands) {
+      if (
+        query &&
+        !`${command.trigger} ${command.hint} ${command.category ?? ""}`
+          .toLowerCase()
+          .includes(query)
+      ) {
+        continue;
+      }
+      const category = command.category || "commands";
+      const entries = groups.get(category) ?? [];
+      entries.push(command);
+      groups.set(category, entries);
+    }
+    return [...groups];
   }
 
   private acceptSlash(cmd: SlashCommand) {
@@ -680,17 +738,17 @@ export class GcComposer extends LitElement {
     // Action commands short-circuit the LLM send and fire an event
     // for the parent to handle (switch model, activate profile, etc.).
     // /help is handled locally via a toast rather than eventing up.
-    const action = parseSlashAction(this.input);
+    const action = parseSlashAction(this.input, this.slashCommands);
     if (action) {
+      this.input = "";
       if (action.command === "help") {
-        this.fire("gc:toast", { kind: "info", message: helpToastMessage() });
+        this.openCommandHelp();
       } else {
         this.fire("gc:slash-action", { command: action.command, args: action.args });
       }
-      this.input = "";
       return;
     }
-    const text = transformSlashCommands(this.input).trim();
+    const text = transformSlashCommands(this.input, this.slashCommands).trim();
     const attachments = this.pendingAttachments;
     if (!text && attachments.length === 0) return;
     this.fire("gc:send", { text, attachments });
@@ -827,6 +885,101 @@ export class GcComposer extends LitElement {
     </aside>`;
   }
 
+  private renderCommandHelp() {
+    const groups = this.commandHelpGroups();
+    return html`<dialog
+      class="command-help"
+      aria-labelledby="command-help-title"
+      @close=${this.restoreComposerFocus}
+      @cancel=${(event: Event) => {
+        event.preventDefault();
+        this.closeCommandHelp();
+      }}
+      @keydown=${(event: KeyboardEvent) => {
+        if (event.key !== "Escape") return;
+        event.preventDefault();
+        event.stopPropagation();
+        this.closeCommandHelp();
+      }}
+      @click=${(event: MouseEvent) => {
+        if (event.target === event.currentTarget) this.closeCommandHelp();
+      }}
+    >
+      <div class="command-help-shell">
+        <header class="command-help-header">
+          <div>
+            <span class="command-help-kicker">composer reference</span>
+            <h2 id="command-help-title">Commands</h2>
+            <p>Choose a command to place it in the composer.</p>
+          </div>
+          <button
+            type="button"
+            class="command-help-close"
+            aria-label="Close command help"
+            @click=${this.closeCommandHelp}
+          >
+            ×
+          </button>
+        </header>
+        <div class="command-help-toolbar">
+          <label>
+            <span aria-hidden="true">⌕</span>
+            <input
+              class="command-help-search"
+              type="search"
+              placeholder="Filter commands"
+              aria-label="Filter commands"
+              .value=${this.commandHelpQuery}
+              @input=${(event: Event) =>
+                (this.commandHelpQuery = (event.target as HTMLInputElement).value)}
+              @keydown=${(event: KeyboardEvent) => {
+                if (event.key !== "Escape") return;
+                event.preventDefault();
+                event.stopPropagation();
+                this.closeCommandHelp();
+              }}
+            />
+          </label>
+          <span
+            >${groups.reduce((count, [, commands]) => count + commands.length, 0)} available</span
+          >
+        </div>
+        <div class="command-help-body">
+          ${groups.length
+            ? groups.map(
+                ([category, commands]) => html`<section class="command-help-group">
+                  <header>
+                    <h3>${commandCategoryLabel(category)}</h3>
+                    <span>${commands.length}</span>
+                  </header>
+                  <div class="command-help-grid">
+                    ${commands.map((command) => {
+                      const description = splitCommandDescription(command.hint);
+                      return html`<button
+                        type="button"
+                        class="command-help-item"
+                        title=${command.example}
+                        @click=${() => this.chooseHelpCommand(command)}
+                      >
+                        <code>${command.label}</code>
+                        <span class="command-help-copy">
+                          <span>${description.summary}</span>
+                          ${description.triggers
+                            ? html`<small><b>Triggers</b> ${description.triggers}</small>`
+                            : nothing}
+                        </span>
+                      </button>`;
+                    })}
+                  </div>
+                </section>`,
+              )
+            : html`<div class="command-help-empty">No commands match that filter.</div>`}
+        </div>
+        <footer><kbd>esc</kbd> close <span>·</span> select a command to insert it</footer>
+      </div>
+    </dialog>`;
+  }
+
   override render() {
     return html`
       <form
@@ -923,13 +1076,16 @@ export class GcComposer extends LitElement {
                     aria-selected=${i === this.slashIdx ? "true" : "false"}
                   >
                     <button
+                      type="button"
                       class="slash-item ${i === this.slashIdx ? "active" : ""}"
                       @click=${() => this.acceptSlash(c)}
-                      title=${c.example}
+                      title=${`${c.label} — ${c.hint}\n${c.example}`}
                     >
                       <span class="slash-label">${c.label}</span>
                       <span class="slash-hint">${c.hint}</span>
-                      <span class="slash-example">${c.example}</span>
+                      <span class="slash-example ${c.category ? "slash-category" : ""}"
+                        >${c.category || c.example}</span
+                      >
                     </button>
                   </li>`,
                 )}
@@ -1052,6 +1208,7 @@ export class GcComposer extends LitElement {
           </div>
         </div>
       </form>
+      ${this.renderCommandHelp()}
     `;
   }
 
@@ -1174,8 +1331,9 @@ export class GcComposer extends LitElement {
       left: 0;
       right: 0;
       z-index: 10;
-      max-height: min(40vh, 360px);
+      max-height: min(38vh, 330px);
       overflow-y: auto;
+      scrollbar-gutter: stable;
       margin: 0 0 var(--space-1);
       padding: var(--space-1) 0;
       border: 1px solid var(--border-default);
@@ -1315,11 +1473,12 @@ export class GcComposer extends LitElement {
     }
     .slash-item {
       display: grid;
-      grid-template-columns: max-content 1fr auto;
-      align-items: baseline;
+      grid-template-columns: minmax(9rem, 15rem) minmax(0, 1fr) max-content;
+      align-items: center;
       column-gap: var(--space-3);
       width: 100%;
-      padding: var(--space-1) var(--space-2);
+      min-height: 30px;
+      padding: var(--space-1) var(--space-3);
       background: transparent;
       color: var(--text);
       border: none;
@@ -1332,6 +1491,14 @@ export class GcComposer extends LitElement {
     .slash-item.active {
       background: var(--surface-3);
     }
+    .slash-label,
+    .slash-hint,
+    .slash-example {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
     .slash-label {
       color: var(--accent-assistant);
       font-weight: 500;
@@ -1340,11 +1507,231 @@ export class GcComposer extends LitElement {
       opacity: 0.7;
     }
     .slash-example {
+      max-width: min(22vw, 18rem);
       opacity: 0.45;
       font-size: 0.68rem;
     }
+    .slash-category {
+      padding: 0.08rem 0.35rem;
+      border: 1px solid var(--border-default);
+      border-radius: 999px;
+      color: var(--text-muted);
+      font-size: 0.56rem;
+      letter-spacing: 0.06em;
+      line-height: 1.2;
+      text-transform: uppercase;
+      opacity: 0.8;
+    }
     .arg-item {
       grid-template-columns: max-content 1fr;
+    }
+    .command-help {
+      width: min(68rem, calc(100vw - 3rem));
+      height: min(44rem, calc(100vh - 3rem));
+      max-width: none;
+      max-height: none;
+      margin: auto;
+      padding: 0;
+      overflow: hidden;
+      border: 1px solid var(--border-default);
+      border-radius: 10px;
+      color: var(--text);
+      background: var(--surface-1);
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+      font-family: inherit;
+    }
+    .command-help::backdrop {
+      background: color-mix(in srgb, var(--surface-0) 72%, transparent);
+      backdrop-filter: blur(3px);
+    }
+    .command-help-shell {
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr) auto;
+      height: 100%;
+    }
+    .command-help-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: var(--space-4);
+      padding: var(--space-5) var(--space-6) var(--space-4);
+      border-bottom: 1px solid var(--border-default);
+      background: var(--surface-0);
+    }
+    .command-help-kicker {
+      color: var(--accent-assistant);
+      font-size: 0.6rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .command-help-header h2 {
+      margin: var(--space-1) 0 0;
+      font-size: 1.25rem;
+      letter-spacing: -0.03em;
+    }
+    .command-help-header p {
+      margin: var(--space-1) 0 0;
+      color: var(--text-muted);
+      font-size: var(--text-xs);
+    }
+    .command-help-close {
+      width: 30px;
+      height: 30px;
+      flex: none;
+      padding: 0;
+      border: 1px solid var(--border-default);
+      border-radius: 50%;
+      color: var(--text-muted);
+      background: transparent;
+      font: 1rem/1 inherit;
+      cursor: pointer;
+    }
+    .command-help-toolbar {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      padding: var(--space-3) var(--space-6);
+      border-bottom: 1px solid var(--border-default);
+      background: var(--surface-1);
+    }
+    .command-help-toolbar label {
+      display: flex;
+      min-width: 0;
+      flex: 1;
+      align-items: center;
+      gap: var(--space-2);
+      padding: 0 var(--space-3);
+      border: 1px solid var(--border-default);
+      border-radius: 5px;
+      background: var(--surface-0);
+      color: var(--text-muted);
+    }
+    .command-help-search {
+      width: 100%;
+      padding: 0.55rem 0;
+      border: 0;
+      outline: 0;
+      color: var(--text);
+      background: transparent;
+      font: inherit;
+    }
+    .command-help-toolbar > span {
+      flex: none;
+      color: var(--text-muted);
+      font-size: var(--text-xs);
+    }
+    .command-help-body {
+      min-height: 0;
+      overflow-y: auto;
+      scrollbar-gutter: stable;
+      padding: var(--space-5) var(--space-6) var(--space-6);
+    }
+    .command-help-group + .command-help-group {
+      margin-top: var(--space-6);
+    }
+    .command-help-group > header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      margin-bottom: var(--space-2);
+      color: var(--text-secondary);
+    }
+    .command-help-group h3 {
+      margin: 0;
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .command-help-group > header span {
+      display: inline-grid;
+      min-width: 1.2rem;
+      height: 1.2rem;
+      place-items: center;
+      border-radius: 999px;
+      color: var(--text-muted);
+      background: var(--surface-3);
+      font-size: 0.58rem;
+    }
+    .command-help-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1px;
+      overflow: hidden;
+      border: 1px solid var(--border-default);
+      border-radius: 6px;
+      background: var(--border-default);
+    }
+    .command-help-item {
+      display: grid;
+      grid-template-columns: minmax(8rem, 12rem) minmax(0, 1fr);
+      align-items: start;
+      gap: var(--space-3);
+      min-width: 0;
+      padding: var(--space-3);
+      border: 0;
+      color: var(--text);
+      background: var(--surface-1);
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+    .command-help-item:hover,
+    .command-help-item:focus-visible {
+      background: var(--surface-2);
+    }
+    .command-help-item code {
+      min-width: 0;
+      overflow: hidden;
+      color: var(--accent-assistant);
+      font: 0.7rem/1.45 inherit;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .command-help-copy {
+      display: grid;
+      min-width: 0;
+      gap: var(--space-1);
+      color: var(--text-secondary);
+      font-size: 0.68rem;
+      line-height: 1.45;
+    }
+    .command-help-copy small {
+      display: -webkit-box;
+      overflow: hidden;
+      color: var(--text-muted);
+      font: 0.58rem/1.45 inherit;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+    }
+    .command-help-copy b {
+      margin-right: 0.35rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+    .command-help-empty {
+      display: grid;
+      min-height: 12rem;
+      place-items: center;
+      color: var(--text-muted);
+      font-size: var(--text-xs);
+    }
+    .command-help-shell > footer {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-6);
+      border-top: 1px solid var(--border-default);
+      color: var(--text-muted);
+      background: var(--surface-0);
+      font-size: 0.6rem;
+    }
+    .command-help-shell > footer kbd {
+      padding: 0.08rem 0.3rem;
+      border: 1px solid var(--border-default);
+      border-radius: 3px;
+      color: var(--text-secondary);
+      background: var(--surface-2);
+      font: inherit;
     }
     .arg-label {
       color: var(--accent-user);
@@ -1551,6 +1938,30 @@ export class GcComposer extends LitElement {
     textarea:focus-visible {
       outline: none;
     }
+    @media (max-width: 700px) {
+      .slash-item {
+        grid-template-columns: minmax(8rem, 42%) minmax(0, 1fr);
+      }
+      .slash-example {
+        display: none;
+      }
+      .command-help {
+        width: calc(100vw - 1rem);
+        height: calc(100vh - 1rem);
+      }
+      .command-help-header,
+      .command-help-toolbar,
+      .command-help-body {
+        padding-right: var(--space-4);
+        padding-left: var(--space-4);
+      }
+      .command-help-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .command-help-item {
+        grid-template-columns: minmax(7rem, 10rem) minmax(0, 1fr);
+      }
+    }
     @media (max-width: 560px) {
       :host([compact]) .composer.mention-open .composer-inner {
         width: calc(100vw - (var(--space-3) * 2));
@@ -1593,9 +2004,31 @@ function previewLanguage(extension?: string): string {
   return aliases[extension || ""] || extension || "plaintext";
 }
 
-function helpToastMessage(): string {
-  const lines = SLASH_COMMANDS.map((c) => `${c.label} — ${c.hint}`);
-  return "Slash commands:\n" + lines.join("\n");
+function commandCategoryLabel(category: string): string {
+  const labels: Record<string, string> = {
+    web: "Web UI",
+    extension: "Extensions",
+    prompt: "Prompt templates",
+    skill: "Skills",
+    commands: "Commands",
+  };
+  return (
+    labels[category] ||
+    category.replace(
+      /(^|[-_])(\w)/g,
+      (_, space, letter) => `${space ? " " : ""}${String(letter).toUpperCase()}`,
+    )
+  );
+}
+
+function splitCommandDescription(description: string): { summary: string; triggers: string } {
+  const marker = description.search(/\s+Triggers:\s*/i);
+  if (marker < 0) return { summary: description, triggers: "" };
+  const matched = description.slice(marker).match(/^\s+Triggers:\s*/i)?.[0] ?? "";
+  return {
+    summary: description.slice(0, marker).trim(),
+    triggers: description.slice(marker + matched.length).trim(),
+  };
 }
 
 declare global {

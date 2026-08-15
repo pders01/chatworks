@@ -6,19 +6,21 @@
 // start of a line transforms into the same marker on submit. Anything
 // else on the line — or lines above/below — is preserved verbatim.
 
-// Slash commands come in two flavors:
+// Slash commands come in three flavors:
 //
 //   - "transform" commands rewrite the message text at submit time
 //     (e.g. /diff → [[diff ...]]). They still flow to the LLM.
 //   - "action" commands trigger a side effect (switch model, show help)
 //     and don't submit to the LLM. The composer fires a gc:slash-action
 //     event; the parent (chat-view) handles the RPC + user feedback.
+//   - "passthrough" commands appear in completion but are submitted
+//     unchanged so an embedding host can interpret them.
 //
 // Commands that overlap with the command palette (new chat, focus,
 // theme, tab navigation) are deliberately NOT exposed here — palette
 // is the right entry point for app-wide actions; slash is for chat-
 // context operations only.
-export type SlashCommandKind = "transform" | "action";
+export type SlashCommandKind = "transform" | "action" | "passthrough";
 
 /** Controls how the composer stitches an autocomplete suggestion back
  * into the input when a command has arg autocomplete. */
@@ -41,6 +43,10 @@ export interface SlashCommand {
   example: string;
   /** How the composer handles this command on submit. */
   kind: SlashCommandKind;
+  /** Stable command name when the visible trigger is namespaced. */
+  command?: string;
+  /** Optional short category badge shown instead of the usage example. */
+  category?: string;
   /** Set to enable arg autocomplete. Dictates suggestion stitching. */
   argCompletion?: ArgCompletionMode;
 }
@@ -100,13 +106,16 @@ export interface ActionArgContext {
  * the command is fully typed and followed by whitespace — `/mod` stays
  * in command-selection mode, `/model ` (note trailing space) enters
  * arg mode with partial="". */
-export function matchActionArgContext(line: string): ActionArgContext | null {
-  const m = line.match(/^\s*\/(\w+)\s+(.*)$/);
+export function matchActionArgContext(
+  line: string,
+  commands: readonly SlashCommand[] = SLASH_COMMANDS,
+): ActionArgContext | null {
+  const m = line.match(/^\s*\/([^\s]+)\s+(.*)$/);
   if (!m) return null;
   const trigger = m[1];
   const partial = m[2];
   if (partial.includes("\n")) return null;
-  const spec = SLASH_COMMANDS.find((c) => c.trigger === trigger && c.argCompletion);
+  const spec = commands.find((c) => c.trigger === trigger && c.argCompletion);
   if (!spec) return null;
   return { command: spec, partial };
 }
@@ -144,7 +153,10 @@ export function splitArgPartial(
  * nothing else follows — we don't want `/profile foo\nextra prose`
  * to look like a bare action.
  */
-export function parseSlashAction(raw: string): ParsedAction | null {
+export function parseSlashAction(
+  raw: string,
+  commands: readonly SlashCommand[] = SLASH_COMMANDS,
+): ParsedAction | null {
   const trimmed = raw.trim();
   if (!trimmed.startsWith("/")) return null;
   // Action commands must be a single line.
@@ -153,13 +165,13 @@ export function parseSlashAction(raw: string): ParsedAction | null {
   const firstSpace = rest.indexOf(" ");
   const command = firstSpace < 0 ? rest : rest.slice(0, firstSpace);
   const argsStr = firstSpace < 0 ? "" : rest.slice(firstSpace + 1).trim();
-  const spec = SLASH_COMMANDS.find((c) => c.trigger === command);
+  const spec = commands.find((c) => c.trigger === command);
   if (!spec || spec.kind !== "action") return null;
   // Profile names can have spaces ("Local Gemma") — keep args as a
   // single-element array containing the whole remainder. Individual
   // commands that need tokenization can split themselves.
   const args = argsStr ? [argsStr] : [];
-  return { command, args };
+  return { command: spec.command ?? command, args };
 }
 
 /** Transform `/diff`-style slash commands to `[[diff ...]]` markers.
@@ -180,17 +192,26 @@ export function parseSlashAction(raw: string): ParsedAction | null {
  * ref. Matches how humans write — `/diff README.md` reads as "show
  * this file", `/diff HEAD~3` reads as "show since this ref".
  */
-export function transformSlashCommands(raw: string): string {
+export function transformSlashCommands(
+  raw: string,
+  commands: readonly SlashCommand[] = SLASH_COMMANDS,
+): string {
+  const diff = commands.find(
+    (candidate) =>
+      candidate.kind === "transform" && (candidate.command ?? candidate.trigger) === "diff",
+  );
+  if (!diff) return raw;
   return raw
     .split("\n")
-    .map((line) => transformLine(line))
+    .map((line) => transformLine(line, diff.trigger))
     .join("\n");
 }
 
-function transformLine(line: string): string {
-  // Anchored: `/diff` at line start, optional args, nothing extra.
-  // Args can be empty (just `/diff`), one token, or two tokens.
-  const m = line.match(/^\s*\/diff(?:\s+(\S+)(?:\s+(\S+))?)?\s*$/);
+function transformLine(line: string, trigger: string): string {
+  // Anchored: the configured diff trigger at line start, optional args,
+  // nothing extra. Args can be empty, one token, or two tokens.
+  const escapedTrigger = trigger.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const m = line.match(new RegExp(`^\\s*\\/${escapedTrigger}(?:\\s+(\\S+)(?:\\s+(\\S+))?)?\\s*$`));
   if (!m) return line;
   const first = m[1];
   const second = m[2];

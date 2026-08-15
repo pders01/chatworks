@@ -51,6 +51,7 @@ export class GcComposer extends LitElement {
   // their current copy; non-repo consumers (chat-standalone, future
   // shells) can pass a product-appropriate prompt.
   @property({ type: String }) placeholder = "";
+  @property({ type: Boolean, reflect: true }) compact = false;
 
   @state() private input = "";
   @state() private pendingAttachments: ClientAttachment[] = [];
@@ -953,6 +954,13 @@ export class GcComposer extends LitElement {
       background: linear-gradient(to top, var(--surface-1), transparent);
       pointer-events: none;
     }
+    :host([compact]) .composer {
+      padding: var(--space-2) var(--space-4) var(--space-3);
+    }
+    :host([compact]) .composer::before {
+      top: -12px;
+      height: 12px;
+    }
     .composer-inner {
       position: relative;
       max-width: var(--content-max-width);
@@ -972,6 +980,17 @@ export class GcComposer extends LitElement {
     }
     .composer-inner:focus-within {
       border-color: var(--border-accent);
+    }
+    :host([compact]) .composer-inner {
+      width: min(
+        calc(100% - var(--composer-gutter, 0px)),
+        calc(var(--content-max-width) - var(--composer-gutter, 0px))
+      );
+      max-width: none;
+      margin-inline: auto;
+      padding: 0.42rem 0.65rem var(--space-1);
+      gap: var(--space-1);
+      transform: translateX(calc(var(--composer-gutter, 0px) / 2));
     }
     textarea {
       width: 100%;

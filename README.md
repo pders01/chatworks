@@ -59,8 +59,11 @@ pieces they need:
 | Subpath                | What it gives you                                    |
 |------------------------|------------------------------------------------------|
 | `@jpahd/chatworks`              | Default barrel — registers components, re-exports runtime singletons |
-| `.../chat-view`        | `<gc-chat-view>` registration                        |
-| `.../settings-panel`   | `<gc-settings-panel>` registration                   |
+| `.../chat-view`        | `<cw-chat-view>` registration                        |
+| `.../composer`, `.../message-list`, `.../session-sidebar` | Lower-level chat primitives for custom shells |
+| `.../diff-view`        | Transport-independent `<cw-diff-view>` unified/split renderer |
+| `.../diff`             | Pure diff HTML transforms (line numbers, word and split diff) |
+| `.../settings-panel`   | `<cw-settings-panel>` registration                   |
 | `.../toast`, `.../loading-indicator`, `.../combobox` | Standalone UI primitives          |
 | `.../transport`        | Connect-RPC client singletons (`repoClient`, `chatClient`, `authClient`) |
 | `.../settings`         | Theme + CSS-variable preference store, with host-theme override hooks |

@@ -16,6 +16,7 @@ import "./components/loading-indicator.js";
 import "./components/combobox.js";
 import "./components/connection-wizard.js";
 import "./components/chat-view.js";
+import "./components/diff-view.js";
 import "./components/settings-panel.js";
 
 // ── Event-map augmentations ──────────────────────────────────────
@@ -37,6 +38,7 @@ export {
   type FocusMode,
 } from "./lib/focus.js";
 export { copyText } from "./lib/clipboard.js";
+export { splitDiffHtml, highlightWordDiffs, addLineNumbers } from "./lib/diff.js";
 export { toast } from "./components/toast.js";
 
 // ── Public types (event payloads) ────────────────────────────────

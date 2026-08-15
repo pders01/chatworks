@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Transport-independent `<cw-diff-view>` with unified and split layouts,
+  Shiki highlighting, line numbers, and word-level changes. Consumers
+  supply `rawDiff`; fetching remains host-owned.
+- `@jpahd/chatworks/diff` pure diff transforms.
+- Public subpath exports for the lower-level composer, message list, and
+  session sidebar so coding-agent and other custom shells can compose
+  Chatworks primitives without adopting `<cw-chat-view>` wholesale.
+
 ## v0.3.0 — optional RepoHost, dist/ build, npm rename, cw-* tags
 
 Batch of friction-point fixes informed by implementing a from-scratch

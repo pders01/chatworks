@@ -25,6 +25,26 @@
       "types": "./dist/components/chat-view.d.ts",
       "import": "./dist/components/chat-view.js"
     },
+    "./composer": {
+      "types": "./dist/components/chat-view/composer.d.ts",
+      "import": "./dist/components/chat-view/composer.js"
+    },
+    "./message-list": {
+      "types": "./dist/components/chat-view/message-list.d.ts",
+      "import": "./dist/components/chat-view/message-list.js"
+    },
+    "./session-sidebar": {
+      "types": "./dist/components/chat-view/session-sidebar.d.ts",
+      "import": "./dist/components/chat-view/session-sidebar.js"
+    },
+    "./diff-view": {
+      "types": "./dist/components/diff-view.d.ts",
+      "import": "./dist/components/diff-view.js"
+    },
+    "./diff": {
+      "types": "./dist/lib/diff.d.ts",
+      "import": "./dist/lib/diff.js"
+    },
     "./settings-panel": {
       "types": "./dist/components/settings-panel.d.ts",
       "import": "./dist/components/settings-panel.js"

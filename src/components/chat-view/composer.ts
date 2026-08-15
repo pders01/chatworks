@@ -1,4 +1,5 @@
 import { LitElement, html, css, nothing } from "lit";
+import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import { customElement, property, state } from "lit/decorators.js";
 import { consume } from "@lit/context";
 import {
@@ -62,6 +63,7 @@ export class GcComposer extends LitElement {
   @state() private showMentions = false;
   @state() private mentionIdx = -1;
   @state() private mentionPreview: FilePreview | null = null;
+  @state() private mentionPreviewHtml = "";
   @state() private mentionPreviewLoading = false;
   @state() private mentionPreviewError = "";
   private dirCache = new Map<string, string[]>();
@@ -498,11 +500,15 @@ export class GcComposer extends LitElement {
     if (this.mentionPreview?.path === path) return;
     const seq = ++this.mentionPreviewSeq;
     this.mentionPreview = null;
+    this.mentionPreviewHtml = "";
     this.mentionPreviewError = "";
     this.mentionPreviewLoading = true;
     try {
       const preview = await readPreview.call(this.repoHost, { repoId: this.repoId, path });
-      if (seq === this.mentionPreviewSeq) this.mentionPreview = preview;
+      if (seq === this.mentionPreviewSeq) {
+        this.mentionPreview = preview;
+        if (!preview.binary) void this.highlightMentionPreview(preview, seq);
+      }
     } catch (error) {
       if (seq === this.mentionPreviewSeq) this.mentionPreviewError = messageOf(error);
     } finally {
@@ -510,9 +516,20 @@ export class GcComposer extends LitElement {
     }
   }
 
+  private async highlightMentionPreview(preview: FilePreview, seq: number): Promise<void> {
+    try {
+      const { highlight } = await import("../../lib/highlight.js");
+      const rendered = await highlight(preview.content, previewLanguage(preview.language));
+      if (seq === this.mentionPreviewSeq) this.mentionPreviewHtml = rendered;
+    } catch {
+      // The escaped plain-text preview remains available if highlighting fails.
+    }
+  }
+
   private clearMentionPreview(): void {
     this.mentionPreviewSeq++;
     this.mentionPreview = null;
+    this.mentionPreviewHtml = "";
     this.mentionPreviewLoading = false;
     this.mentionPreviewError = "";
   }
@@ -559,6 +576,20 @@ export class GcComposer extends LitElement {
           this.mentionIdx <= 0 ? this.mentionResults.length - 1 : this.mentionIdx - 1,
         );
         this.scrollActiveIntoView(".mention-list");
+        return;
+      }
+      if (e.key === "Home" || e.key === "End") {
+        e.preventDefault();
+        this.selectMention(e.key === "Home" ? 0 : this.mentionResults.length - 1);
+        this.scrollActiveIntoView(".mention-list");
+        return;
+      }
+      if (e.key === "PageDown" || e.key === "PageUp") {
+        e.preventDefault();
+        const preview = this.renderRoot.querySelector<HTMLElement>(".preview-code");
+        preview?.scrollBy({
+          top: (e.key === "PageDown" ? 1 : -1) * Math.max(120, preview.clientHeight * 0.8),
+        });
         return;
       }
       if (e.key === "Enter" || e.key === "Tab") {
@@ -773,7 +804,11 @@ export class GcComposer extends LitElement {
     } else if (this.mentionPreview?.binary) {
       body = html`<div class="preview-state">Binary file · preview unavailable</div>`;
     } else if (this.mentionPreview) {
-      body = html`<pre><code>${this.mentionPreview.content}</code></pre>`;
+      body = html`<div class="preview-code" tabindex="0" aria-label="File contents">
+        ${this.mentionPreviewHtml
+          ? unsafeHTML(this.mentionPreviewHtml)
+          : html`<pre><code>${this.mentionPreview.content}</code></pre>`}
+      </div>`;
     } else {
       body = html`<div class="preview-state">Choose a file to preview.</div>`;
     }
@@ -795,7 +830,9 @@ export class GcComposer extends LitElement {
   override render() {
     return html`
       <form
-        class="composer ${this.dragActive ? "drag-active" : ""}"
+        class="composer ${this.dragActive ? "drag-active" : ""} ${this.showMentions
+          ? "mention-open"
+          : ""}"
         role="search"
         aria-label="Chat composer"
         @submit=${(e: Event) => {
@@ -825,15 +862,35 @@ export class GcComposer extends LitElement {
             aria-label="Message input — type @ for file autocomplete or / for slash commands, Enter to send, drop files to attach"
             aria-describedby="composer-status"
             aria-autocomplete="list"
+            aria-controls=${this.showMentions
+              ? "mention-list"
+              : this.showSlash
+                ? "slash-list"
+                : this.showArgs
+                  ? "arg-list"
+                  : nothing}
+            aria-activedescendant=${this.showMentions && this.mentionIdx >= 0
+              ? `mention-option-${this.mentionIdx}`
+              : this.showSlash
+                ? `slash-option-${this.slashIdx}`
+                : this.showArgs
+                  ? `arg-option-${this.argIdx}`
+                  : nothing}
             aria-expanded=${this.showMentions || this.showSlash || this.showArgs ? "true" : "false"}
           ></textarea>
           ${this.showMentions
             ? html`<div
                 class="mention-picker ${this.repoHost?.getFilePreview ? "with-preview" : ""}"
               >
-                <ul class="mention-list" role="listbox" aria-label="Workspace files">
+                <ul
+                  id="mention-list"
+                  class="mention-list"
+                  role="listbox"
+                  aria-label="Workspace files"
+                >
                   ${this.mentionResults.map(
                     (p, i) => html`<li
+                      id=${`mention-option-${i}`}
                       role="option"
                       aria-selected=${i === this.mentionIdx ? "true" : "false"}
                     >
@@ -853,9 +910,15 @@ export class GcComposer extends LitElement {
               </div>`
             : nothing}
           ${this.showSlash
-            ? html`<ul class="slash-list" role="listbox" aria-label="Slash commands">
+            ? html`<ul
+                id="slash-list"
+                class="slash-list"
+                role="listbox"
+                aria-label="Slash commands"
+              >
                 ${this.slashResults.map(
                   (c, i) => html`<li
+                    id=${`slash-option-${i}`}
                     role="option"
                     aria-selected=${i === this.slashIdx ? "true" : "false"}
                   >
@@ -874,12 +937,14 @@ export class GcComposer extends LitElement {
             : nothing}
           ${this.showArgs && this.argCtx
             ? html`<ul
+                id="arg-list"
                 class="slash-list arg-list"
                 role="listbox"
                 aria-label="${this.argCtx.command.label} arguments"
               >
                 ${this.argResults.map(
                   (s, i) => html`<li
+                    id=${`arg-option-${i}`}
                     role="option"
                     aria-selected=${i === this.argIdx ? "true" : "false"}
                   >
@@ -1101,34 +1166,40 @@ export class GcComposer extends LitElement {
     textarea::placeholder {
       opacity: 0.35;
     }
-    /* Autocomplete surfaces open upward because the composer sits at the
-       viewport bottom. Positioning is relative to .composer-inner. */
-    .mention-picker,
+    /* Slash completion remains a compact popover. File mentions expand the
+       composer in-flow so the picker can use enough space without clipping. */
     .slash-list {
       position: absolute;
       bottom: 100%;
       left: 0;
       right: 0;
+      z-index: 10;
+      max-height: min(40vh, 360px);
+      overflow-y: auto;
       margin: 0 0 var(--space-1);
-      background: var(--surface-2);
+      padding: var(--space-1) 0;
       border: 1px solid var(--border-default);
       border-radius: 6px;
+      background: var(--surface-2);
       box-shadow: var(--shadow-dropdown, 0 4px 12px rgba(0, 0, 0, 0.35));
-      max-height: min(40vh, 360px);
-      z-index: 10;
-    }
-    .slash-list {
-      overflow-y: auto;
-      padding: var(--space-1) 0;
       list-style: none;
+    }
+    :host([compact]) .composer.mention-open .composer-inner {
+      width: min(calc(100vw - (var(--space-7) * 2)), 74rem);
+      transform: none;
     }
     .mention-picker {
       display: grid;
-      grid-template-columns: minmax(0, 1fr);
+      min-height: 18rem;
       overflow: hidden;
+      border: 1px solid var(--border-default);
+      border-radius: 6px;
+      background: var(--surface-2);
+      box-shadow: var(--shadow-dropdown, 0 4px 12px rgba(0, 0, 0, 0.35));
     }
     .mention-picker.with-preview {
-      grid-template-columns: minmax(150px, 2fr) minmax(0, 3fr);
+      height: min(58vh, 38rem);
+      grid-template-columns: minmax(13rem, 2fr) minmax(0, 5fr);
     }
     .mention-list {
       min-width: 0;
@@ -1140,7 +1211,7 @@ export class GcComposer extends LitElement {
     .mention-preview {
       display: flex;
       min-width: 0;
-      min-height: 180px;
+      min-height: 0;
       flex-direction: column;
       border-left: 1px solid var(--border-default);
       background: var(--surface-1);
@@ -1148,9 +1219,9 @@ export class GcComposer extends LitElement {
     .mention-preview header {
       display: flex;
       align-items: center;
-      min-height: 30px;
+      min-height: 32px;
       gap: var(--space-2);
-      padding: 0 var(--space-2);
+      padding: 0 var(--space-3);
       border-bottom: 1px solid var(--border-default);
       color: var(--text-secondary);
       font-size: var(--text-xs);
@@ -1167,16 +1238,51 @@ export class GcComposer extends LitElement {
       color: var(--text-muted);
       font-size: 0.6rem;
     }
-    .mention-preview pre {
+    .preview-code {
       min-height: 0;
       flex: 1;
       overflow: auto;
-      margin: 0;
-      padding: var(--space-2);
       color: var(--text-secondary);
-      white-space: pre;
+      background: var(--surface-1);
       tab-size: 2;
-      font: var(--text-xs)/1.5 var(--font-mono, ui-monospace, monospace);
+      font: var(--text-xs)/1.55 var(--font-mono, ui-monospace, monospace);
+    }
+    .preview-code:focus-visible {
+      outline-offset: -2px;
+    }
+    .preview-code pre,
+    .preview-code .shiki {
+      min-width: max-content;
+      min-height: 100%;
+      margin: 0;
+      padding: var(--space-3) 0;
+      background: transparent !important;
+      font: inherit;
+    }
+    .preview-code code {
+      counter-reset: preview-line;
+      font: inherit;
+    }
+    .preview-code .line {
+      display: inline-block;
+      width: 100%;
+      padding-right: var(--space-3);
+      counter-increment: preview-line;
+    }
+    .preview-code .line::before {
+      content: counter(preview-line);
+      display: inline-block;
+      width: 4ch;
+      margin-right: var(--space-3);
+      padding-left: var(--space-2);
+      color: var(--text-muted);
+      text-align: right;
+      opacity: 0.55;
+      user-select: none;
+    }
+    .preview-code > pre:not(.shiki) {
+      padding: var(--space-3);
+      white-space: pre;
     }
     .preview-state {
       display: grid;
@@ -1446,21 +1552,24 @@ export class GcComposer extends LitElement {
       outline: none;
     }
     @media (max-width: 560px) {
+      :host([compact]) .composer.mention-open .composer-inner {
+        width: calc(100vw - (var(--space-3) * 2));
+      }
       .mention-picker.with-preview {
+        height: min(52vh, 28rem);
         grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: minmax(0, auto) minmax(140px, 1fr);
-        max-height: min(36vh, 300px);
+        grid-template-rows: minmax(0, auto) minmax(0, 1fr);
       }
       .mention-list {
-        max-height: 140px;
+        max-height: 9rem;
       }
       .mention-preview {
-        min-height: 140px;
+        min-height: 0;
         border-top: 1px solid var(--border-default);
         border-left: 0;
       }
       .preview-state {
-        min-height: 110px;
+        min-height: 8rem;
       }
     }
     @media (prefers-reduced-motion: reduce) {
@@ -1469,6 +1578,19 @@ export class GcComposer extends LitElement {
       }
     }
   `;
+}
+
+function previewLanguage(extension?: string): string {
+  const aliases: Record<string, string> = {
+    js: "javascript",
+    md: "markdown",
+    py: "python",
+    rb: "ruby",
+    sh: "shellscript",
+    ts: "typescript",
+    yml: "yaml",
+  };
+  return aliases[extension || ""] || extension || "plaintext";
 }
 
 function helpToastMessage(): string {

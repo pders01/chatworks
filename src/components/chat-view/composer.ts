@@ -1003,6 +1003,7 @@ export class GcComposer extends LitElement {
         @drop=${this.onDrop}
       >
         <div class="composer-inner">
+          <slot name="controls"></slot>
           ${this.pendingAttachments.length > 0
             ? html`<div class="attachment-strip" role="list">
                 ${this.pendingAttachments.map((a, i) => this.renderAttachmentChip(a, i))}

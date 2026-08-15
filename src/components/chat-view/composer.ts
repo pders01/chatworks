@@ -955,13 +955,18 @@ export class GcComposer extends LitElement {
                   <div class="command-help-grid">
                     ${commands.map((command) => {
                       const description = splitCommandDescription(command.hint);
+                      const label = splitCommandLabel(command.label);
                       return html`<button
                         type="button"
                         class="command-help-item"
                         title=${command.example}
                         @click=${() => this.chooseHelpCommand(command)}
                       >
-                        <code>${command.label}</code>
+                        <code title=${command.label}
+                          >${label.namespace
+                            ? html`<span class="command-namespace">${label.namespace}</span>`
+                            : nothing}<span class="command-entity">${label.entity}</span></code
+                        >
                         <span class="command-help-copy">
                           <span>${description.summary}</span>
                           ${description.triggers
@@ -1243,6 +1248,7 @@ export class GcComposer extends LitElement {
   static override styles = css`
     :host {
       display: block;
+      container-type: inline-size;
       font-family: ui-monospace, "JetBrains Mono", Menlo, monospace;
       font-size: 0.82rem;
       color: var(--text);
@@ -1526,8 +1532,8 @@ export class GcComposer extends LitElement {
       grid-template-columns: max-content 1fr;
     }
     .command-help {
-      width: min(68rem, calc(100vw - 3rem));
-      height: min(44rem, calc(100vh - 3rem));
+      width: min(92rem, calc(100vw - 2.5rem));
+      height: min(54rem, calc(100vh - 2.5rem));
       max-width: none;
       max-height: none;
       margin: auto;
@@ -1655,20 +1661,17 @@ export class GcComposer extends LitElement {
     .command-help-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 1px;
-      overflow: hidden;
-      border: 1px solid var(--border-default);
-      border-radius: 6px;
-      background: var(--border-default);
+      gap: var(--space-2);
     }
     .command-help-item {
       display: grid;
-      grid-template-columns: minmax(8rem, 12rem) minmax(0, 1fr);
+      grid-template-columns: minmax(13rem, 18rem) minmax(0, 1fr);
       align-items: start;
-      gap: var(--space-3);
+      gap: var(--space-4);
       min-width: 0;
-      padding: var(--space-3);
-      border: 0;
+      padding: var(--space-3) var(--space-4);
+      border: 1px solid var(--border-default);
+      border-radius: 6px;
       color: var(--text);
       background: var(--surface-1);
       font: inherit;
@@ -1681,11 +1684,18 @@ export class GcComposer extends LitElement {
     }
     .command-help-item code {
       min-width: 0;
-      overflow: hidden;
       color: var(--accent-assistant);
       font: 0.7rem/1.45 inherit;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      overflow-wrap: anywhere;
+      white-space: normal;
+    }
+    .command-namespace {
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+    .command-entity {
+      color: var(--accent-assistant);
+      font-weight: 600;
     }
     .command-help-copy {
       display: grid;
@@ -1938,6 +1948,32 @@ export class GcComposer extends LitElement {
     textarea:focus-visible {
       outline: none;
     }
+    @container (max-width: 560px) {
+      :host([compact]) .composer.mention-open .composer-inner {
+        width: 100%;
+      }
+      .mention-picker.with-preview {
+        height: min(56vh, 32rem);
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: minmax(0, auto) minmax(0, 1fr);
+      }
+      .mention-list {
+        max-height: 10rem;
+      }
+      .mention-preview {
+        min-height: 0;
+        border-top: 1px solid var(--border-default);
+        border-left: 0;
+      }
+      .preview-state {
+        min-height: 8rem;
+      }
+    }
+    @media (max-width: 1050px) {
+      .command-help-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
     @media (max-width: 700px) {
       .slash-item {
         grid-template-columns: minmax(8rem, 42%) minmax(0, 1fr);
@@ -1955,11 +1991,9 @@ export class GcComposer extends LitElement {
         padding-right: var(--space-4);
         padding-left: var(--space-4);
       }
-      .command-help-grid {
-        grid-template-columns: minmax(0, 1fr);
-      }
       .command-help-item {
-        grid-template-columns: minmax(7rem, 10rem) minmax(0, 1fr);
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--space-2);
       }
     }
     @media (max-width: 560px) {
@@ -2019,6 +2053,11 @@ function commandCategoryLabel(category: string): string {
       (_, space, letter) => `${space ? " " : ""}${String(letter).toUpperCase()}`,
     )
   );
+}
+
+function splitCommandLabel(label: string): { namespace: string; entity: string } {
+  const match = label.match(/^(\/[^:]+:)(.+)$/);
+  return match ? { namespace: match[1], entity: match[2] } : { namespace: "", entity: label };
 }
 
 function splitCommandDescription(description: string): { summary: string; triggers: string } {

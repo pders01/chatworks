@@ -45,6 +45,15 @@ export interface TreeEntry {
   blobSha: string;
 }
 
+export interface FilePreview {
+  path: string;
+  content: string;
+  size: bigint;
+  binary: boolean;
+  truncated: boolean;
+  language?: string;
+}
+
 export interface CommitEntry {
   sha: string;
   shortSha: string;
@@ -227,6 +236,7 @@ export interface RepoHost {
     ref?: string;
     path: string;
   }): Promise<{ entries: TreeEntry[]; refResolved: string }>;
+  getFilePreview?(req: { repoId: string; ref?: string; path: string }): Promise<FilePreview>;
   getDiff(req: {
     repoId: string;
     fromRef: string;

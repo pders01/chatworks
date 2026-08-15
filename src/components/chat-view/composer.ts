@@ -5,6 +5,7 @@ import {
   EntryType,
   llmConfigHostContext,
   repoHostContext,
+  type FilePreview,
   type LlmConfigHost,
   type RepoHost,
 } from "../../host.js";
@@ -60,8 +61,12 @@ export class GcComposer extends LitElement {
   @state() private mentionResults: string[] = [];
   @state() private showMentions = false;
   @state() private mentionIdx = -1;
+  @state() private mentionPreview: FilePreview | null = null;
+  @state() private mentionPreviewLoading = false;
+  @state() private mentionPreviewError = "";
   private dirCache = new Map<string, string[]>();
   private checkMentionSeq = 0;
+  private mentionPreviewSeq = 0;
 
   @state() private slashResults: SlashCommand[] = [];
   @state() private showSlash = false;
@@ -437,6 +442,7 @@ export class GcComposer extends LitElement {
     if (!atMatch) {
       this.showMentions = false;
       this.mentionResults = [];
+      this.clearMentionPreview();
       return;
     }
     const query = atMatch[1];
@@ -446,11 +452,13 @@ export class GcComposer extends LitElement {
     if (!this.repoHost) {
       this.mentionResults = [];
       this.showMentions = false;
+      this.clearMentionPreview();
       return;
     }
     if (!this.dirCache.has(dirPath)) {
       this.mentionResults = [];
       this.showMentions = false;
+      this.clearMentionPreview();
       try {
         const resp = await this.repoHost.listTree({ repoId: this.repoId, path: dirPath });
         const prefix = dirPath ? dirPath + "/" : "";
@@ -469,8 +477,44 @@ export class GcComposer extends LitElement {
         return name.includes(filterPart);
       })
       .slice(0, 8);
-    this.mentionIdx = -1;
+    this.mentionIdx = this.mentionResults.length > 0 ? 0 : -1;
     this.showMentions = this.mentionResults.length > 0;
+    if (this.mentionIdx >= 0) void this.loadMentionPreview(this.mentionResults[this.mentionIdx]);
+    else this.clearMentionPreview();
+  }
+
+  private selectMention(index: number): void {
+    this.mentionIdx = index;
+    const path = this.mentionResults[index];
+    if (path) void this.loadMentionPreview(path);
+  }
+
+  private async loadMentionPreview(path: string): Promise<void> {
+    const readPreview = this.repoHost?.getFilePreview;
+    if (!readPreview || path.endsWith("/")) {
+      this.clearMentionPreview();
+      return;
+    }
+    if (this.mentionPreview?.path === path) return;
+    const seq = ++this.mentionPreviewSeq;
+    this.mentionPreview = null;
+    this.mentionPreviewError = "";
+    this.mentionPreviewLoading = true;
+    try {
+      const preview = await readPreview.call(this.repoHost, { repoId: this.repoId, path });
+      if (seq === this.mentionPreviewSeq) this.mentionPreview = preview;
+    } catch (error) {
+      if (seq === this.mentionPreviewSeq) this.mentionPreviewError = messageOf(error);
+    } finally {
+      if (seq === this.mentionPreviewSeq) this.mentionPreviewLoading = false;
+    }
+  }
+
+  private clearMentionPreview(): void {
+    this.mentionPreviewSeq++;
+    this.mentionPreview = null;
+    this.mentionPreviewLoading = false;
+    this.mentionPreviewError = "";
   }
 
   private insertMention(path: string) {
@@ -493,6 +537,7 @@ export class GcComposer extends LitElement {
       return;
     }
     this.showMentions = false;
+    this.clearMentionPreview();
     requestAnimationFrame(() => {
       ta.focus();
       const newPos = atIdx + path.length + 2;
@@ -504,14 +549,15 @@ export class GcComposer extends LitElement {
     if (this.showMentions && this.mentionResults.length > 0) {
       if (e.key === "ArrowDown") {
         e.preventDefault();
-        this.mentionIdx = (this.mentionIdx + 1) % this.mentionResults.length;
+        this.selectMention((this.mentionIdx + 1) % this.mentionResults.length);
         this.scrollActiveIntoView(".mention-list");
         return;
       }
       if (e.key === "ArrowUp") {
         e.preventDefault();
-        this.mentionIdx =
-          this.mentionIdx <= 0 ? this.mentionResults.length - 1 : this.mentionIdx - 1;
+        this.selectMention(
+          this.mentionIdx <= 0 ? this.mentionResults.length - 1 : this.mentionIdx - 1,
+        );
         this.scrollActiveIntoView(".mention-list");
         return;
       }
@@ -524,6 +570,7 @@ export class GcComposer extends LitElement {
       if (e.key === "Escape") {
         e.preventDefault();
         this.showMentions = false;
+        this.clearMentionPreview();
         return;
       }
     }
@@ -713,6 +760,38 @@ export class GcComposer extends LitElement {
     this.fire("gc:stop", {});
   }
 
+  private renderMentionPreview() {
+    if (!this.repoHost?.getFilePreview) return nothing;
+    const selected = this.mentionResults[this.mentionIdx] || "";
+    let body;
+    if (selected.endsWith("/")) {
+      body = html`<div class="preview-state">Open the directory to browse its files.</div>`;
+    } else if (this.mentionPreviewLoading) {
+      body = html`<div class="preview-state">Loading preview…</div>`;
+    } else if (this.mentionPreviewError) {
+      body = html`<div class="preview-state preview-error">${this.mentionPreviewError}</div>`;
+    } else if (this.mentionPreview?.binary) {
+      body = html`<div class="preview-state">Binary file · preview unavailable</div>`;
+    } else if (this.mentionPreview) {
+      body = html`<pre><code>${this.mentionPreview.content}</code></pre>`;
+    } else {
+      body = html`<div class="preview-state">Choose a file to preview.</div>`;
+    }
+    return html`<aside class="mention-preview" aria-live="polite">
+      <header>
+        <span title=${selected}>${selected || "preview"}</span>
+        ${this.mentionPreview
+          ? html`<small
+              >${fmtBytes(Number(this.mentionPreview.size))}${this.mentionPreview.truncated
+                ? " · truncated"
+                : ""}</small
+            >`
+          : nothing}
+      </header>
+      ${body}
+    </aside>`;
+  }
+
   override render() {
     return html`
       <form
@@ -749,21 +828,29 @@ export class GcComposer extends LitElement {
             aria-expanded=${this.showMentions || this.showSlash || this.showArgs ? "true" : "false"}
           ></textarea>
           ${this.showMentions
-            ? html`<ul class="mention-list" role="listbox">
-                ${this.mentionResults.map(
-                  (p, i) => html`<li
-                    role="option"
-                    aria-selected=${i === this.mentionIdx ? "true" : "false"}
-                  >
-                    <button
-                      class="mention-item ${i === this.mentionIdx ? "active" : ""}"
-                      @click=${() => this.insertMention(p)}
+            ? html`<div
+                class="mention-picker ${this.repoHost?.getFilePreview ? "with-preview" : ""}"
+              >
+                <ul class="mention-list" role="listbox" aria-label="Workspace files">
+                  ${this.mentionResults.map(
+                    (p, i) => html`<li
+                      role="option"
+                      aria-selected=${i === this.mentionIdx ? "true" : "false"}
                     >
-                      ${p}
-                    </button>
-                  </li>`,
-                )}
-              </ul>`
+                      <button
+                        type="button"
+                        class="mention-item ${i === this.mentionIdx ? "active" : ""}"
+                        @pointerenter=${() => this.selectMention(i)}
+                        @focus=${() => this.selectMention(i)}
+                        @click=${() => this.insertMention(p)}
+                      >
+                        ${p}
+                      </button>
+                    </li>`,
+                  )}
+                </ul>
+                ${this.renderMentionPreview()}
+              </div>`
             : nothing}
           ${this.showSlash
             ? html`<ul class="slash-list" role="listbox" aria-label="Slash commands">
@@ -1014,26 +1101,95 @@ export class GcComposer extends LitElement {
     textarea::placeholder {
       opacity: 0.35;
     }
-    /* All three autocomplete lists open UPWARD above the textarea —
-       composer sits at the viewport bottom, so a downward dropdown
-       gets clipped by the screen edge. Positioning is relative to
-       .composer-inner (position: relative set below). */
-    .mention-list,
+    /* Autocomplete surfaces open upward because the composer sits at the
+       viewport bottom. Positioning is relative to .composer-inner. */
+    .mention-picker,
     .slash-list {
       position: absolute;
       bottom: 100%;
       left: 0;
       right: 0;
       margin: 0 0 var(--space-1);
-      list-style: none;
-      padding: var(--space-1) 0;
       background: var(--surface-2);
       border: 1px solid var(--border-default);
       border-radius: 6px;
       box-shadow: var(--shadow-dropdown, 0 4px 12px rgba(0, 0, 0, 0.35));
-      max-height: min(50vh, 420px);
-      overflow-y: auto;
+      max-height: min(40vh, 360px);
       z-index: 10;
+    }
+    .slash-list {
+      overflow-y: auto;
+      padding: var(--space-1) 0;
+      list-style: none;
+    }
+    .mention-picker {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      overflow: hidden;
+    }
+    .mention-picker.with-preview {
+      grid-template-columns: minmax(150px, 2fr) minmax(0, 3fr);
+    }
+    .mention-list {
+      min-width: 0;
+      overflow-y: auto;
+      margin: 0;
+      padding: var(--space-1) 0;
+      list-style: none;
+    }
+    .mention-preview {
+      display: flex;
+      min-width: 0;
+      min-height: 180px;
+      flex-direction: column;
+      border-left: 1px solid var(--border-default);
+      background: var(--surface-1);
+    }
+    .mention-preview header {
+      display: flex;
+      align-items: center;
+      min-height: 30px;
+      gap: var(--space-2);
+      padding: 0 var(--space-2);
+      border-bottom: 1px solid var(--border-default);
+      color: var(--text-secondary);
+      font-size: var(--text-xs);
+    }
+    .mention-preview header span {
+      min-width: 0;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .mention-preview header small {
+      flex: none;
+      color: var(--text-muted);
+      font-size: 0.6rem;
+    }
+    .mention-preview pre {
+      min-height: 0;
+      flex: 1;
+      overflow: auto;
+      margin: 0;
+      padding: var(--space-2);
+      color: var(--text-secondary);
+      white-space: pre;
+      tab-size: 2;
+      font: var(--text-xs)/1.5 var(--font-mono, ui-monospace, monospace);
+    }
+    .preview-state {
+      display: grid;
+      min-height: 150px;
+      flex: 1;
+      place-items: center;
+      padding: var(--space-3);
+      color: var(--text-muted);
+      font-size: var(--text-xs);
+      text-align: center;
+    }
+    .preview-error {
+      color: var(--danger);
     }
     .mention-item {
       display: block;
@@ -1288,6 +1444,24 @@ export class GcComposer extends LitElement {
     }
     textarea:focus-visible {
       outline: none;
+    }
+    @media (max-width: 560px) {
+      .mention-picker.with-preview {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: minmax(0, auto) minmax(140px, 1fr);
+        max-height: min(36vh, 300px);
+      }
+      .mention-list {
+        max-height: 140px;
+      }
+      .mention-preview {
+        min-height: 140px;
+        border-top: 1px solid var(--border-default);
+        border-left: 0;
+      }
+      .preview-state {
+        min-height: 110px;
+      }
     }
     @media (prefers-reduced-motion: reduce) {
       .send {

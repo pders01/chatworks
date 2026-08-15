@@ -1,8 +1,169 @@
-// Pure DOM transforms on Shiki-highlighted diff HTML. Kept in lib/
-// (not the component) so the logic is testable against happy-dom
-// without pulling in Lit or the component's render pipeline.
-//
-// The shape of the input matters: Shiki emits <pre><code class="line">...</code>...</pre>,
+// Pure unified-diff parsing and DOM transforms. Kept in lib/ so the
+// logic is testable against happy-dom without pulling in Lit or the
+// component's render pipeline.
+
+export type DiffLineKind = "context" | "addition" | "deletion" | "notice";
+
+export interface ParsedDiffLine {
+  kind: DiffLineKind;
+  content: string;
+  oldLine: number | null;
+  newLine: number | null;
+  sourceIndex: number;
+}
+
+export interface ParsedDiffHunk {
+  header: string;
+  context: string;
+  oldStart: number;
+  oldCount: number;
+  newStart: number;
+  newCount: number;
+  sourceIndex: number;
+  lines: ParsedDiffLine[];
+}
+
+export interface ParsedDiffFile {
+  oldPath: string;
+  newPath: string;
+  metadata: Array<{ content: string; sourceIndex: number }>;
+  hunks: ParsedDiffHunk[];
+}
+
+export interface ParsedDiff {
+  files: ParsedDiffFile[];
+}
+
+/** Parse a Git-style unified patch into files, hunks, and numbered lines.
+ * Unknown metadata is retained rather than discarded so renderers can expose
+ * binary, rename, mode, and other patch states without reparsing raw text. */
+export function parseUnifiedDiff(rawDiff: string): ParsedDiff {
+  const source = rawDiff.replace(/\r\n?/g, "\n").split("\n");
+  if (source.at(-1) === "") source.pop();
+
+  const files: ParsedDiffFile[] = [];
+  let file: ParsedDiffFile | null = null;
+  let hunk: ParsedDiffHunk | null = null;
+  let oldLine = 0;
+  let newLine = 0;
+
+  const ensureFile = (): ParsedDiffFile => {
+    if (!file) {
+      file = { oldPath: "", newPath: "", metadata: [], hunks: [] };
+      files.push(file);
+    }
+    return file;
+  };
+
+  for (let sourceIndex = 0; sourceIndex < source.length; sourceIndex++) {
+    const raw = source[sourceIndex];
+    if (raw.startsWith("diff --git ")) {
+      file = { oldPath: "", newPath: "", metadata: [{ content: raw, sourceIndex }], hunks: [] };
+      files.push(file);
+      hunk = null;
+      continue;
+    }
+
+    const hunkMatch = raw.match(/^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@(.*)$/);
+    if (hunkMatch) {
+      const current = ensureFile();
+      oldLine = Number(hunkMatch[1]);
+      newLine = Number(hunkMatch[3]);
+      hunk = {
+        header: raw.slice(0, raw.length - hunkMatch[5].length),
+        context: hunkMatch[5].trim(),
+        oldStart: oldLine,
+        oldCount: hunkMatch[2] === undefined ? 1 : Number(hunkMatch[2]),
+        newStart: newLine,
+        newCount: hunkMatch[4] === undefined ? 1 : Number(hunkMatch[4]),
+        sourceIndex,
+        lines: [],
+      };
+      current.hunks.push(hunk);
+      continue;
+    }
+
+    if (!hunk) {
+      const current = ensureFile();
+      current.metadata.push({ content: raw, sourceIndex });
+      if (raw.startsWith("--- ")) current.oldPath = normalizeDiffPath(raw.slice(4));
+      if (raw.startsWith("+++ ")) current.newPath = normalizeDiffPath(raw.slice(4));
+      continue;
+    }
+
+    if (raw.startsWith("-")) {
+      hunk.lines.push({
+        kind: "deletion",
+        content: raw.slice(1),
+        oldLine: oldLine++,
+        newLine: null,
+        sourceIndex,
+      });
+    } else if (raw.startsWith("+")) {
+      hunk.lines.push({
+        kind: "addition",
+        content: raw.slice(1),
+        oldLine: null,
+        newLine: newLine++,
+        sourceIndex,
+      });
+    } else if (raw.startsWith("\\")) {
+      hunk.lines.push({
+        kind: "notice",
+        content: raw,
+        oldLine: null,
+        newLine: null,
+        sourceIndex,
+      });
+    } else {
+      hunk.lines.push({
+        kind: "context",
+        content: raw.startsWith(" ") ? raw.slice(1) : raw,
+        oldLine: oldLine++,
+        newLine: newLine++,
+        sourceIndex,
+      });
+    }
+  }
+
+  return { files };
+}
+
+/** Extract one HTML fragment per Shiki line and remove the diff prefix from
+ * code rows. The prefix is rendered in its own semantic marker gutter. */
+export function extractDiffLineHtml(highlightedDiff: string): string[] {
+  const tmp = document.createElement("div");
+  tmp.innerHTML = highlightedDiff;
+  return Array.from(tmp.querySelectorAll("code .line")).map((line) => {
+    const clone = line.cloneNode(true) as Element;
+    const text = clone.textContent ?? "";
+    const isCodeLine =
+      (text.startsWith(" ") || text.startsWith("+") || text.startsWith("-")) &&
+      !text.startsWith("--- ") &&
+      !text.startsWith("+++ ");
+    if (isCodeLine) removeFirstTextCharacter(clone);
+    return clone.innerHTML;
+  });
+}
+
+function normalizeDiffPath(path: string): string {
+  const clean = path.split("\t", 1)[0];
+  if (clean === "/dev/null") return "";
+  return clean.startsWith("a/") || clean.startsWith("b/") ? clean.slice(2) : clean;
+}
+
+function removeFirstTextCharacter(element: Element): void {
+  const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+  while (walker.nextNode()) {
+    const node = walker.currentNode as Text;
+    if (node.length === 0) continue;
+    node.deleteData(0, 1);
+    return;
+  }
+}
+
+// The shape of highlighted input matters: Shiki emits
+// <pre><code><span class="line">...</span>...</code></pre>,
 // with each line wrapped in a `.line` element and the raw prefix
 // character ('-' / '+' / ' ') as part of the line's text content.
 // We key everything off that structural contract; drift in Shiki's

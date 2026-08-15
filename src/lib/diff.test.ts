@@ -1,5 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { splitDiffHtml, highlightWordDiffs, addLineNumbers } from "./diff.js";
+import {
+  addLineNumbers,
+  extractDiffLineHtml,
+  highlightWordDiffs,
+  parseUnifiedDiff,
+  splitDiffHtml,
+} from "./diff.js";
 
 // Shiki wraps each line in <span class="line">; the first visible
 // character is the diff prefix (space/+/-). These helpers construct
@@ -14,6 +20,89 @@ function noCodeWrapper(text: string): string {
   // the fallback branch.
   return `<div>${text}</div>`;
 }
+
+// ── parseUnifiedDiff ───────────────────────────────────────────────
+
+describe("parseUnifiedDiff", () => {
+  test("builds files, hunks, line kinds, and old/new line numbers", () => {
+    const parsed = parseUnifiedDiff(
+      [
+        "diff --git a/src/a.ts b/src/a.ts",
+        "index 1111111..2222222 100644",
+        "--- a/src/a.ts",
+        "+++ b/src/a.ts",
+        "@@ -10,3 +10,4 @@ function example() {",
+        " context",
+        "-oldValue();",
+        "+newValue();",
+        "+anotherValue();",
+        " tail",
+      ].join("\n"),
+    );
+
+    expect(parsed.files).toHaveLength(1);
+    expect(parsed.files[0].oldPath).toBe("src/a.ts");
+    expect(parsed.files[0].newPath).toBe("src/a.ts");
+    expect(parsed.files[0].hunks).toHaveLength(1);
+    const hunk = parsed.files[0].hunks[0];
+    expect(hunk.context).toBe("function example() {");
+    expect(hunk.lines.map(({ kind, oldLine, newLine }) => ({ kind, oldLine, newLine }))).toEqual([
+      { kind: "context", oldLine: 10, newLine: 10 },
+      { kind: "deletion", oldLine: 11, newLine: null },
+      { kind: "addition", oldLine: null, newLine: 11 },
+      { kind: "addition", oldLine: null, newLine: 12 },
+      { kind: "context", oldLine: 12, newLine: 13 },
+    ]);
+  });
+
+  test("retains binary and rename metadata when no hunks exist", () => {
+    const parsed = parseUnifiedDiff(
+      [
+        "diff --git a/old.png b/new.png",
+        "similarity index 100%",
+        "rename from old.png",
+        "rename to new.png",
+        "Binary files a/old.png and b/new.png differ",
+      ].join("\n"),
+    );
+
+    expect(parsed.files[0].hunks).toHaveLength(0);
+    expect(parsed.files[0].metadata.map(({ content }) => content)).toContain(
+      "Binary files a/old.png and b/new.png differ",
+    );
+  });
+
+  test("starts an anonymous file for a bare hunk", () => {
+    const parsed = parseUnifiedDiff("@@ -1 +1 @@\n-old\n+new");
+    expect(parsed.files).toHaveLength(1);
+    expect(parsed.files[0].hunks[0].lines.map(({ content }) => content)).toEqual(["old", "new"]);
+  });
+});
+
+// ── extractDiffLineHtml ────────────────────────────────────────────
+
+describe("extractDiffLineHtml", () => {
+  test("removes code prefixes while retaining highlighted markup", () => {
+    const highlighted = shikiDiff([
+      '<span style="color:red">-old</span>',
+      '<span style="color:green">+new</span>',
+      '<span style="color:white"> context</span>',
+      '<span style="color:blue">@@ -1 +1 @@</span>',
+    ]);
+    const lines = extractDiffLineHtml(highlighted);
+
+    expect(lines[0]).toContain(">old</span>");
+    expect(lines[1]).toContain(">new</span>");
+    expect(lines[2]).toContain(">context</span>");
+    expect(lines[3]).toContain("@@ -1 +1 @@");
+    expect(lines[0]).not.toContain(">-old</span>");
+  });
+
+  test("keeps file-header prefixes as metadata", () => {
+    const lines = extractDiffLineHtml(shikiDiff(["--- a/file.ts", "+++ b/file.ts"]));
+    expect(lines).toEqual(["--- a/file.ts", "+++ b/file.ts"]);
+  });
+});
 
 // ── splitDiffHtml ──────────────────────────────────────────────────
 

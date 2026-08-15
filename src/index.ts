@@ -38,7 +38,18 @@ export {
   type FocusMode,
 } from "./lib/focus.js";
 export { copyText } from "./lib/clipboard.js";
-export { splitDiffHtml, highlightWordDiffs, addLineNumbers } from "./lib/diff.js";
+export {
+  parseUnifiedDiff,
+  extractDiffLineHtml,
+  splitDiffHtml,
+  highlightWordDiffs,
+  addLineNumbers,
+  type DiffLineKind,
+  type ParsedDiff,
+  type ParsedDiffFile,
+  type ParsedDiffHunk,
+  type ParsedDiffLine,
+} from "./lib/diff.js";
 export { toast } from "./components/toast.js";
 
 // ── Public types (event payloads) ────────────────────────────────

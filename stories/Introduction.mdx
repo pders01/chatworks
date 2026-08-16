@@ -1,0 +1,32 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Introduction/Chatworks" />
+
+# Chatworks
+
+Composable web components and workbench infrastructure for AI-assisted web
+applications.
+
+This Storybook is the executable component catalog. It focuses on public
+properties, state variants, responsive behavior, theme tokens, and composition
+rather than prescribing complete productivity applications.
+
+## Layers
+
+- **AI surfaces** — chat, message, composer, session, and model configuration
+  components.
+- **Workflow composition** — extension-owned views, commands, services, context,
+  storage, and arbitrary contribution points.
+- **Data display** — transport-independent diffs and rich assistant output.
+- **Primitives** — inputs, loading states, notifications, and overlays.
+
+Use the theme control in the toolbar to review every story in light and dark
+schemes. The accessibility panel runs axe against the rendered canvas.
+
+## Extension boundary
+
+A canvas, kanban board, document editor, or project dashboard should be mounted as
+a workbench view. Chatworks owns its lifecycle and navigation; the extension owns
+its domain model and custom-element tree. Open **Workflows / Extension workbench**
+to see board and canvas views composed through the same public API used by
+pi-webui.

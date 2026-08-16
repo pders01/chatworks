@@ -1,0 +1,163 @@
+:root,
+:root[data-theme="dark"] {
+  --surface-0: #0b0d10;
+  --surface-1: #111419;
+  --surface-1-alt: #15191f;
+  --surface-2: #1a1f27;
+  --surface-3: #252b35;
+  --surface-4: #343c48;
+  --surface-5: #46505e;
+  --border-default: #303743;
+  --border-strong: #4b5666;
+  --border-accent: #688fd8;
+  --border-focus: #8baef0;
+  --text: #edf1f7;
+  --text-default: #edf1f7;
+  --text-secondary: #bac3cf;
+  --text-muted: #828d9d;
+  --text-strong: #ffffff;
+  --text-accent: #9ebdf5;
+  --accent: #7ea5ed;
+  --accent-assistant: #7ea5ed;
+  --accent-user: #d8a657;
+  --accent-link-dim: #8facdf;
+  --success: #63c28f;
+  --warning: #e2b85b;
+  --danger: #f08080;
+  --danger-bg: #2c171a;
+  --danger-border: #6e3239;
+  --action-bg: #1b2738;
+  --action-bg-hover: #24344b;
+  --border-user-rule: #644f2f;
+  --gutter-bg: #0d1014;
+  --line-bg: transparent;
+  --shadow-dropdown: 0 14px 38px rgb(0 0 0 / 0.42);
+  --shadow-modal: 0 28px 90px rgb(0 0 0 / 0.55);
+}
+
+:root[data-theme="light"] {
+  --surface-0: #f4f6f9;
+  --surface-1: #ffffff;
+  --surface-1-alt: #f7f8fa;
+  --surface-2: #edf0f4;
+  --surface-3: #dfe4ea;
+  --surface-4: #cbd2db;
+  --surface-5: #aeb8c5;
+  --border-default: #d2d8e0;
+  --border-strong: #aeb8c5;
+  --border-accent: #5279be;
+  --border-focus: #315fba;
+  --text: #17202b;
+  --text-default: #17202b;
+  --text-secondary: #485565;
+  --text-muted: #6e7b8b;
+  --text-strong: #070b10;
+  --text-accent: #315fba;
+  --accent: #426dbb;
+  --accent-assistant: #426dbb;
+  --accent-user: #a36b13;
+  --accent-link-dim: #426dbb;
+  --success: #237a4b;
+  --warning: #9a650a;
+  --danger: #b4232c;
+  --danger-bg: #fff0f1;
+  --danger-border: #e5a9ae;
+  --action-bg: #e9eff8;
+  --action-bg-hover: #dbe6f5;
+  --border-user-rule: #d9c39d;
+  --gutter-bg: #f1f3f6;
+  --line-bg: transparent;
+  --shadow-dropdown: 0 14px 38px rgb(31 42 55 / 0.16);
+  --shadow-modal: 0 28px 90px rgb(31 42 55 / 0.24);
+}
+
+:root {
+  --font-sans:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --text-xs: 0.72rem;
+  --text-sm: 0.8rem;
+  --text-base: 0.86rem;
+  --text-lg: 1rem;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-7: 2rem;
+  --radius-sm: 4px;
+  --radius-md: 7px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+  --sidebar-width: 260px;
+  --content-max-width: 820px;
+  --composer-gutter: 1rem;
+  --diff-font-size: 0.76rem;
+  color: var(--text);
+  background: var(--surface-0);
+  font-family: var(--font-sans);
+}
+
+html,
+body,
+#storybook-root {
+  min-height: 100%;
+  margin: 0;
+  color: var(--text);
+  background: var(--surface-0);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.story-frame {
+  min-height: 100vh;
+  padding: clamp(1rem, 3vw, 2.5rem);
+  color: var(--text);
+  background:
+    radial-gradient(
+      circle at 85% 0%,
+      color-mix(in srgb, var(--accent-assistant) 10%, transparent),
+      transparent 32rem
+    ),
+    var(--surface-0);
+}
+
+.story-frame.constrained {
+  display: grid;
+  place-items: start center;
+}
+
+.story-panel {
+  width: min(100%, 980px);
+  overflow: hidden;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  background: var(--surface-1);
+  box-shadow: var(--shadow-dropdown);
+}
+
+.story-label {
+  margin: 0 0 var(--space-3);
+  color: var(--text-muted);
+  font: 600 var(--text-xs)/1 var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+button.story-button {
+  padding: 0.55rem 0.8rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  background: var(--surface-2);
+  font: 500 var(--text-sm)/1 var(--font-sans);
+  cursor: pointer;
+}
+
+button.story-button:hover {
+  border-color: var(--border-accent);
+  background: var(--surface-3);
+}

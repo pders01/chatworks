@@ -19,6 +19,9 @@
   other renderer and are disposed safely across navigation and async races.
 - A transport-independent workbench contract and board-style extension
   example in `docs/workbench.md`.
+- Storybook 10 component catalog with light/dark design tokens, accessibility
+  tooling, mock host services, interactive AI surfaces, diff states, and a
+  composed board/canvas workbench example.
 
 ## v0.3.0 — optional RepoHost, dist/ build, npm rename, cw-* tags
 

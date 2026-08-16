@@ -16,9 +16,13 @@ const meta = {
   component: "cw-settings-panel",
   parameters: {
     docs: {
+      story: {
+        inline: false,
+        height: "360px",
+      },
       description: {
         component:
-          "Runtime appearance, provider configuration, model discovery, and reusable LLM profiles over an injected configuration host.",
+          "Runtime layout, provider configuration, model discovery, and reusable LLM profiles over an injected configuration host.",
       },
     },
   },

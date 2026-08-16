@@ -8,14 +8,14 @@ const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const storybookProject = (
   name: string,
-  theme: "dark" | "light",
+  colorScheme: "dark" | "light",
   viewport: { width: number; height: number },
 ) => ({
   extends: true as const,
   plugins: [
     storybookTest({
       configDir: path.join(dirname, ".storybook"),
-      initialGlobals: { theme },
+      initialGlobals: { colorScheme },
     }),
   ],
   test: {

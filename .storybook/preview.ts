@@ -1,22 +1,20 @@
 import type { Decorator, Preview } from "@storybook/web-components-vite";
-import { getTheme, setTheme } from "../src/lib/settings.js";
 import "./preview.css";
 
 const withTheme: Decorator = (story, context) => {
-  const theme = context.globals.theme === "light" ? "light" : "dark";
-  if (getTheme() !== theme) setTheme(theme);
-  document.documentElement.dataset.theme = theme;
-  document.documentElement.style.colorScheme = theme;
+  const colorScheme = context.globals.colorScheme === "light" ? "light" : "dark";
+  document.documentElement.dataset.colorScheme = colorScheme;
+  document.documentElement.style.colorScheme = colorScheme;
   return story();
 };
 
 const preview: Preview = {
   decorators: [withTheme],
   globalTypes: {
-    theme: {
-      description: "Chatworks color scheme",
+    colorScheme: {
+      description: "Preview color scheme",
       toolbar: {
-        icon: "paintbrush",
+        icon: "contrast",
         items: [
           { value: "dark", title: "Dark" },
           { value: "light", title: "Light" },
@@ -26,7 +24,7 @@ const preview: Preview = {
     },
   },
   initialGlobals: {
-    theme: "dark",
+    colorScheme: "dark",
   },
   parameters: {
     layout: "fullscreen",

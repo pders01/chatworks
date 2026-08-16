@@ -256,10 +256,44 @@ export function createStoryRepoHost(): RepoHost {
       return { entries, refResolved: "main" };
     },
     async getFilePreview({ path }) {
+      const content = path.endsWith("workbench.ts")
+        ? `export interface WorkbenchView {
+  id: string;
+  name: string;
+  region: string;
+  order?: number;
+  mount(container: HTMLElement): DisposableLike;
+}
+
+export class WorkbenchRegistry {
+  private readonly views = new Map<string, WorkbenchView>();
+
+  registerView(view: WorkbenchView): Disposable {
+    this.views.set(view.id, view);
+    return toDisposable(() => this.views.delete(view.id));
+  }
+}
+`
+        : `export function parseUnifiedDiff(source: string): ParsedDiff {
+  const files: ParsedDiffFile[] = [];
+  let current: ParsedDiffFile | undefined;
+
+  for (const line of source.split("\\n")) {
+    if (line.startsWith("diff --git ")) {
+      current = createFile(line);
+      files.push(current);
+      continue;
+    }
+    current?.lines.push(parseLine(line));
+  }
+
+  return { files };
+}
+`;
       return {
         path,
-        content: `export const preview = ${JSON.stringify(path)};\n`,
-        size: 42n,
+        content,
+        size: BigInt(new TextEncoder().encode(content).length),
         binary: false,
         truncated: false,
         language: "typescript",

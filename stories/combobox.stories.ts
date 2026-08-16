@@ -71,7 +71,7 @@ export const Models: Story = {
 export const Empty: Story = {
   args: {
     options: [],
-    value: "unavailable-model",
+    value: "",
     emptyHint: "Connect a provider to discover models",
   },
   play: ({ canvasElement }) => openCombobox(canvasElement),

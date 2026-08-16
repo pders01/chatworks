@@ -8,8 +8,8 @@ Composable web components and workbench infrastructure for AI-assisted web
 applications.
 
 This Storybook is the executable component catalog. It focuses on public
-properties, state variants, responsive behavior, theme tokens, and composition
-rather than prescribing complete productivity applications.
+properties, state variants, responsive behavior, catalog-owned presentation, and
+composition rather than prescribing complete productivity applications.
 
 ## Layers
 
@@ -20,8 +20,11 @@ rather than prescribing complete productivity applications.
 - **Data display** — transport-independent diffs and rich assistant output.
 - **Primitives** — inputs, loading states, notifications, and overlays.
 
-Use the theme control in the toolbar to review every story in light and dark
-schemes. The accessibility panel runs axe against the rendered canvas.
+Use the color-scheme control in the toolbar to review every story against the
+catalog's light and dark wireframe treatment. Chatworks itself ships only
+structural and accessibility-critical CSS; these story styles exercise its public
+parts without becoming component defaults. The accessibility panel runs axe
+against the rendered canvas.
 
 ## Extension boundary
 

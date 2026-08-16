@@ -386,6 +386,7 @@ export class GcConnectionWizard extends LitElement {
           <cw-combobox
             .options=${this.providerOptions}
             .value=${""}
+            label="Search providers"
             placeholder="Type to search or paste a base URL…"
             @gc-select=${(e: CustomEvent) => this.selectProvider(e.detail)}
           ></cw-combobox>
@@ -500,6 +501,7 @@ export class GcConnectionWizard extends LitElement {
           <cw-combobox
             .options=${this.modelOptions}
             .value=${this.model}
+            label="Model"
             placeholder="Search models…"
             @gc-select=${(e: CustomEvent) => {
               this.model = e.detail.value;
@@ -608,6 +610,7 @@ export class GcConnectionWizard extends LitElement {
                 { value: "anthropic", label: "anthropic" },
               ]}
               .value=${this.backend}
+              label="Backend"
               @gc-select=${(e: CustomEvent) => {
                 this.backend = e.detail.value;
                 this.requestUpdate();

@@ -1308,17 +1308,15 @@ export class GcChatView extends LitElement {
     .export-btn {
       padding: var(--space-1) var(--space-3);
       background: transparent;
-      color: var(--text);
+      color: var(--text-secondary);
       border: 1px solid transparent;
       border-radius: var(--radius-sm);
       font-family: inherit;
       font-size: var(--text-xs);
       cursor: pointer;
-      opacity: 0.4;
-      transition: opacity 0.12s ease;
     }
     .export-btn:hover {
-      opacity: 0.9;
+      color: var(--text);
       border-color: var(--border-default);
     }
     .focus-btn {
@@ -1327,20 +1325,19 @@ export class GcChatView extends LitElement {
       gap: 0.35rem;
       padding: var(--space-1) 0.55rem;
       background: transparent;
-      color: var(--text);
+      color: var(--text-secondary);
       border: 1px solid transparent;
       border-radius: 3px;
       font-family: inherit;
       font-size: var(--text-xs);
       cursor: pointer;
-      opacity: 0.4;
       transition:
-        opacity 0.12s ease,
+        color 0.12s ease,
         background 0.12s ease,
         border-color 0.12s ease;
     }
     .focus-btn:hover {
-      opacity: 0.9;
+      color: var(--text);
       background: var(--surface-2);
       border-color: var(--border-default);
     }
@@ -1348,9 +1345,9 @@ export class GcChatView extends LitElement {
       letter-spacing: 0.05em;
     }
     .session-tokens {
-      font-size: var(--text-xs);
-      opacity: 0.4;
       margin-right: auto;
+      color: var(--text-secondary);
+      font-size: var(--text-xs);
       letter-spacing: 0.01em;
     }
     /* Pre-send confirmation card. Rendered above the composer when the
@@ -1449,8 +1446,8 @@ export class GcChatView extends LitElement {
       max-width: var(--content-max-width);
       margin: 0 auto var(--space-1);
       padding: 0 var(--space-7);
+      color: var(--text-secondary);
       font-size: var(--text-xs);
-      opacity: 0.55;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -1459,7 +1456,6 @@ export class GcChatView extends LitElement {
       text-transform: uppercase;
       letter-spacing: 0.06em;
       font-size: 0.6rem;
-      opacity: 0.7;
     }
     .model-indicator-value {
       font-family: var(--font-mono, ui-monospace, monospace);

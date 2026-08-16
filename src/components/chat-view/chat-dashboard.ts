@@ -168,7 +168,7 @@ export class GcChatDashboard extends LitElement {
     }
     .empty-sub {
       margin: 0 0 var(--space-7);
-      opacity: 0.55;
+      color: var(--text-secondary);
       font-size: 0.82rem;
       line-height: 1.6;
     }
@@ -208,11 +208,10 @@ export class GcChatDashboard extends LitElement {
       border-color: var(--border-strong);
     }
     .example-head {
+      color: var(--accent-assistant);
       font-size: 0.65rem;
       text-transform: uppercase;
       letter-spacing: 0.08em;
-      opacity: 0.5;
-      color: var(--accent-assistant);
     }
     .example-body {
       font-size: 0.78rem;
@@ -227,20 +226,19 @@ export class GcChatDashboard extends LitElement {
       text-align: left;
     }
     .recent-title {
+      margin-bottom: var(--space-2);
+      color: var(--text-secondary);
       font-size: 0.65rem;
       text-transform: uppercase;
       letter-spacing: 0.08em;
-      opacity: 0.4;
-      margin-bottom: var(--space-2);
     }
     .activity-text {
+      margin: 0;
+      color: var(--text-secondary);
       font-size: var(--text-xs);
       line-height: 1.6;
-      opacity: 0.6;
-      margin: 0;
     }
     .activity-text.loading {
-      opacity: 0.35;
       font-style: italic;
     }
     /* Markdown-rendered content: lists get bullets, paragraphs get

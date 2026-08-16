@@ -35,6 +35,8 @@ export class CwDiffView extends LitElement {
   @property({ type: Boolean, reflect: true }) wrap = false;
   @property({ type: Boolean, attribute: "show-metadata" }) showMetadata = false;
   @property({ type: String }) emptyLabel = "no changes";
+  /** Accessible name for the focusable diff scroller. */
+  @property({ type: String }) label = "Code changes";
 
   @state() private phase: "empty" | "loading" | "ready" | "error" = "empty";
   @state() private rendered = "";
@@ -99,26 +101,28 @@ export class CwDiffView extends LitElement {
     if (this.phase === "empty" || !this.rendered) {
       return html`<div class="empty">${this.emptyLabel}</div>`;
     }
-    if (!this.split) return this.renderUnified();
-
     return html`
-      <div class="diff split">
-        <table>
-          <colgroup>
-            <col />
-            <col />
-          </colgroup>
-          <tbody>
-            ${splitDiffHtml(this.rendered).map(
-              ({ left, right }) => html`
-                <tr>
-                  <td class="side old">${left ? unsafeHTML(left) : nothing}</td>
-                  <td class="side new">${right ? unsafeHTML(right) : nothing}</td>
-                </tr>
-              `,
-            )}
-          </tbody>
-        </table>
+      <div class="viewport" role="region" aria-label=${this.label} tabindex="0">
+        ${this.split
+          ? html`<div class="diff split">
+              <table>
+                <colgroup>
+                  <col />
+                  <col />
+                </colgroup>
+                <tbody>
+                  ${splitDiffHtml(this.rendered).map(
+                    ({ left, right }) => html`
+                      <tr>
+                        <td class="side old">${left ? unsafeHTML(left) : nothing}</td>
+                        <td class="side new">${right ? unsafeHTML(right) : nothing}</td>
+                      </tr>
+                    `,
+                  )}
+                </tbody>
+              </table>
+            </div>`
+          : this.renderUnified()}
       </div>
     `;
   }
@@ -181,7 +185,7 @@ export class CwDiffView extends LitElement {
       display: block;
       min-width: 0;
       min-height: 0;
-      overflow: auto;
+      overflow: hidden;
       color: var(--text);
       background: var(--surface-1);
       font-family: var(--font-mono, ui-monospace, monospace);
@@ -200,6 +204,17 @@ export class CwDiffView extends LitElement {
       color: var(--text-muted, var(--text));
       font-size: var(--text-xs);
       font-style: italic;
+    }
+    .viewport {
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      overflow: auto;
+      box-sizing: border-box;
+    }
+    .viewport:focus-visible {
+      outline: 2px solid var(--border-focus, var(--text-accent, currentColor));
+      outline-offset: -2px;
     }
     .diff {
       font-size: var(--diff-font-size, var(--text-sm, 0.75rem));
@@ -305,7 +320,7 @@ export class CwDiffView extends LitElement {
       user-select: none;
     }
     .gutter {
-      color: var(--text-muted, var(--text));
+      color: var(--text-secondary, var(--text));
       text-align: right;
       font-variant-numeric: tabular-nums;
     }
@@ -345,12 +360,12 @@ export class CwDiffView extends LitElement {
     }
     .diff mark.word-del {
       color: inherit;
-      background: color-mix(in srgb, var(--danger) 38%, transparent);
+      background: color-mix(in srgb, var(--danger) 18%, transparent);
       border-radius: 2px;
     }
     .diff mark.word-add {
       color: inherit;
-      background: color-mix(in srgb, var(--success) 38%, transparent);
+      background: color-mix(in srgb, var(--success) 18%, transparent);
       border-radius: 2px;
     }
     .ln-old,
@@ -358,8 +373,8 @@ export class CwDiffView extends LitElement {
       display: inline-block;
       min-width: 3ch;
       padding-right: var(--space-2);
+      color: var(--text-secondary, var(--text));
       text-align: right;
-      opacity: 0.45;
       user-select: none;
       font-variant-numeric: tabular-nums;
     }

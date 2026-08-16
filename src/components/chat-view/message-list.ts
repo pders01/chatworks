@@ -527,20 +527,16 @@ ${ev.content}</pre
       text-transform: uppercase;
       letter-spacing: 0.08em;
       margin-bottom: 0.45rem;
-      opacity: 0.5;
     }
     .turn.assistant .turn-label {
       color: var(--accent-assistant);
-      opacity: 0.9;
     }
     .turn.user .turn-label {
-      color: var(--accent-user);
-      opacity: 0.85;
+      color: color-mix(in srgb, var(--accent-user) 90%, var(--text));
     }
     .turn-model {
-      opacity: 0.55;
       font-weight: 400;
-      color: var(--text);
+      color: var(--text-secondary);
       text-transform: none;
       letter-spacing: 0;
       font-size: 0.65rem;
@@ -649,8 +645,7 @@ ${ev.content}</pre
       padding: var(--space-2) var(--space-3);
       background: var(--surface-0);
       font-size: var(--text-xs);
-      color: var(--text);
-      opacity: 0.75;
+      color: var(--text-secondary);
       cursor: pointer;
       user-select: none;
       list-style: none;
@@ -723,8 +718,8 @@ ${ev.content}</pre
     }
     .token-info {
       margin-top: var(--space-2);
+      color: var(--text-secondary);
       font-size: var(--text-xs);
-      opacity: 0.4;
       letter-spacing: 0.01em;
     }
     .turn-attachments {
@@ -740,17 +735,16 @@ ${ev.content}</pre
       gap: 2px;
     }
     .turn-warning {
-      font-size: 0.7rem;
-      opacity: 0.65;
       color: var(--warning, var(--text));
+      font-size: 0.7rem;
     }
     .thinking-block {
       margin: var(--space-2) 0;
       border: 1px dashed var(--border-default);
       border-radius: 6px;
+      color: var(--text-secondary);
       background: var(--surface-2);
       font-size: var(--text-xs);
-      opacity: 0.75;
     }
     .thinking-block.is-streaming {
       opacity: 1;
@@ -790,7 +784,7 @@ ${ev.content}</pre
       vertical-align: middle;
     }
     .thinking-caret {
-      opacity: 0.4;
+      color: var(--text-secondary);
       font-size: 10px;
     }
     .thinking-body {
@@ -799,11 +793,11 @@ ${ev.content}</pre
       max-height: 240px;
       overflow: auto;
       font-family: var(--font-mono, monospace);
+      color: var(--text-secondary);
       font-size: 0.7rem;
       white-space: pre-wrap;
       word-break: break-word;
       border-top: 1px solid var(--border-default);
-      opacity: 0.9;
     }
     .tool-events {
       margin: var(--space-2) 0;
@@ -875,14 +869,14 @@ ${ev.content}</pre
       font-family: var(--font-mono, monospace);
     }
     .tool-summary {
-      opacity: 0.65;
+      color: var(--text-secondary);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
       flex: 1;
     }
     .tool-caret {
-      opacity: 0.4;
+      color: var(--text-secondary);
       font-size: 10px;
     }
     .tool-body {
@@ -892,7 +886,7 @@ ${ev.content}</pre
       gap: 4px;
     }
     .tool-body-label {
-      opacity: 0.5;
+      color: var(--text-secondary);
       font-size: 0.65rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
@@ -955,7 +949,7 @@ ${ev.content}</pre
       font-weight: 500;
     }
     .attachment-size {
-      opacity: 0.55;
+      color: var(--text-secondary);
       font-size: 0.65rem;
     }
     /* Scrollbar */

@@ -1035,7 +1035,6 @@ export class GcComposer extends LitElement {
                 : this.showArgs
                   ? `arg-option-${this.argIdx}`
                   : nothing}
-            aria-expanded=${this.showMentions || this.showSlash || this.showArgs ? "true" : "false"}
           ></textarea>
           ${this.showMentions
             ? html`<div
@@ -1046,22 +1045,19 @@ export class GcComposer extends LitElement {
                   class="mention-list"
                   role="listbox"
                   aria-label="Workspace files"
+                  tabindex="0"
+                  @keydown=${this.onKeydown}
                 >
                   ${this.mentionResults.map(
                     (p, i) => html`<li
                       id=${`mention-option-${i}`}
                       role="option"
+                      class="mention-item ${i === this.mentionIdx ? "active" : ""}"
                       aria-selected=${i === this.mentionIdx ? "true" : "false"}
+                      @pointerenter=${() => this.selectMention(i)}
+                      @click=${() => this.insertMention(p)}
                     >
-                      <button
-                        type="button"
-                        class="mention-item ${i === this.mentionIdx ? "active" : ""}"
-                        @pointerenter=${() => this.selectMention(i)}
-                        @focus=${() => this.selectMention(i)}
-                        @click=${() => this.insertMention(p)}
-                      >
-                        ${p}
-                      </button>
+                      ${p}
                     </li>`,
                   )}
                 </ul>
@@ -1074,25 +1070,23 @@ export class GcComposer extends LitElement {
                 class="slash-list"
                 role="listbox"
                 aria-label="Slash commands"
+                tabindex="0"
+                @keydown=${this.onKeydown}
               >
                 ${this.slashResults.map(
                   (c, i) => html`<li
                     id=${`slash-option-${i}`}
                     role="option"
+                    class="slash-item ${i === this.slashIdx ? "active" : ""}"
                     aria-selected=${i === this.slashIdx ? "true" : "false"}
+                    @click=${() => this.acceptSlash(c)}
+                    title=${`${c.label} — ${c.hint}\n${c.example}`}
                   >
-                    <button
-                      type="button"
-                      class="slash-item ${i === this.slashIdx ? "active" : ""}"
-                      @click=${() => this.acceptSlash(c)}
-                      title=${`${c.label} — ${c.hint}\n${c.example}`}
+                    <span class="slash-label">${c.label}</span>
+                    <span class="slash-hint">${c.hint}</span>
+                    <span class="slash-example ${c.category ? "slash-category" : ""}"
+                      >${c.category || c.example}</span
                     >
-                      <span class="slash-label">${c.label}</span>
-                      <span class="slash-hint">${c.hint}</span>
-                      <span class="slash-example ${c.category ? "slash-category" : ""}"
-                        >${c.category || c.example}</span
-                      >
-                    </button>
                   </li>`,
                 )}
               </ul>`
@@ -1103,33 +1097,32 @@ export class GcComposer extends LitElement {
                 class="slash-list arg-list"
                 role="listbox"
                 aria-label="${this.argCtx.command.label} arguments"
+                tabindex="0"
+                @keydown=${this.onKeydown}
               >
                 ${this.argResults.map(
                   (s, i) => html`<li
                     id=${`arg-option-${i}`}
                     role="option"
+                    class="slash-item arg-item ${i === this.argIdx ? "active" : ""}"
                     aria-selected=${i === this.argIdx ? "true" : "false"}
+                    @click=${() => {
+                      // Mirror the keyboard-Enter rule: directories drill,
+                      // transform commands keep editing, only final action
+                      // picks auto-submit. Otherwise clicking a directory
+                      // during /diff completion would ship a half-formed
+                      // marker.
+                      const cmd = this.argCtx?.command;
+                      const isDir = s.value.endsWith("/");
+                      const autoSubmit = cmd?.kind === "action" && !isDir;
+                      this.acceptArgSuggestion(s);
+                      if (autoSubmit) queueMicrotask(() => this.submit());
+                    }}
                   >
-                    <button
-                      class="slash-item arg-item ${i === this.argIdx ? "active" : ""}"
-                      @click=${() => {
-                        // Mirror the keyboard-Enter rule: directories drill,
-                        // transform commands keep editing, only final action
-                        // picks auto-submit. Otherwise clicking a directory
-                        // during /diff completion would ship a half-formed
-                        // marker.
-                        const cmd = this.argCtx?.command;
-                        const isDir = s.value.endsWith("/");
-                        const autoSubmit = cmd?.kind === "action" && !isDir;
-                        this.acceptArgSuggestion(s);
-                        if (autoSubmit) queueMicrotask(() => this.submit());
-                      }}
-                    >
-                      <span class="arg-label">${s.label}</span>
-                      ${s.description
-                        ? html`<span class="slash-hint">${s.description}</span>`
-                        : nothing}
-                    </button>
+                    <span class="arg-label">${s.label}</span>
+                    ${s.description
+                      ? html`<span class="slash-hint">${s.description}</span>`
+                      : nothing}
                   </li>`,
                 )}
               </ul>`
@@ -1328,7 +1321,8 @@ export class GcComposer extends LitElement {
       outline: none;
     }
     textarea::placeholder {
-      opacity: 0.35;
+      color: var(--text-secondary);
+      opacity: 1;
     }
     /* Slash completion remains a compact popover. File mentions expand the
        composer in-flow so the picker can use enough space without clipping. */
@@ -1348,6 +1342,11 @@ export class GcComposer extends LitElement {
       background: var(--surface-2);
       box-shadow: var(--shadow-dropdown, 0 4px 12px rgba(0, 0, 0, 0.35));
       list-style: none;
+    }
+    .slash-list:focus-visible,
+    .mention-list:focus-visible {
+      outline: 2px solid var(--border-focus, var(--border-accent));
+      outline-offset: -2px;
     }
     :host([compact]) .composer.mention-open .composer-inner {
       width: min(calc(100vw - (var(--space-7) * 2)), 74rem);
@@ -1440,9 +1439,8 @@ export class GcComposer extends LitElement {
       width: 4ch;
       margin-right: var(--space-3);
       padding-left: var(--space-2);
-      color: var(--text-muted);
+      color: var(--text-secondary);
       text-align: right;
-      opacity: 0.55;
       user-select: none;
     }
     .preview-code > pre:not(.shiki) {
@@ -1511,23 +1509,22 @@ export class GcComposer extends LitElement {
       font-weight: 500;
     }
     .slash-hint {
-      opacity: 0.7;
+      color: var(--text-secondary);
     }
     .slash-example {
       max-width: min(22vw, 18rem);
-      opacity: 0.45;
+      color: var(--text-secondary);
       font-size: 0.68rem;
     }
     .slash-category {
       padding: 0.08rem 0.35rem;
       border: 1px solid var(--border-default);
       border-radius: 999px;
-      color: var(--text-muted);
+      color: var(--text-secondary);
       font-size: 0.56rem;
       letter-spacing: 0.06em;
       line-height: 1.2;
       text-transform: uppercase;
-      opacity: 0.8;
     }
     .arg-item {
       grid-template-columns: max-content 1fr;
@@ -1763,11 +1760,10 @@ export class GcComposer extends LitElement {
       height: 28px;
       padding: 0;
       background: transparent;
-      color: var(--text);
+      color: var(--text-secondary);
       border: none;
       border-radius: 50%;
       cursor: pointer;
-      opacity: 0.4;
       flex-shrink: 0;
       margin-left: auto;
       transition:
@@ -1775,7 +1771,7 @@ export class GcComposer extends LitElement {
         background 0.12s ease;
     }
     .attach-btn:hover:not([disabled]) {
-      opacity: 0.85;
+      color: var(--text);
       background: var(--surface-3);
     }
     .attach-btn[disabled] {
@@ -1830,7 +1826,7 @@ export class GcComposer extends LitElement {
       font-weight: 500;
     }
     .attachment-size {
-      opacity: 0.55;
+      color: var(--text-secondary);
       font-size: 0.65rem;
     }
     .attachment-remove {
@@ -1879,7 +1875,7 @@ export class GcComposer extends LitElement {
       font-size: 0.68rem;
     }
     .dim {
-      opacity: 0.4;
+      color: var(--text-secondary);
     }
     .err {
       color: var(--danger);

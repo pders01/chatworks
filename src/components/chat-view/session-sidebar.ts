@@ -262,10 +262,10 @@ export class GcSessionSidebar extends LitElement {
     }
     .sidebar-label {
       padding: var(--space-2) 0.95rem 0.35rem;
+      color: var(--text-secondary);
       font-size: 0.65rem;
       text-transform: uppercase;
       letter-spacing: 0.08em;
-      opacity: 0.4;
     }
     .sessions {
       list-style: none;
@@ -358,13 +358,13 @@ export class GcSessionSidebar extends LitElement {
       flex: 1;
     }
     .sess-meta {
-      opacity: 0.35;
+      color: var(--text-secondary);
       font-size: 0.68rem;
       flex-shrink: 0;
     }
     .sidebar-empty {
       padding: var(--space-2) 0.85rem;
-      opacity: 0.35;
+      color: var(--text-secondary);
       font-size: 0.72rem;
       font-style: italic;
     }

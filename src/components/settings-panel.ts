@@ -587,6 +587,7 @@ export class GcSettingsPanel extends LitElement {
                   ? html`<cw-combobox
                       .options=${suggestions}
                       .value=${entry.value}
+                      .label=${this.humanizeKey(entry.key)}
                       empty-hint=${this.comboboxEmptyHint(entry.key)}
                       @gc-select=${(e: CustomEvent) => {
                         this.updateConfigEntry(entry.key, e.detail.value);
@@ -992,7 +993,7 @@ export class GcSettingsPanel extends LitElement {
     }
     .modal-hint {
       margin: var(--space-4) 0 0;
-      opacity: 0.4;
+      color: var(--text-secondary);
       font-size: var(--text-xs);
       text-align: center;
     }
@@ -1125,9 +1126,9 @@ export class GcSettingsPanel extends LitElement {
       accent-color: var(--accent-assistant);
     }
     .setting-value {
-      font-size: var(--text-xs);
-      opacity: 0.6;
       min-width: 4.5em;
+      color: var(--text-secondary);
+      font-size: var(--text-xs);
       text-align: right;
       font-variant-numeric: tabular-nums;
     }
@@ -1138,20 +1139,19 @@ export class GcSettingsPanel extends LitElement {
     .theme-btn {
       padding: var(--space-1) var(--space-3);
       background: transparent;
-      color: var(--text);
+      color: var(--text-secondary);
       border: 1px solid var(--border-default);
       border-radius: var(--radius-md);
       font-family: inherit;
       font-size: var(--text-xs);
       cursor: pointer;
-      opacity: 0.6;
     }
     .theme-btn:hover {
-      opacity: 1;
+      color: var(--text);
       border-color: var(--border-strong);
     }
     .theme-btn.active {
-      opacity: 1;
+      color: var(--text);
       background: var(--surface-3);
       border-color: var(--accent-assistant);
     }

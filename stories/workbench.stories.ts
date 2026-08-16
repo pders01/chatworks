@@ -25,14 +25,14 @@ class StoryProjectBoard extends LitElement {
   override render() {
     const columns = ["Next", "Doing", "Done"];
     return html`
-      <header>
+      <div class="project-header">
         <div>
           <span class="eyebrow">project workflow</span>
           <h1>Chatworks roadmap</h1>
         </div>
         <button @click=${this.addCard}>+ task</button>
-      </header>
-      <main>
+      </div>
+      <main tabindex="0" aria-label="Project board columns">
         ${columns.map(
           (column) => html`
             <section>
@@ -65,12 +65,12 @@ class StoryProjectBoard extends LitElement {
       background: var(--surface-1);
       font-family: var(--font-sans);
     }
-    header,
+    .project-header,
     main,
     h2 {
       display: flex;
     }
-    header {
+    .project-header {
       align-items: center;
       justify-content: space-between;
       gap: 1rem;

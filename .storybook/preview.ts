@@ -1,8 +1,10 @@
 import type { Decorator, Preview } from "@storybook/web-components-vite";
+import { getTheme, setTheme } from "../src/lib/settings.js";
 import "./preview.css";
 
 const withTheme: Decorator = (story, context) => {
   const theme = context.globals.theme === "light" ? "light" : "dark";
+  if (getTheme() !== theme) setTheme(theme);
   document.documentElement.dataset.theme = theme;
   document.documentElement.style.colorScheme = theme;
   return story();

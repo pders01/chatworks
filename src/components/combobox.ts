@@ -33,6 +33,7 @@ export interface ComboboxOption {
  * <cw-combobox
  *   .options=${[{ value: "openai", label: "OpenAI", description: "GPT models" }]}
  *   .value=${"openai"}
+ *   label="Provider"
  *   placeholder="Select provider"
  *   @gc-select=${(e) => console.log(e.detail)}
  *   @gc-input=${(e) => console.log(e.detail)}
@@ -44,6 +45,8 @@ export class GcCombobox extends LitElement {
   @property({ type: Array }) options: ComboboxOption[] = [];
   @property({ type: String }) value = "";
   @property({ type: String }) placeholder = "";
+  /** Accessible name for the internal text input. */
+  @property({ type: String }) label = "Options";
   @property({ type: String, attribute: "empty-hint" }) emptyHint = "";
 
   @state() private open = false;
@@ -247,6 +250,7 @@ export class GcCombobox extends LitElement {
       <div class="combobox-wrap">
         <input
           role="combobox"
+          aria-label=${this.label}
           aria-autocomplete="list"
           aria-expanded=${this.open && items.length > 0 ? "true" : "false"}
           aria-controls=${listId}
@@ -317,8 +321,10 @@ export class GcCombobox extends LitElement {
       outline: none;
       transition: border-color 0.12s ease;
     }
-    input:focus {
+    input:focus-visible {
       border-color: var(--accent-assistant, #6b8aff);
+      outline: 2px solid var(--accent-assistant, #6b8aff);
+      outline-offset: 1px;
     }
     .listbox {
       position: fixed;
@@ -359,8 +365,7 @@ export class GcCombobox extends LitElement {
       color: var(--text, #e0e0e0);
     }
     .option-desc {
-      color: var(--text, #e0e0e0);
-      opacity: 0.5;
+      color: var(--text-secondary, var(--text, #e0e0e0));
       font-size: 0.65rem;
     }
   `;

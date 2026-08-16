@@ -14,6 +14,7 @@ const modelOptions: ComboboxOption[] = [
 type ComboboxArgs = {
   options: ComboboxOption[];
   value: string;
+  label: string;
   placeholder: string;
   emptyHint: string;
 };
@@ -32,6 +33,7 @@ const meta = {
   args: {
     options: modelOptions,
     value: "",
+    label: "Assistant model",
     placeholder: "Select a model",
     emptyHint: "No models match",
   },
@@ -42,6 +44,7 @@ const meta = {
         <cw-combobox
           .options=${args.options}
           .value=${args.value}
+          .label=${args.label}
           .placeholder=${args.placeholder}
           .emptyHint=${args.emptyHint}
         ></cw-combobox>

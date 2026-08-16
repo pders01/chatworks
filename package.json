@@ -1,7 +1,7 @@
 {
   "name": "@jpahd/chatworks",
   "version": "0.3.0",
-  "description": "Drop-in chat surface — Lit web components, a Connect-RPC transport layer, model-catalog discovery, slash-command engine, markdown + Shiki rendering, and a runtime settings panel — for embedding an LLM chat into any web app.",
+  "description": "Composable Lit web components and an extension-ready workbench runtime for AI-assisted chat, code, and arbitrary productivity workflows.",
   "license": "MIT",
   "author": "Paul Derscheid",
   "type": "module",
@@ -13,6 +13,7 @@
   ],
   "files": [
     "dist",
+    "docs",
     "README.md",
     "LICENSE"
   ],
@@ -40,6 +41,22 @@
     "./diff-view": {
       "types": "./dist/components/diff-view.d.ts",
       "import": "./dist/components/diff-view.js"
+    },
+    "./workbench": {
+      "types": "./dist/lib/workbench.d.ts",
+      "import": "./dist/lib/workbench.js"
+    },
+    "./workbench-view": {
+      "types": "./dist/components/workbench-view.d.ts",
+      "import": "./dist/components/workbench-view.js"
+    },
+    "./workbench-switcher": {
+      "types": "./dist/components/workbench-switcher.d.ts",
+      "import": "./dist/components/workbench-switcher.js"
+    },
+    "./command-palette": {
+      "types": "./dist/components/command-palette.d.ts",
+      "import": "./dist/components/command-palette.js"
     },
     "./diff": {
       "types": "./dist/lib/diff.d.ts",

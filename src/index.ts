@@ -18,6 +18,9 @@ import "./components/connection-wizard.js";
 import "./components/chat-view.js";
 import "./components/diff-view.js";
 import "./components/settings-panel.js";
+import "./components/workbench-view.js";
+import "./components/workbench-switcher.js";
+import "./components/command-palette.js";
 
 // ── Event-map augmentations ──────────────────────────────────────
 import "./lib/events.js";
@@ -28,6 +31,29 @@ export { createConnectRpcHosts, type ConnectRpcHosts } from "./adapters/connect-
 
 // ── Runtime helpers ──────────────────────────────────────────────
 export * as settings from "./lib/settings.js";
+export {
+  DisposableStore,
+  WorkbenchExtensionHost,
+  WorkbenchRegistry,
+  WorkbenchServiceCollection,
+  WorkbenchStorage,
+  asDisposable,
+  customElementView,
+  extensionFromModule,
+  toDisposable,
+  type Disposable,
+  type DisposableLike,
+  type WorkbenchCommand,
+  type WorkbenchCommandContext,
+  type WorkbenchContextValue,
+  type WorkbenchContribution,
+  type WorkbenchExtension,
+  type WorkbenchExtensionContext,
+  type WorkbenchExtensionModule,
+  type WorkbenchPredicate,
+  type WorkbenchView,
+  type WorkbenchViewContext,
+} from "./lib/workbench.js";
 export {
   readFocus,
   writeFocus,

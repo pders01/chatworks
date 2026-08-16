@@ -11,6 +11,14 @@
 - Public subpath exports for the lower-level composer, message list, and
   session sidebar so coding-agent and other custom shells can compose
   Chatworks primitives without adopting `<cw-chat-view>` wholesale.
+- Extension-ready workbench runtime with lifecycle-owned views, commands,
+  arbitrary contribution points, host services, context predicates, and
+  namespaced JSON storage.
+- Composable `<cw-workbench-view>`, `<cw-workbench-switcher>`, and
+  `<cw-command-palette>` elements. Views can mount custom elements or any
+  other renderer and are disposed safely across navigation and async races.
+- A transport-independent workbench contract and board-style extension
+  example in `docs/workbench.md`.
 
 ## v0.3.0 — optional RepoHost, dist/ build, npm rename, cw-* tags
 

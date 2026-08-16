@@ -1,13 +1,14 @@
 # chatworks
 
-Drop-in chat surface for embedding an LLM chat into a web app. Ships Lit
-web components, a Connect-RPC transport, model-catalog discovery, a
-slash-command engine, markdown + Shiki rendering, and a runtime settings
-panel.
+Composable web components and workbench infrastructure for AI-assisted web
+applications. Chatworks ships chat and diff surfaces, lower-level UI primitives,
+and an extension runtime for composing arbitrary productivity workflows such as
+canvases, boards, editors, and project dashboards.
 
-Originally extracted from [git-chat](https://github.com/pders01/git-chat);
-designed to be reusable across any app that speaks the same RPC
-contract.
+Originally extracted from [git-chat](https://github.com/pders01/git-chat), the
+library no longer assumes that chat is the complete application shell. Hosts own
+their transport and domain services; extensions contribute views, commands, and
+host-defined capabilities through browser-native contracts.
 
 ## Install
 
@@ -35,9 +36,9 @@ settings.applyAll();                      // apply persisted theme + CSS vars
 
 ```html
 <!-- somewhere in your app shell -->
-<gc-chat-view active-repo="my-repo" focus-mode="off"></gc-chat-view>
-<gc-settings-panel open></gc-settings-panel>
-<gc-toast></gc-toast>
+<cw-chat-view repo-id="my-repo"></cw-chat-view>
+<cw-settings-panel open></cw-settings-panel>
+<cw-toast></cw-toast>
 ```
 
 The components dispatch typed `gc:*` events that bubble through shadow
@@ -63,6 +64,9 @@ pieces they need:
 | `.../composer`, `.../message-list`, `.../session-sidebar` | Lower-level chat primitives for custom shells |
 | `.../diff-view`        | Transport-independent `<cw-diff-view>` unified/split renderer |
 | `.../diff`             | Pure diff HTML transforms (line numbers, word and split diff) |
+| `.../workbench`        | Extension host, view/command registry, services, context, and storage |
+| `.../workbench-view`, `.../workbench-switcher` | Registry-driven view mounting and navigation |
+| `.../command-palette`  | Searchable workbench command surface |
 | `.../settings-panel`   | `<cw-settings-panel>` registration                   |
 | `.../toast`, `.../loading-indicator`, `.../combobox` | Standalone UI primitives          |
 | `.../transport`        | Connect-RPC client singletons (`repoClient`, `chatClient`, `authClient`) |
@@ -73,6 +77,24 @@ pieces they need:
 | `.../attachments`      | @-mention attachment helpers                         |
 | `.../markdown`, `.../highlight`, `.../clipboard`, `.../focus` | Misc helpers   |
 | `.../proto/{auth,chat,repo}` | Generated protobuf clients + message types     |
+
+## Workbench extensions
+
+The workbench API lets a host expose abstract services while extensions register
+arbitrary custom-element views, commands, and host-defined contributions. It has
+no dependency on the Connect-RPC chat contract.
+
+```ts
+import { WorkbenchExtensionHost, WorkbenchRegistry } from "@jpahd/chatworks/workbench";
+
+const registry = new WorkbenchRegistry();
+registry.services.provide("my-app.assistant", assistant);
+const extensions = new WorkbenchExtensionHost(registry);
+await extensions.activate(myExtension);
+```
+
+See [the workbench and extension contract](docs/workbench.md) for lifecycle,
+mounting, state, command-palette, and board-style examples.
 
 ## Backend contract
 

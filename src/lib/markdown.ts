@@ -8,13 +8,13 @@
 //      single pass.
 //   2. `marked` parses the markdown into tokens.
 //   3. An async `walkTokens` pass runs every fenced code block through the
-//      shared Shiki highlighter (see `highlight.ts`). Results are attached
-//      to each token as a `shikiHtml` field.
-//   4. A custom renderer returns the pre-computed Shiki HTML for code
-//      blocks, and marked's defaults for everything else.
+//      shared host-configurable highlighter (see `highlight.ts`). Results are
+//      attached to each token as a `highlightedHtml` field.
+//   4. A custom renderer returns the pre-computed code HTML, and marked's
+//      defaults for everything else.
 //   5. DOMPurify strips anything dangerous from the final HTML.
 //
-// The reason Shiki runs in `walkTokens` instead of a synchronous
+// The reason highlighting runs in `walkTokens` instead of a synchronous
 // `renderer.code` is that `highlight()` returns a Promise — marked's
 // sync render path can't await it. The two-pass design (async walk, then
 // sync render) is the pattern marked's docs recommend for async
@@ -50,7 +50,7 @@ export type DiffResolver = (ref: DiffRef) => Promise<string>;
 const markerPattern = /\[\[diff(?:\s+([^\]\n]+))?\]\]/g;
 
 // A code token as marked defines it. We extend it with an optional
-// `shikiHtml` field populated during walkTokens.
+// `highlightedHtml` field populated during walkTokens.
 type CodeToken = {
   type: "code";
   raw: string;
@@ -58,7 +58,7 @@ type CodeToken = {
   lang?: string;
   text: string;
   escaped?: boolean;
-  shikiHtml?: string;
+  highlightedHtml?: string;
 };
 
 // Single shared Marked instance — configuration is applied once at module
@@ -72,7 +72,7 @@ const marked = new Marked({
   walkTokens: async (token) => {
     if (token.type === "code") {
       const t = token as CodeToken;
-      t.shikiHtml = await highlight(t.text, (t.lang || "").trim() || "plaintext");
+      t.highlightedHtml = await highlight(t.text, (t.lang || "").trim() || "plaintext");
     }
   },
 });
@@ -84,7 +84,7 @@ marked.use({
   renderer: {
     code(token) {
       const t = token as CodeToken;
-      const inner = t.shikiHtml ?? `<pre><code>${escapeHtml(t.text)}</code></pre>`;
+      const inner = t.highlightedHtml ?? `<pre><code>${escapeHtml(t.text)}</code></pre>`;
       // Wrap in a positioned container with a floating copy button.
       // The button itself does no work — chat-view listens for clicks
       // on `.copy-code` via event delegation on the message container
@@ -109,10 +109,9 @@ function escapeHtml(s: string): string {
     .replace(/'/g, "&#39;");
 }
 
-// DOMPurify config: allow the HTML tags marked emits for standard
-// markdown, plus the span/pre structure Shiki emits for highlighted code.
-// Explicitly no <script>, no <iframe>, no event handlers. We allow class
-// and style on spans (Shiki uses inline styles for theming).
+// DOMPurify config: allow the HTML tags marked emits for standard markdown,
+// plus the span/pre structure a host highlighter may emit. Explicitly no
+// <script>, no <iframe>, event handlers, or inline presentation.
 const PURIFY_CONFIG: PurifyConfig = {
   ALLOWED_TAGS: [
     "p",
@@ -146,7 +145,8 @@ const PURIFY_CONFIG: PurifyConfig = {
     "div",
     "button",
   ],
-  ALLOWED_ATTR: ["class", "style", "href", "title", "open"],
+  ALLOWED_ATTR: ["class", "part", "href", "title", "open"],
+  ADD_URI_SAFE_ATTR: ["part"],
   // Links must be http(s) only. No javascript:, no data:, no mailto.
   ALLOWED_URI_REGEXP: /^https?:\/\//i,
 };
@@ -158,7 +158,7 @@ const PURIFY_CONFIG: PurifyConfig = {
 //
 // If `resolveDiff` is provided, `[[diff …]]` markers in the source are
 // resolved in parallel before marked sees the text; each marker becomes
-// a fenced ```diff block that Shiki highlights like any other language.
+// a fenced ```diff block handled by the same host-configurable code path.
 export async function renderMarkdown(source: string, resolveDiff?: DiffResolver): Promise<string> {
   if (!source) return "";
   const prepared = resolveDiff ? await expandDiffMarkers(source, resolveDiff) : source;

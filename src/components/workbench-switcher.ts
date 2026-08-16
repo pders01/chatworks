@@ -49,14 +49,15 @@ export class CwWorkbenchSwitcher extends LitElement {
             <button
               type="button"
               class=${active === view.id ? "active" : ""}
+              part="item ${active === view.id ? "active" : ""}"
               aria-current=${active === view.id ? "page" : nothing}
               title=${view.description || view.title}
               @click=${() => this.select(view.id)}
             >
               ${view.icon
-                ? html`<span class="icon" aria-hidden="true">${view.icon}</span>`
+                ? html`<span class="icon" part="icon" aria-hidden="true">${view.icon}</span>`
                 : nothing}
-              <span>${view.title}</span>
+              <span part="label">${view.title}</span>
             </button>
           `,
         )}
@@ -68,8 +69,6 @@ export class CwWorkbenchSwitcher extends LitElement {
     :host {
       display: inline-flex;
       min-width: 0;
-      color: var(--text-muted, inherit);
-      font: 0.75rem/1 var(--font-sans, system-ui, sans-serif);
     }
     nav {
       display: flex;
@@ -85,29 +84,15 @@ export class CwWorkbenchSwitcher extends LitElement {
       height: 1.7rem;
       padding: 0 0.5rem;
       overflow: hidden;
-      border: 1px solid transparent;
-      border-radius: var(--radius-sm, 4px);
-      color: inherit;
-      background: transparent;
-      font: inherit;
       text-overflow: ellipsis;
       white-space: nowrap;
       cursor: pointer;
-    }
-    button:hover {
-      color: var(--text, currentColor);
-      background: var(--surface-2, color-mix(in srgb, currentColor 8%, transparent));
-    }
-    button.active {
-      color: var(--text, currentColor);
-      border-color: var(--border-default, currentColor);
-      background: var(--surface-2, color-mix(in srgb, currentColor 8%, transparent));
     }
     .icon {
       flex: none;
     }
     :focus-visible {
-      outline: 2px solid var(--accent-assistant, Highlight);
+      outline: 2px solid currentColor;
       outline-offset: 1px;
     }
   `;

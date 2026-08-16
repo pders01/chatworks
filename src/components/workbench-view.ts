@@ -15,10 +15,12 @@ export class CwWorkbenchView extends LitElement {
   private mountedRegistry?: WorkbenchRegistry;
   private mountedDisposable?: Disposable;
   private generation = 0;
+  private mountScheduled = false;
 
   override connectedCallback(): void {
     super.connectedCallback();
     this.registry?.addEventListener("cw:workbench-change", this.onRegistryChange);
+    this.scheduleMount();
   }
 
   override disconnectedCallback(): void {
@@ -33,7 +35,16 @@ export class CwWorkbenchView extends LitElement {
       previous?.removeEventListener("cw:workbench-change", this.onRegistryChange);
       this.registry?.addEventListener("cw:workbench-change", this.onRegistryChange);
     }
-    if (changed.has("registry") || changed.has("viewId")) void this.mountView();
+    if (changed.has("registry") || changed.has("viewId")) this.scheduleMount();
+  }
+
+  private scheduleMount(): void {
+    if (this.mountScheduled) return;
+    this.mountScheduled = true;
+    queueMicrotask(() => {
+      this.mountScheduled = false;
+      if (this.isConnected) void this.mountView();
+    });
   }
 
   private onRegistryChange = (event: Event): void => {
@@ -43,7 +54,7 @@ export class CwWorkbenchView extends LitElement {
     const becameUnavailable = detail.kind === "context" && !this.registry?.view(this.viewId);
     if (!registrationChanged && !becameUnavailable) return;
     this.mountedId = "";
-    void this.mountView();
+    this.scheduleMount();
   };
 
   private async mountView(): Promise<void> {
@@ -71,6 +82,7 @@ export class CwWorkbenchView extends LitElement {
     this.mountedRegistry = registry;
     const surface = document.createElement("div");
     surface.className = "surface";
+    surface.setAttribute("part", "surface");
     container.replaceChildren(surface);
     try {
       const result = await view.mount(surface, registry.viewContext(id));
@@ -125,8 +137,6 @@ export class CwWorkbenchView extends LitElement {
       display: block;
       min-width: 0;
       min-height: 0;
-      color: var(--text, inherit);
-      background: var(--surface-1, transparent);
     }
     .mount,
     .surface {
@@ -141,12 +151,6 @@ export class CwWorkbenchView extends LitElement {
       display: grid;
       place-items: center;
       padding: 1rem;
-      color: var(--text-muted, currentColor);
-      background: var(--surface-1, Canvas);
-      font: 0.8rem/1.4 var(--font-sans, system-ui, sans-serif);
-    }
-    .error {
-      color: var(--danger, #b42318);
     }
   `;
 }

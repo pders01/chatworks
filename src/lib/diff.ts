@@ -129,8 +129,8 @@ export function parseUnifiedDiff(rawDiff: string): ParsedDiff {
   return { files };
 }
 
-/** Extract one HTML fragment per Shiki line and remove the diff prefix from
- * code rows. The prefix is rendered in its own semantic marker gutter. */
+/** Extract one HTML fragment per line-wrapped code row and remove the diff
+ * prefix. The prefix is rendered in its own semantic marker gutter. */
 export function extractDiffLineHtml(highlightedDiff: string): string[] {
   const tmp = document.createElement("div");
   tmp.innerHTML = highlightedDiff;
@@ -162,21 +162,18 @@ function removeFirstTextCharacter(element: Element): void {
   }
 }
 
-// The shape of highlighted input matters: Shiki emits
-// <pre><code><span class="line">...</span>...</code></pre>,
-// with each line wrapped in a `.line` element and the raw prefix
-// character ('-' / '+' / ' ') as part of the line's text content.
-// We key everything off that structural contract; drift in Shiki's
-// output shape would show up here first, which is on purpose — the
-// render pipeline depends on this assumption.
+// The highlighted-input shape matters: each row is a `.line` element and
+// includes its raw prefix character ('-' / '+' / ' ') in text content. Both
+// the default plain renderer and an installed host highlighter must preserve
+// that structural contract for diff transforms.
 
-/** Convert a unified-diff HTML blob (as emitted by Shiki's diff
- * grammar) into side-by-side pairs. Consecutive -/+ runs are zipped
+/** Convert a line-wrapped unified-diff HTML blob into side-by-side pairs.
+ * Consecutive -/+ runs are zipped
  * row-by-row; unchanged context lines mirror on both sides. Orphan
  * deletes get an empty right side; orphan adds get an empty left side.
  *
- * The input can come in two shapes: Shiki's `.line`-wrapped variant
- * (preferred) or a plain newline-split body. Both are handled. */
+ * The input can come in two shapes: a `.line`-wrapped variant (preferred)
+ * or a plain newline-split body. Both are handled. */
 export function splitDiffHtml(unifiedHtml: string): Array<{ left: string; right: string }> {
   const tmp = document.createElement("div");
   tmp.innerHTML = unifiedHtml;
@@ -217,7 +214,7 @@ export function splitDiffHtml(unifiedHtml: string): Array<{ left: string; right:
   return pairs;
 }
 
-/** Post-process Shiki diff HTML to add <mark> around changed words
+/** Post-process line-wrapped diff HTML to add <mark> around changed words
  * within adjacent -/+ line pairs. Returns a fresh HTML string; the
  * input is not mutated. Lines that changed >80% on both sides are
  * left alone — they're treated as unrelated edits, not word-level
@@ -323,9 +320,11 @@ export function addLineNumbers(htmlStr: string): string {
 
     const oldSp = document.createElement("span");
     oldSp.className = "ln-old";
+    oldSp.setAttribute("part", "line-number old-line-number");
     if (oldNum) oldSp.dataset.n = oldNum;
     const newSp = document.createElement("span");
     newSp.className = "ln-new";
+    newSp.setAttribute("part", "line-number new-line-number");
     if (newNum) newSp.dataset.n = newNum;
     // Insert at the head so the line prefix (' ', '+', '-') follows.
     el.insertBefore(newSp, el.firstChild);
@@ -408,6 +407,7 @@ function markWordDiffs(delEl: Element, addEl: Element) {
         before.splitText(localEnd - localStart);
         const mark = document.createElement("mark");
         mark.className = cssClass;
+        mark.setAttribute("part", cssClass);
         before.parentNode!.insertBefore(mark, before);
         mark.appendChild(before);
       }

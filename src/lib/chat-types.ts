@@ -19,8 +19,8 @@ export type MessageRole = (typeof MessageRole)[keyof typeof MessageRole];
 // immediately after load for historical turns. While a turn is actively
 // streaming, `html` stays undefined and the UI falls back to plain text.
 // Re-parsing markdown on every token would produce visual flicker (fenced
-// code blocks opening and closing) and wastes CPU on Shiki calls that
-// would be invalidated on the next chunk.
+// code blocks opening and closing) and wastes work that would be invalidated
+// on the next chunk.
 export type Turn = {
   id: string;
   role: MessageRole;

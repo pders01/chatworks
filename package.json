@@ -172,8 +172,7 @@
   },
   "dependencies": {
     "dompurify": "^3.3.3",
-    "marked": "^18.0.0",
-    "shiki": "^4.0.2"
+    "marked": "^18.0.0"
   },
   "devDependencies": {
     "@bufbuild/protobuf": "^2.11.0",

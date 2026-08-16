@@ -246,13 +246,15 @@ export class GcCombobox extends LitElement {
   override render() {
     const items = this.filtered;
     const listId = `${this._id}-list`;
+    const showEmpty = this.open && items.length === 0 && Boolean(this.emptyHint);
     return html`
-      <div class="combobox-wrap">
+      <div class="combobox-wrap" part="combobox-wrap">
         <input
+          part="input"
           role="combobox"
           aria-label=${this.label}
           aria-autocomplete="list"
-          aria-expanded=${this.open && items.length > 0 ? "true" : "false"}
+          aria-expanded=${this.open && (items.length > 0 || showEmpty) ? "true" : "false"}
           aria-controls=${listId}
           aria-activedescendant=${this.activeIndex >= 0
             ? `${this._id}-opt-${this.activeIndex}`
@@ -265,18 +267,32 @@ export class GcCombobox extends LitElement {
           @focus=${this.onFocus}
           @blur=${this.onBlur}
         />
-        ${this.open && items.length === 0 && this.emptyHint && this.filter
-          ? html`<div class="listbox empty-hint">${this.emptyHint}</div>`
+        ${showEmpty
+          ? html`<div
+              id=${listId}
+              class="listbox empty-hint"
+              part="listbox empty-hint"
+              role="status"
+            >
+              ${this.emptyHint}
+            </div>`
           : nothing}
         ${this.open && items.length > 0
           ? html`
-              <ul id=${listId} role="listbox" class="listbox" aria-label="Suggestions">
+              <ul
+                id=${listId}
+                role="listbox"
+                class="listbox"
+                part="listbox"
+                aria-label="Suggestions"
+              >
                 ${items.map(
                   (opt, i) => html`
                     <li
                       id="${this._id}-opt-${i}"
                       role="option"
                       class="option ${i === this.activeIndex ? "active" : ""}"
+                      part="option ${i === this.activeIndex ? "active" : ""}"
                       aria-selected=${i === this.activeIndex ? "true" : "false"}
                       @mousedown=${(e: Event) => {
                         e.preventDefault(); // prevent blur
@@ -286,9 +302,11 @@ export class GcCombobox extends LitElement {
                         this.activeIndex = i;
                       }}
                     >
-                      <span class="option-label">${opt.label}</span>
+                      <span class="option-label" part="option-label">${opt.label}</span>
                       ${opt.description
-                        ? html`<span class="option-desc">${opt.description}</span>`
+                        ? html`<span class="option-desc" part="option-desc"
+                            >${opt.description}</span
+                          >`
                         : nothing}
                     </li>
                   `,
@@ -312,18 +330,9 @@ export class GcCombobox extends LitElement {
       width: 100%;
       box-sizing: border-box;
       padding: var(--space-1, 4px) var(--space-2, 8px);
-      background: var(--surface-0, #1a1a1a);
-      color: var(--text, #e0e0e0);
-      border: 1px solid var(--border-default, #333);
-      border-radius: var(--radius-sm, 4px);
-      font-family: inherit;
-      font-size: var(--text-xs, 0.75rem);
-      outline: none;
-      transition: border-color 0.12s ease;
     }
     input:focus-visible {
-      border-color: var(--accent-assistant, #6b8aff);
-      outline: 2px solid var(--accent-assistant, #6b8aff);
+      outline: 2px solid currentColor;
       outline-offset: 1px;
     }
     .listbox {
@@ -331,21 +340,14 @@ export class GcCombobox extends LitElement {
       z-index: 9999;
       margin: 0;
       padding: var(--space-1, 4px) 0;
-      background: var(--surface-2, #252525);
-      border: 1px solid var(--border-strong, #444);
-      border-radius: var(--radius-sm, 4px);
-      box-shadow: var(--shadow-dropdown);
       max-height: 240px;
       overflow-y: auto;
       list-style: none;
     }
     .empty-hint {
       padding: var(--space-2, 8px);
-      font-size: var(--text-xs, 0.75rem);
       /* Muted via color, not opacity — opacity would fade the .listbox
          background too, making the dropdown see-through. */
-      color: var(--text-muted, #888);
-      font-style: italic;
     }
     .option {
       display: flex;
@@ -353,20 +355,7 @@ export class GcCombobox extends LitElement {
       gap: 1px;
       padding: var(--space-1, 4px) var(--space-2, 8px);
       cursor: pointer;
-      font-size: var(--text-xs, 0.75rem);
-      border-radius: var(--radius-sm, 4px);
       margin: 0 var(--space-1, 4px);
-    }
-    .option:hover,
-    .option.active {
-      background: var(--surface-3, #333);
-    }
-    .option-label {
-      color: var(--text, #e0e0e0);
-    }
-    .option-desc {
-      color: var(--text-secondary, var(--text, #e0e0e0));
-      font-size: 0.65rem;
     }
   `;
 }

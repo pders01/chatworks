@@ -48,13 +48,14 @@ export class GcMessageList extends LitElement {
     return html`
       <div
         class="messages"
+        part="messages"
         role="log"
         aria-live="polite"
         aria-label="Chat messages"
         @click=${this.onMessagesClick}
         @scroll=${this.onScroll}
       >
-        <div class="messages-inner">
+        <div class="messages-inner" part="messages-inner">
           ${repeat(
             this.turns,
             (t) => t.id,
@@ -74,9 +75,9 @@ export class GcMessageList extends LitElement {
           : "system";
     const body =
       t.role === MessageRole.ASSISTANT && !t.streaming && t.html
-        ? html`<div class="body md">${unsafeHTML(t.html)}</div>`
-        : html`<div class="body">
-            ${t.content}${t.streaming ? html`<span class="cursor">▍</span>` : nothing}
+        ? html`<div class="body md" part="body md">${unsafeHTML(t.html)}</div>`
+        : html`<div class="body" part="body">
+            ${t.content}${t.streaming ? html`<span class="cursor" part="cursor">▍</span>` : nothing}
           </div>`;
 
     if (t.role === MessageRole.USER) {
@@ -84,12 +85,13 @@ export class GcMessageList extends LitElement {
       const isEditable = !!pair && this.turns[pair.userIdx]?.id === t.id;
       const isEditing = this.editingTurnId === t.id;
       return html`
-        <article class="turn user">
-          <div class="turn-label">you</div>
-          <div class="turn-actions">
+        <article class="turn user" part="turn user">
+          <div class="turn-label" part="turn-label">you</div>
+          <div class="turn-actions" part="turn-actions">
             ${isEditable && !isEditing
               ? html`<button
                   class="turn-action"
+                  part="turn-action"
                   @click=${() => this.beginEditLast()}
                   aria-label="Edit message and resend"
                   title="Edit message and resend"
@@ -99,6 +101,7 @@ export class GcMessageList extends LitElement {
               : nothing}
             <button
               class="turn-action"
+              part="turn-action"
               @click=${(e: Event) => this.copyTurn(e, t)}
               aria-label="Copy message"
               title="Copy message"
@@ -107,14 +110,16 @@ export class GcMessageList extends LitElement {
             </button>
           </div>
           ${t.attachments && t.attachments.length > 0
-            ? html`<div class="turn-attachments" role="list">
+            ? html`<div class="turn-attachments" part="turn-attachments" role="list">
                 ${t.attachments.map((a) => this.renderAttachmentChip(a))}
               </div>`
             : nothing}
           ${isEditing ? this.renderEditTurn(t) : body}
           ${t.warnings && t.warnings.length > 0
-            ? html`<div class="turn-warnings" role="status">
-                ${t.warnings.map((w) => html`<div class="turn-warning">⚠ ${w}</div>`)}
+            ? html`<div class="turn-warnings" part="turn-warnings" role="status">
+                ${t.warnings.map(
+                  (w) => html`<div class="turn-warning" part="turn-warning">⚠ ${w}</div>`,
+                )}
               </div>`
             : nothing}
         </article>
@@ -122,9 +127,9 @@ export class GcMessageList extends LitElement {
     }
 
     const tokenInfo = t.streaming
-      ? html`<div class="token-info">streaming...</div>`
+      ? html`<div class="token-info" part="token-info">streaming...</div>`
       : t.tokensIn || t.tokensOut
-        ? html`<div class="token-info">
+        ? html`<div class="token-info" part="token-info">
             ${t.model ? t.model.toLowerCase() : ""}${t.model ? " · " : ""}${fmtNum(t.tokensIn ?? 0)}
             in · ${fmtNum(t.tokensOut ?? 0)} out ·
             ${estimateCost(t.model ?? "", t.tokensIn ?? 0, t.tokensOut ?? 0)}
@@ -142,18 +147,19 @@ export class GcMessageList extends LitElement {
       this.turns[lastIdx - 1]?.role === MessageRole.USER;
 
     return html`
-      <article class="turn ${roleClass}">
-        <div class="turn-label">
+      <article class="turn ${roleClass}" part="turn ${roleClass}">
+        <div class="turn-label" part="turn-label">
           assistant${t.model
-            ? html`<span class="turn-model">${t.model.toLowerCase()}</span>`
+            ? html`<span class="turn-model" part="turn-model">${t.model.toLowerCase()}</span>`
             : nothing}
         </div>
         ${t.streaming
           ? nothing
-          : html`<div class="turn-actions">
+          : html`<div class="turn-actions" part="turn-actions">
               ${isRetryable
                 ? html`<button
                     class="turn-action primary"
+                    part="turn-action primary"
                     @click=${() => this.fireRetry()}
                     aria-label="Retry"
                     title="Retry"
@@ -164,6 +170,7 @@ export class GcMessageList extends LitElement {
               ${isRegeneratable
                 ? html`<button
                     class="turn-action"
+                    part="turn-action"
                     @click=${() => this.fireRegenerate()}
                     aria-label="Regenerate response"
                     title="Regenerate response"
@@ -173,6 +180,7 @@ export class GcMessageList extends LitElement {
                 : nothing}
               <button
                 class="turn-action"
+                part="turn-action"
                 @click=${(e: Event) => this.copyTurn(e, t)}
                 aria-label="Copy message"
                 title="Copy message"
@@ -190,16 +198,24 @@ export class GcMessageList extends LitElement {
   private renderThinking(t: Turn) {
     if (!t.thinking) return nothing;
     const label = t.streaming ? "thinking…" : "thinking";
-    return html`<div class="thinking-block ${t.streaming ? "is-streaming" : ""}">
+    return html`<div
+      class="thinking-block ${t.streaming ? "is-streaming" : ""}"
+      part="thinking-block ${t.streaming ? "is-streaming" : ""}"
+    >
       <button
         class="thinking-head"
+        part="thinking-head"
         aria-expanded=${t.thinkingExpanded ? "true" : "false"}
         @click=${() => this.toggleThinking(t.id)}
       >
-        <span class="thinking-label">${label}</span>
-        <span class="thinking-caret" aria-hidden="true">${t.thinkingExpanded ? "▾" : "▸"}</span>
+        <span class="thinking-label" part="thinking-label">${label}</span>
+        <span class="thinking-caret" part="thinking-caret" aria-hidden="true"
+          >${t.thinkingExpanded ? "▾" : "▸"}</span
+        >
       </button>
-      ${t.thinkingExpanded ? html`<pre class="thinking-body">${t.thinking}</pre>` : nothing}
+      ${t.thinkingExpanded
+        ? html`<pre class="thinking-body" part="thinking-body">${t.thinking}</pre>`
+        : nothing}
     </div>`;
   }
 
@@ -211,7 +227,7 @@ export class GcMessageList extends LitElement {
   }
 
   private renderToolEvents(events: ToolEvent[]) {
-    return html`<div class="tool-events" role="list">
+    return html`<div class="tool-events" part="tool-events" role="list">
       ${events.map((ev) => this.renderToolEvent(ev))}
     </div>`;
   }
@@ -219,35 +235,55 @@ export class GcMessageList extends LitElement {
   private renderToolEvent(ev: ToolEvent) {
     const icon =
       ev.state === "running"
-        ? html`<span class="tool-dot tool-dot--running" aria-hidden="true"></span>`
+        ? html`<span
+            class="tool-dot tool-dot--running"
+            part="tool-dot tool-dot--running"
+            aria-hidden="true"
+          ></span>`
         : ev.state === "error"
-          ? html`<span class="tool-dot tool-dot--error" aria-hidden="true">✗</span>`
-          : html`<span class="tool-dot tool-dot--done" aria-hidden="true">✓</span>`;
+          ? html`<span
+              class="tool-dot tool-dot--error"
+              part="tool-dot tool-dot--error"
+              aria-hidden="true"
+              >✗</span
+            >`
+          : html`<span
+              class="tool-dot tool-dot--done"
+              part="tool-dot tool-dot--done"
+              aria-hidden="true"
+              >✓</span
+            >`;
     const summary = fmtToolSummary(ev);
     const canExpand = ev.state !== "running";
-    return html`<div class="tool-event ${ev.state}" role="listitem">
+    return html`<div class="tool-event ${ev.state}" part="tool-event ${ev.state}" role="listitem">
       <button
         class="tool-event-head"
+        part="tool-event-head"
         ?disabled=${!canExpand}
         aria-expanded=${ev.expanded ? "true" : "false"}
         @click=${() => this.toggleToolEvent(ev.id)}
       >
         ${icon}
-        <span class="tool-name">${ev.name}</span>
-        <span class="tool-summary">${summary}</span>
+        <span class="tool-name" part="tool-name">${ev.name}</span>
+        <span class="tool-summary" part="tool-summary">${summary}</span>
         ${canExpand
-          ? html`<span class="tool-caret" aria-hidden="true">${ev.expanded ? "▾" : "▸"}</span>`
+          ? html`<span class="tool-caret" part="tool-caret" aria-hidden="true"
+              >${ev.expanded ? "▾" : "▸"}</span
+            >`
           : nothing}
       </button>
       ${ev.expanded
-        ? html`<div class="tool-body">
-            <div class="tool-body-label">args</div>
-            <pre class="tool-body-pre">${fmtJSON(ev.argsJson)}</pre>
+        ? html`<div class="tool-body" part="tool-body">
+            <div class="tool-body-label" part="tool-body-label">args</div>
+            <pre class="tool-body-pre" part="tool-body-pre">${fmtJSON(ev.argsJson)}</pre>
             ${ev.content !== undefined
-              ? html`<div class="tool-body-label">
+              ? html`<div class="tool-body-label" part="tool-body-label">
                     result${ev.state === "error" ? " (error)" : ""}
                   </div>
-                  <pre class="tool-body-pre ${ev.state === "error" ? "is-error" : ""}">
+                  <pre
+                    class="tool-body-pre ${ev.state === "error" ? "is-error" : ""}"
+                    part="tool-body-pre ${ev.state === "error" ? "is-error" : ""}"
+                  >
 ${ev.content}</pre
                   >`
               : nothing}
@@ -274,15 +310,25 @@ ${ev.content}</pre
     const isImage = a.mimeType.startsWith("image/") && a.url;
     const tooltip = `${a.filename} · ${fmtBytes(a.size)}`;
     if (isImage) {
-      return html`<div class="attachment-chip is-image" role="listitem" title=${tooltip}>
-        <img src=${a.url!} alt=${a.filename} class="attachment-thumb" />
+      return html`<div
+        class="attachment-chip is-image"
+        part="attachment-chip is-image"
+        role="listitem"
+        title=${tooltip}
+      >
+        <img src=${a.url!} alt=${a.filename} class="attachment-thumb" part="attachment-thumb" />
       </div>`;
     }
-    return html`<div class="attachment-chip is-file" role="listitem" title=${tooltip}>
-      <span class="attachment-glyph" aria-hidden="true">📄</span>
-      <span class="attachment-meta">
-        <span class="attachment-name">${a.filename}</span>
-        <span class="attachment-size">${fmtBytes(a.size)}</span>
+    return html`<div
+      class="attachment-chip is-file"
+      part="attachment-chip is-file"
+      role="listitem"
+      title=${tooltip}
+    >
+      <span class="attachment-glyph" part="attachment-glyph" aria-hidden="true">📄</span>
+      <span class="attachment-meta" part="attachment-meta">
+        <span class="attachment-name" part="attachment-name">${a.filename}</span>
+        <span class="attachment-size" part="attachment-size">${fmtBytes(a.size)}</span>
       </span>
     </div>`;
   }
@@ -290,9 +336,10 @@ ${ev.content}</pre
   private renderEditTurn(t: Turn) {
     const rows = Math.max(2, Math.min(12, t.content.split("\n").length));
     return html`
-      <div class="body edit">
+      <div class="body edit" part="body edit">
         <textarea
           class="edit-input"
+          part="edit-input"
           rows=${rows}
           .value=${t.content}
           @keydown=${(e: KeyboardEvent) => {
@@ -311,10 +358,13 @@ ${ev.content}</pre
             ta.style.height = `${ta.scrollHeight}px`;
           }}
         ></textarea>
-        <div class="edit-actions">
-          <button class="turn-action" @click=${() => this.cancelEdit()}>cancel</button>
+        <div class="edit-actions" part="edit-actions">
+          <button class="turn-action" part="turn-action" @click=${() => this.cancelEdit()}>
+            cancel
+          </button>
           <button
             class="turn-action primary"
+            part="turn-action primary"
             @click=${(e: Event) => {
               const ta = (
                 e.currentTarget as HTMLElement
@@ -397,19 +447,15 @@ ${ev.content}</pre
       display: flex;
       flex: 1;
       min-height: 0;
-      font-family: ui-monospace, "JetBrains Mono", Menlo, monospace;
-      font-size: 0.82rem;
-      color: var(--text);
     }
     .messages {
       flex: 1;
       min-height: 0;
       overflow-y: auto;
-      padding: var(--space-6) var(--space-7) var(--space-4);
-      scroll-behavior: smooth;
+      padding: var(--space-6, 1.5rem) var(--space-7, 2rem) var(--space-4, 1rem);
     }
     .messages-inner {
-      max-width: var(--content-max-width);
+      max-width: var(--content-max-width, 52rem);
       margin: 0 auto;
     }
     :host([unfocused]) .messages-inner {
@@ -419,10 +465,10 @@ ${ev.content}</pre
     /* ── Turns ───────────────────────────────────────────────────── */
     .turn {
       position: relative;
-      margin-bottom: var(--space-7);
+      margin-bottom: var(--space-7, 2rem);
     }
     .turn:last-child {
-      margin-bottom: var(--space-2);
+      margin-bottom: var(--space-2, 0.5rem);
     }
     .turn-actions {
       position: absolute;
@@ -430,58 +476,27 @@ ${ev.content}</pre
       right: 0;
       display: flex;
       gap: 4px;
-      opacity: 0;
-      transition: opacity 0.1s;
-    }
-    .turn:hover .turn-actions,
-    .turn-actions:focus-within {
-      opacity: 1;
     }
     .turn-action {
       padding: 2px 8px;
-      background: var(--surface-2);
-      color: var(--text-muted);
-      border: 1px solid var(--surface-4);
-      border-radius: var(--radius-sm);
-      font-family: inherit;
-      font-size: var(--text-xs);
       cursor: pointer;
     }
-    .turn-action:hover {
-      background: var(--surface-3);
-      color: var(--text);
-    }
-    .turn-action.primary {
-      background: var(--action-bg);
-      color: var(--text);
-      border-color: var(--surface-4);
-    }
-    .turn-action.primary:hover {
-      background: var(--action-bg-hover);
-    }
     .turn-action:focus-visible {
-      outline: 2px solid var(--accent-user);
+      outline: 2px solid currentColor;
       outline-offset: 1px;
     }
     .body.edit {
       display: flex;
       flex-direction: column;
-      gap: var(--space-2);
+      gap: var(--space-2, 0.5rem);
     }
     .edit-input {
       width: 100%;
       resize: none;
-      background: var(--surface-0);
-      color: var(--text);
-      border: 1px solid var(--surface-4);
-      border-radius: var(--radius-sm);
-      padding: var(--space-2);
-      font-family: inherit;
-      font-size: inherit;
-      line-height: 1.5;
+      padding: var(--space-2, 0.5rem);
     }
     .edit-input:focus-visible {
-      outline: 2px solid var(--accent-user);
+      outline: 2px solid currentColor;
       outline-offset: 1px;
     }
     .edit-actions {
@@ -494,73 +509,31 @@ ${ev.content}</pre
     }
     .md .copy-code {
       position: absolute;
-      top: var(--space-2);
-      right: var(--space-2);
+      top: var(--space-2, 0.5rem);
+      right: var(--space-2, 0.5rem);
       padding: 2px 8px;
-      background: var(--surface-2);
-      color: var(--text-muted);
-      border: 1px solid var(--surface-4);
-      border-radius: var(--radius-sm);
-      font-family: inherit;
-      font-size: var(--text-xs);
       cursor: pointer;
-      opacity: 0;
-      transition: opacity 0.1s;
-    }
-    .md .code-block:hover .copy-code,
-    .md .copy-code:focus-visible {
-      opacity: 1;
-    }
-    .md .copy-code:hover {
-      background: var(--surface-3);
-      color: var(--text);
     }
     .md .copy-code:focus-visible {
-      outline: 2px solid var(--accent-user);
+      outline: 2px solid currentColor;
       outline-offset: 1px;
     }
     .turn-label {
       display: flex;
       align-items: center;
       gap: 0.6rem;
-      font-size: 0.65rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
       margin-bottom: 0.45rem;
-    }
-    .turn.assistant .turn-label {
-      color: var(--accent-assistant);
-    }
-    .turn.user .turn-label {
-      color: color-mix(in srgb, var(--accent-user) 90%, var(--text));
-    }
-    .turn-model {
-      font-weight: 400;
-      color: var(--text-secondary);
-      text-transform: none;
-      letter-spacing: 0;
-      font-size: 0.65rem;
     }
     .turn-model::before {
       content: "·";
-      margin-right: var(--space-2);
-      opacity: 0.5;
+      margin-right: var(--space-2, 0.5rem);
     }
     .turn.user .body {
       padding: 0.55rem 0.85rem;
-      background: var(--surface-1-alt);
-      border-left: 2px solid var(--border-user-rule);
-      border-radius: 0 4px 4px 0;
-      color: var(--text-secondary);
-    }
-    .turn.assistant .body {
-      color: var(--text);
     }
     .body {
       white-space: pre-wrap;
       word-break: break-word;
-      line-height: 1.6;
-      font-size: var(--text-base);
     }
     .body.md {
       white-space: normal;
@@ -582,70 +555,32 @@ ${ev.content}</pre
     .body.md li {
       margin: 0.2em 0;
     }
-    .body.md li::marker {
-      color: var(--accent-assistant);
-      opacity: 0.6;
-    }
     .body.md h1,
     .body.md h2,
     .body.md h3,
     .body.md h4 {
       margin: 1em 0 0.4em;
-      font-weight: 600;
-      line-height: 1.3;
-      letter-spacing: -0.01em;
-    }
-    .body.md h1 {
-      font-size: 1.05rem;
-    }
-    .body.md h2 {
-      font-size: 0.98rem;
-    }
-    .body.md h3 {
-      font-size: 0.9rem;
-    }
-    .body.md h4 {
-      font-size: var(--text-base);
     }
     .body.md code {
-      font-family: inherit;
       padding: 0.08em 0.4em;
-      background: var(--surface-2);
-      border: 1px solid var(--surface-4);
-      border-radius: 3px;
-      font-size: 0.92em;
     }
     .body.md pre {
       margin: 0.8em 0;
       padding: 0.9rem 1.1rem;
-      background: var(--surface-0);
-      border: 1px solid var(--surface-4);
-      border-radius: 5px;
       overflow-x: auto;
-      font-size: 0.76rem;
-      line-height: 1.55;
     }
     .body.md pre code {
       padding: 0;
-      background: transparent;
-      border: none;
-      border-radius: 0;
-      font-size: inherit;
     }
     .body.md .diff-block {
       margin: 0.8em 0;
-      border: 1px solid var(--surface-4);
-      border-radius: var(--radius-lg);
       overflow: hidden;
     }
     .body.md .diff-block > summary {
       display: flex;
       align-items: center;
-      gap: var(--space-2);
-      padding: var(--space-2) var(--space-3);
-      background: var(--surface-0);
-      font-size: var(--text-xs);
-      color: var(--text-secondary);
+      gap: var(--space-2, 0.5rem);
+      padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
       cursor: pointer;
       user-select: none;
       list-style: none;
@@ -655,101 +590,52 @@ ${ev.content}</pre
     }
     .body.md .diff-block > summary::before {
       content: "▶";
-      font-size: 0.6em;
-      transition: transform 0.15s ease;
     }
     .body.md .diff-block[open] > summary::before {
       transform: rotate(90deg);
     }
-    .body.md .diff-block > summary:hover {
-      opacity: 1;
-    }
     .body.md .diff-block > pre,
     .body.md .diff-block > .shiki {
       margin: 0;
-      border-radius: 0;
-      border: none;
-      border-top: 1px solid var(--surface-4);
     }
     .body.md blockquote {
       margin: 0.7em 0;
       padding: 0.1em 0.95em;
-      border-left: 2px solid var(--border-strong);
-      color: var(--text-muted);
-    }
-    .body.md a {
-      color: var(--accent-user);
-      text-decoration: underline;
-      text-decoration-color: var(--accent-link-dim);
-    }
-    .body.md a:hover {
-      text-decoration-color: var(--accent-user);
     }
     .body.md hr {
-      border: none;
-      border-top: 1px solid var(--border-default);
       margin: 1.2em 0;
     }
     .body.md table {
       border-collapse: collapse;
       margin: 0.7em 0;
-      font-size: var(--text-sm);
     }
     .body.md th,
     .body.md td {
-      border: 1px solid var(--border-default);
       padding: 0.35em 0.7em;
       text-align: left;
-    }
-    .body.md th {
-      background: var(--surface-2);
-      font-weight: 600;
     }
     .cursor {
       display: inline-block;
       margin-left: 0.1ch;
       width: 0.5ch;
-      animation: blink 1s infinite steps(1);
-    }
-    @keyframes blink {
-      50% {
-        opacity: 0;
-      }
     }
     .token-info {
-      margin-top: var(--space-2);
-      color: var(--text-secondary);
-      font-size: var(--text-xs);
-      letter-spacing: 0.01em;
+      margin-top: var(--space-2, 0.5rem);
     }
     .turn-attachments {
       display: flex;
       flex-wrap: wrap;
-      gap: var(--space-2);
-      margin-top: var(--space-2);
+      gap: var(--space-2, 0.5rem);
+      margin-top: var(--space-2, 0.5rem);
     }
     .turn-warnings {
-      margin-top: var(--space-2);
+      margin-top: var(--space-2, 0.5rem);
       display: flex;
       flex-direction: column;
       gap: 2px;
     }
-    .turn-warning {
-      color: var(--warning, var(--text));
-      font-size: 0.7rem;
-    }
     .thinking-block {
-      margin: var(--space-2) 0;
-      border: 1px dashed var(--border-default);
-      border-radius: 6px;
-      color: var(--text-secondary);
-      background: var(--surface-2);
-      font-size: var(--text-xs);
-    }
-    .thinking-block.is-streaming {
-      opacity: 1;
-      border-style: solid;
-      border-color: var(--border-accent, var(--border-default));
+      margin: var(--space-2, 0.5rem) 0;
     }
     .thinking-head {
       display: flex;
@@ -757,19 +643,10 @@ ${ev.content}</pre
       align-items: center;
       gap: 0.5rem;
       padding: 4px 8px;
-      background: transparent;
-      border: none;
-      color: var(--text);
       cursor: pointer;
-      font-family: inherit;
-      font-size: inherit;
       text-align: left;
     }
-    .thinking-head:hover {
-      background: var(--surface-3);
-    }
     .thinking-label {
-      font-style: italic;
       flex: 1;
     }
     .thinking-block.is-streaming .thinking-label::after {
@@ -778,38 +655,21 @@ ${ev.content}</pre
       width: 6px;
       height: 6px;
       margin-left: 0.4rem;
-      border-radius: 50%;
-      background: var(--accent-user);
-      animation: toolPulse 1s ease-in-out infinite;
       vertical-align: middle;
-    }
-    .thinking-caret {
-      color: var(--text-secondary);
-      font-size: 10px;
     }
     .thinking-body {
       margin: 0;
       padding: 6px 10px 8px;
       max-height: 240px;
       overflow: auto;
-      font-family: var(--font-mono, monospace);
-      color: var(--text-secondary);
-      font-size: 0.7rem;
       white-space: pre-wrap;
       word-break: break-word;
-      border-top: 1px solid var(--border-default);
     }
     .tool-events {
-      margin: var(--space-2) 0;
+      margin: var(--space-2, 0.5rem) 0;
       display: flex;
       flex-direction: column;
       gap: 4px;
-    }
-    .tool-event {
-      border: 1px solid var(--border-default);
-      border-radius: 6px;
-      background: var(--surface-2);
-      font-size: var(--text-xs);
     }
     .tool-event-head {
       width: 100%;
@@ -817,20 +677,11 @@ ${ev.content}</pre
       align-items: center;
       gap: 0.5rem;
       padding: 4px 8px;
-      background: transparent;
-      border: none;
-      color: var(--text);
       cursor: pointer;
-      font-family: inherit;
-      font-size: inherit;
       text-align: left;
     }
     .tool-event-head[disabled] {
       cursor: default;
-      opacity: 0.8;
-    }
-    .tool-event-head:hover:not([disabled]) {
-      background: var(--surface-3);
     }
     .tool-dot {
       display: inline-flex;
@@ -838,46 +689,13 @@ ${ev.content}</pre
       justify-content: center;
       width: 14px;
       height: 14px;
-      border-radius: 50%;
-      font-size: 10px;
       flex-shrink: 0;
     }
-    .tool-dot--running {
-      background: var(--accent-user);
-      opacity: 0.6;
-      animation: toolPulse 1s ease-in-out infinite;
-    }
-    .tool-dot--done {
-      background: var(--accent-assistant, var(--accent-user));
-      color: var(--surface-0);
-    }
-    .tool-dot--error {
-      background: var(--danger, #d34);
-      color: #fff;
-    }
-    @keyframes toolPulse {
-      0%,
-      100% {
-        opacity: 0.3;
-      }
-      50% {
-        opacity: 0.8;
-      }
-    }
-    .tool-name {
-      font-weight: 600;
-      font-family: var(--font-mono, monospace);
-    }
     .tool-summary {
-      color: var(--text-secondary);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
       flex: 1;
-    }
-    .tool-caret {
-      color: var(--text-secondary);
-      font-size: 10px;
     }
     .tool-body {
       padding: 0 8px 8px 28px;
@@ -885,35 +703,18 @@ ${ev.content}</pre
       flex-direction: column;
       gap: 4px;
     }
-    .tool-body-label {
-      color: var(--text-secondary);
-      font-size: 0.65rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
     .tool-body-pre {
       margin: 0;
       padding: 6px 8px;
-      background: var(--surface-3);
-      border-radius: 4px;
       max-height: 240px;
       overflow: auto;
-      font-family: var(--font-mono, monospace);
-      font-size: 0.7rem;
       white-space: pre-wrap;
       word-break: break-word;
-    }
-    .tool-body-pre.is-error {
-      color: var(--danger, #d34);
     }
     .attachment-chip {
       position: relative;
       display: inline-flex;
       align-items: center;
-      background: var(--surface-3);
-      border: 1px solid var(--border-default);
-      border-radius: 6px;
-      font-size: var(--text-xs);
     }
     .attachment-chip.is-image {
       padding: 0;
@@ -932,57 +733,28 @@ ${ev.content}</pre
       object-fit: cover;
       display: block;
     }
-    .attachment-glyph {
-      font-size: 14px;
-      opacity: 0.65;
-    }
     .attachment-meta {
       display: flex;
       flex-direction: column;
       min-width: 0;
-      line-height: 1.2;
     }
     .attachment-name {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      font-weight: 500;
-    }
-    .attachment-size {
-      color: var(--text-secondary);
-      font-size: 0.65rem;
     }
     /* Scrollbar */
     .messages::-webkit-scrollbar {
       width: 8px;
     }
-    .messages::-webkit-scrollbar-thumb {
-      background: var(--surface-4);
-      border-radius: 4px;
-    }
-    .messages::-webkit-scrollbar-thumb:hover {
-      background: var(--border-strong);
-    }
-    .messages::-webkit-scrollbar-track {
-      background: transparent;
-    }
     /* Focus */
     :focus-visible {
-      outline: 2px solid var(--accent-assistant);
+      outline: 2px solid currentColor;
       outline-offset: 2px;
     }
     button:focus-visible {
-      outline: 2px solid var(--accent-assistant);
+      outline: 2px solid currentColor;
       outline-offset: -1px;
-      border-radius: var(--radius-md);
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .cursor {
-        animation: none;
-      }
-      .messages {
-        scroll-behavior: auto;
-      }
     }
   `;
 }

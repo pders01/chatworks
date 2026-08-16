@@ -854,23 +854,34 @@ export class GcComposer extends LitElement {
     const selected = this.mentionResults[this.mentionIdx] || "";
     let body;
     if (selected.endsWith("/")) {
-      body = html`<div class="preview-state">Open the directory to browse its files.</div>`;
+      body = html`<div class="preview-state" part="preview-state">
+        Open the directory to browse its files.
+      </div>`;
     } else if (this.mentionPreviewLoading) {
-      body = html`<div class="preview-state">Loading preview…</div>`;
+      body = html`<div class="preview-state" part="preview-state">Loading preview…</div>`;
     } else if (this.mentionPreviewError) {
-      body = html`<div class="preview-state preview-error">${this.mentionPreviewError}</div>`;
+      body = html`<div class="preview-state preview-error" part="preview-state preview-error">
+        ${this.mentionPreviewError}
+      </div>`;
     } else if (this.mentionPreview?.binary) {
-      body = html`<div class="preview-state">Binary file · preview unavailable</div>`;
+      body = html`<div class="preview-state" part="preview-state">
+        Binary file · preview unavailable
+      </div>`;
     } else if (this.mentionPreview) {
-      body = html`<div class="preview-code" tabindex="0" aria-label="File contents">
+      body = html`<div
+        class="preview-code"
+        part="preview-code"
+        tabindex="0"
+        aria-label="File contents"
+      >
         ${this.mentionPreviewHtml
           ? unsafeHTML(this.mentionPreviewHtml)
           : html`<pre><code>${this.mentionPreview.content}</code></pre>`}
       </div>`;
     } else {
-      body = html`<div class="preview-state">Choose a file to preview.</div>`;
+      body = html`<div class="preview-state" part="preview-state">Choose a file to preview.</div>`;
     }
-    return html`<aside class="mention-preview" aria-live="polite">
+    return html`<aside class="mention-preview" part="mention-preview" aria-live="polite">
       <header>
         <span title=${selected}>${selected || "preview"}</span>
         ${this.mentionPreview
@@ -889,6 +900,7 @@ export class GcComposer extends LitElement {
     const groups = this.commandHelpGroups();
     return html`<dialog
       class="command-help"
+      part="command-help"
       aria-labelledby="command-help-title"
       @close=${this.restoreComposerFocus}
       @cancel=${(event: Event) => {
@@ -905,27 +917,29 @@ export class GcComposer extends LitElement {
         if (event.target === event.currentTarget) this.closeCommandHelp();
       }}
     >
-      <div class="command-help-shell">
-        <header class="command-help-header">
+      <div class="command-help-shell" part="command-help-shell">
+        <header class="command-help-header" part="command-help-header">
           <div>
-            <span class="command-help-kicker">composer reference</span>
+            <span class="command-help-kicker" part="command-help-kicker">composer reference</span>
             <h2 id="command-help-title">Commands</h2>
             <p>Choose a command to place it in the composer.</p>
           </div>
           <button
             type="button"
             class="command-help-close"
+            part="command-help-close"
             aria-label="Close command help"
             @click=${this.closeCommandHelp}
           >
             ×
           </button>
         </header>
-        <div class="command-help-toolbar">
+        <div class="command-help-toolbar" part="command-help-toolbar">
           <label>
             <span aria-hidden="true">⌕</span>
             <input
               class="command-help-search"
+              part="command-help-search"
               type="search"
               placeholder="Filter commands"
               aria-label="Filter commands"
@@ -944,30 +958,38 @@ export class GcComposer extends LitElement {
             >${groups.reduce((count, [, commands]) => count + commands.length, 0)} available</span
           >
         </div>
-        <div class="command-help-body">
+        <div class="command-help-body" part="command-help-body">
           ${groups.length
             ? groups.map(
-                ([category, commands]) => html`<section class="command-help-group">
+                ([category, commands]) => html`<section
+                  class="command-help-group"
+                  part="command-help-group"
+                >
                   <header>
                     <h3>${commandCategoryLabel(category)}</h3>
                     <span>${commands.length}</span>
                   </header>
-                  <div class="command-help-grid">
+                  <div class="command-help-grid" part="command-help-grid">
                     ${commands.map((command) => {
                       const description = splitCommandDescription(command.hint);
                       const label = splitCommandLabel(command.label);
                       return html`<button
                         type="button"
                         class="command-help-item"
+                        part="command-help-item"
                         title=${command.example}
                         @click=${() => this.chooseHelpCommand(command)}
                       >
                         <code title=${command.label}
                           >${label.namespace
-                            ? html`<span class="command-namespace">${label.namespace}</span>`
-                            : nothing}<span class="command-entity">${label.entity}</span></code
+                            ? html`<span class="command-namespace" part="command-namespace"
+                                >${label.namespace}</span
+                              >`
+                            : nothing}<span class="command-entity" part="command-entity"
+                            >${label.entity}</span
+                          ></code
                         >
-                        <span class="command-help-copy">
+                        <span class="command-help-copy" part="command-help-copy">
                           <span>${description.summary}</span>
                           ${description.triggers
                             ? html`<small><b>Triggers</b> ${description.triggers}</small>`
@@ -978,9 +1000,13 @@ export class GcComposer extends LitElement {
                   </div>
                 </section>`,
               )
-            : html`<div class="command-help-empty">No commands match that filter.</div>`}
+            : html`<div class="command-help-empty" part="command-help-empty">
+                No commands match that filter.
+              </div>`}
         </div>
-        <footer><kbd>esc</kbd> close <span>·</span> select a command to insert it</footer>
+        <footer part="command-help-footer">
+          <kbd part="command-help-key">esc</kbd> close <span>·</span> select a command to insert it
+        </footer>
       </div>
     </dialog>`;
   }
@@ -989,6 +1015,9 @@ export class GcComposer extends LitElement {
     return html`
       <form
         class="composer ${this.dragActive ? "drag-active" : ""} ${this.showMentions
+          ? "mention-open"
+          : ""}"
+        part="composer ${this.dragActive ? "drag-active" : ""} ${this.showMentions
           ? "mention-open"
           : ""}"
         role="search"
@@ -1002,14 +1031,15 @@ export class GcComposer extends LitElement {
         @dragleave=${this.onDragLeave}
         @drop=${this.onDrop}
       >
-        <div class="composer-inner">
+        <div class="composer-inner" part="composer-inner">
           <slot name="controls"></slot>
           ${this.pendingAttachments.length > 0
-            ? html`<div class="attachment-strip" role="list">
+            ? html`<div class="attachment-strip" part="attachment-strip" role="list">
                 ${this.pendingAttachments.map((a, i) => this.renderAttachmentChip(a, i))}
               </div>`
             : nothing}
           <textarea
+            part="input"
             .value=${this.input}
             @input=${this.onInput}
             @keydown=${this.onKeydown}
@@ -1039,10 +1069,12 @@ export class GcComposer extends LitElement {
           ${this.showMentions
             ? html`<div
                 class="mention-picker ${this.repoHost?.getFilePreview ? "with-preview" : ""}"
+                part="mention-picker ${this.repoHost?.getFilePreview ? "with-preview" : ""}"
               >
                 <ul
                   id="mention-list"
                   class="mention-list"
+                  part="mention-list"
                   role="listbox"
                   aria-label="Workspace files"
                   tabindex="0"
@@ -1053,6 +1085,7 @@ export class GcComposer extends LitElement {
                       id=${`mention-option-${i}`}
                       role="option"
                       class="mention-item ${i === this.mentionIdx ? "active" : ""}"
+                      part="mention-item ${i === this.mentionIdx ? "active" : ""}"
                       aria-selected=${i === this.mentionIdx ? "true" : "false"}
                       @pointerenter=${() => this.selectMention(i)}
                       @click=${() => this.insertMention(p)}
@@ -1068,6 +1101,7 @@ export class GcComposer extends LitElement {
             ? html`<ul
                 id="slash-list"
                 class="slash-list"
+                part="slash-list"
                 role="listbox"
                 aria-label="Slash commands"
                 tabindex="0"
@@ -1078,13 +1112,16 @@ export class GcComposer extends LitElement {
                     id=${`slash-option-${i}`}
                     role="option"
                     class="slash-item ${i === this.slashIdx ? "active" : ""}"
+                    part="slash-item ${i === this.slashIdx ? "active" : ""}"
                     aria-selected=${i === this.slashIdx ? "true" : "false"}
                     @click=${() => this.acceptSlash(c)}
                     title=${`${c.label} — ${c.hint}\n${c.example}`}
                   >
-                    <span class="slash-label">${c.label}</span>
-                    <span class="slash-hint">${c.hint}</span>
-                    <span class="slash-example ${c.category ? "slash-category" : ""}"
+                    <span class="slash-label" part="slash-label">${c.label}</span>
+                    <span class="slash-hint" part="slash-hint">${c.hint}</span>
+                    <span
+                      class="slash-example ${c.category ? "slash-category" : ""}"
+                      part="slash-example ${c.category ? "slash-category" : ""}"
                       >${c.category || c.example}</span
                     >
                   </li>`,
@@ -1095,6 +1132,7 @@ export class GcComposer extends LitElement {
             ? html`<ul
                 id="arg-list"
                 class="slash-list arg-list"
+                part="slash-list arg-list"
                 role="listbox"
                 aria-label="${this.argCtx.command.label} arguments"
                 tabindex="0"
@@ -1105,6 +1143,7 @@ export class GcComposer extends LitElement {
                     id=${`arg-option-${i}`}
                     role="option"
                     class="slash-item arg-item ${i === this.argIdx ? "active" : ""}"
+                    part="slash-item arg-item ${i === this.argIdx ? "active" : ""}"
                     aria-selected=${i === this.argIdx ? "true" : "false"}
                     @click=${() => {
                       // Mirror the keyboard-Enter rule: directories drill,
@@ -1119,27 +1158,28 @@ export class GcComposer extends LitElement {
                       if (autoSubmit) queueMicrotask(() => this.submit());
                     }}
                   >
-                    <span class="arg-label">${s.label}</span>
+                    <span class="arg-label" part="arg-label">${s.label}</span>
                     ${s.description
-                      ? html`<span class="slash-hint">${s.description}</span>`
+                      ? html`<span class="slash-hint" part="slash-hint">${s.description}</span>`
                       : nothing}
                   </li>`,
                 )}
               </ul>`
             : nothing}
-          <div class="composer-row">
-            <span class="composer-hint" id="composer-status" role="status">
+          <div class="composer-row" part="composer-row">
+            <span class="composer-hint" part="composer-hint" id="composer-status" role="status">
               ${this.errorMsg
-                ? html`<span class="err">⚠ ${this.errorMsg}</span>`
+                ? html`<span class="err" part="err">⚠ ${this.errorMsg}</span>`
                 : this.sending
-                  ? html`<span class="dim">streaming…</span>`
-                  : html`<span class="dim"
+                  ? html`<span class="dim" part="dim">streaming…</span>`
+                  : html`<span class="dim" part="dim"
                       >↵ send · shift+↵ newline · drag or paste to attach</span
                     >`}
             </span>
             <input
               type="file"
               class="attach-input"
+              part="attach-input"
               multiple
               accept=${[...ALLOWED_ATTACHMENT_MIMES].join(",")}
               @change=${(e: Event) => void this.onPickFiles(e)}
@@ -1149,6 +1189,7 @@ export class GcComposer extends LitElement {
             <button
               type="button"
               class="attach-btn"
+              part="attach-btn"
               aria-label="Attach file"
               title="Attach file"
               ?disabled=${this.sending ||
@@ -1177,6 +1218,7 @@ export class GcComposer extends LitElement {
               ? html`<button
                   type="button"
                   class="stop"
+                  part="stop"
                   aria-label="Stop generating"
                   @click=${() => this.stop()}
                 >
@@ -1189,6 +1231,7 @@ export class GcComposer extends LitElement {
                   type="submit"
                   aria-label="Send message"
                   class="send"
+                  part="send"
                   ?disabled=${!this.input.trim() && this.pendingAttachments.length === 0}
                 >
                   <svg
@@ -1217,6 +1260,7 @@ export class GcComposer extends LitElement {
     const remove = html`<button
       type="button"
       class="attachment-remove"
+      part="attachment-remove"
       aria-label="Remove ${a.filename}"
       title="Remove"
       @click=${() => this.removeAttachment(index)}
@@ -1224,16 +1268,26 @@ export class GcComposer extends LitElement {
       ×
     </button>`;
     if (isImage) {
-      return html`<div class="attachment-chip is-image" role="listitem" title=${tooltip}>
-        <img src=${a.url!} alt=${a.filename} class="attachment-thumb" />
+      return html`<div
+        class="attachment-chip is-image"
+        part="attachment-chip is-image"
+        role="listitem"
+        title=${tooltip}
+      >
+        <img src=${a.url!} alt=${a.filename} class="attachment-thumb" part="attachment-thumb" />
         ${remove}
       </div>`;
     }
-    return html`<div class="attachment-chip is-file" role="listitem" title=${tooltip}>
-      <span class="attachment-glyph" aria-hidden="true">📄</span>
-      <span class="attachment-meta">
-        <span class="attachment-name">${a.filename}</span>
-        <span class="attachment-size">${fmtBytes(a.size)}</span>
+    return html`<div
+      class="attachment-chip is-file"
+      part="attachment-chip is-file"
+      role="listitem"
+      title=${tooltip}
+    >
+      <span class="attachment-glyph" part="attachment-glyph" aria-hidden="true">📄</span>
+      <span class="attachment-meta" part="attachment-meta">
+        <span class="attachment-name" part="attachment-name">${a.filename}</span>
+        <span class="attachment-size" part="attachment-size">${fmtBytes(a.size)}</span>
       </span>
       ${remove}
     </div>`;
@@ -1243,28 +1297,17 @@ export class GcComposer extends LitElement {
     :host {
       display: block;
       container-type: inline-size;
-      font-family: ui-monospace, "JetBrains Mono", Menlo, monospace;
-      font-size: 0.82rem;
-      color: var(--text);
     }
     .composer {
       flex-shrink: 0;
-      padding: var(--space-3) var(--space-7) var(--space-5);
-      background: var(--surface-1);
+      padding: var(--space-3, 0.75rem) var(--space-7, 2rem) var(--space-5, 1.25rem);
       position: relative;
     }
     .composer::before {
-      content: "";
-      position: absolute;
-      left: 0;
-      right: 0;
-      top: -24px;
-      height: 24px;
-      background: linear-gradient(to top, var(--surface-1), transparent);
-      pointer-events: none;
+      content: none;
     }
     :host([compact]) .composer {
-      padding: var(--space-2) var(--space-4) var(--space-3);
+      padding: var(--space-2, 0.5rem) var(--space-4, 1rem) var(--space-3, 0.75rem);
     }
     :host([compact]) .composer::before {
       top: -12px;
@@ -1272,57 +1315,37 @@ export class GcComposer extends LitElement {
     }
     .composer-inner {
       position: relative;
-      max-width: var(--content-max-width);
+      max-width: var(--content-max-width, 52rem);
       margin: 0 auto;
       box-sizing: border-box;
-      background: var(--surface-2);
-      border: 1px solid var(--border-default);
-      border-radius: 8px;
-      padding: 0.65rem 0.85rem var(--space-2);
+      padding: 0.65rem 0.85rem var(--space-2, 0.5rem);
       display: flex;
       flex-direction: column;
       gap: 0.4rem;
-      transition: border-color 0.12s ease;
     }
     :host([unfocused]) .composer-inner {
       max-width: 1000px;
     }
-    .composer-inner:focus-within {
-      border-color: var(--border-accent);
-    }
     :host([compact]) .composer-inner {
       width: min(
         calc(100% - var(--composer-gutter, 0px)),
-        calc(var(--content-max-width) - var(--composer-gutter, 0px))
+        calc(var(--content-max-width, 52rem) - var(--composer-gutter, 0px))
       );
       max-width: none;
       margin-inline: auto;
-      padding: 0.42rem 0.65rem var(--space-1);
-      gap: var(--space-1);
+      padding: 0.42rem 0.65rem var(--space-1, 0.25rem);
+      gap: var(--space-1, 0.25rem);
       transform: translateX(calc(var(--composer-gutter, 0px) / 2));
     }
     textarea {
       width: 100%;
       box-sizing: border-box;
       resize: none;
-      background: transparent;
-      color: var(--text);
-      border: none;
       padding: 0.15rem 0.05rem;
-      font-family: inherit;
-      font-size: var(--text-base);
-      line-height: 1.5;
       min-height: 1.5em;
       max-height: 40vh;
       overflow-y: auto;
       field-sizing: content;
-    }
-    textarea:focus {
-      outline: none;
-    }
-    textarea::placeholder {
-      color: var(--text-secondary);
-      opacity: 1;
     }
     /* Slash completion remains a compact popover. File mentions expand the
        composer in-flow so the picker can use enough space without clipping. */
@@ -1335,41 +1358,33 @@ export class GcComposer extends LitElement {
       max-height: min(38vh, 330px);
       overflow-y: auto;
       scrollbar-gutter: stable;
-      margin: 0 0 var(--space-1);
-      padding: var(--space-1) 0;
-      border: 1px solid var(--border-default);
-      border-radius: 6px;
-      background: var(--surface-2);
-      box-shadow: var(--shadow-dropdown, 0 4px 12px rgba(0, 0, 0, 0.35));
+      margin: 0 0 var(--space-1, 0.25rem);
+      padding: var(--space-1, 0.25rem) 0;
       list-style: none;
     }
     .slash-list:focus-visible,
     .mention-list:focus-visible {
-      outline: 2px solid var(--border-focus, var(--border-accent));
+      outline: 2px solid currentColor;
       outline-offset: -2px;
     }
     :host([compact]) .composer.mention-open .composer-inner {
-      width: min(calc(100vw - (var(--space-7) * 2)), 74rem);
+      width: min(calc(100vw - (var(--space-7, 2rem) * 2)), 74rem);
       transform: none;
     }
     .mention-picker {
       display: grid;
       min-height: 18rem;
       overflow: hidden;
-      border: 1px solid var(--border-default);
-      border-radius: 6px;
-      background: var(--surface-2);
-      box-shadow: var(--shadow-dropdown, 0 4px 12px rgba(0, 0, 0, 0.35));
     }
     .mention-picker.with-preview {
-      height: min(58vh, 38rem);
+      height: clamp(16rem, 34vh, 22rem);
       grid-template-columns: minmax(13rem, 2fr) minmax(0, 5fr);
     }
     .mention-list {
       min-width: 0;
       overflow-y: auto;
       margin: 0;
-      padding: var(--space-1) 0;
+      padding: var(--space-1, 0.25rem) 0;
       list-style: none;
     }
     .mention-preview {
@@ -1377,18 +1392,13 @@ export class GcComposer extends LitElement {
       min-width: 0;
       min-height: 0;
       flex-direction: column;
-      border-left: 1px solid var(--border-default);
-      background: var(--surface-1);
     }
     .mention-preview header {
       display: flex;
       align-items: center;
       min-height: 32px;
-      gap: var(--space-2);
-      padding: 0 var(--space-3);
-      border-bottom: 1px solid var(--border-default);
-      color: var(--text-secondary);
-      font-size: var(--text-xs);
+      gap: var(--space-2, 0.5rem);
+      padding: 0 var(--space-3, 0.75rem);
     }
     .mention-preview header span {
       min-width: 0;
@@ -1399,17 +1409,12 @@ export class GcComposer extends LitElement {
     }
     .mention-preview header small {
       flex: none;
-      color: var(--text-muted);
-      font-size: 0.6rem;
     }
     .preview-code {
       min-height: 0;
       flex: 1;
       overflow: auto;
-      color: var(--text-secondary);
-      background: var(--surface-1);
       tab-size: 2;
-      font: var(--text-xs)/1.55 var(--font-mono, ui-monospace, monospace);
     }
     .preview-code:focus-visible {
       outline-offset: -2px;
@@ -1419,32 +1424,28 @@ export class GcComposer extends LitElement {
       min-width: max-content;
       min-height: 100%;
       margin: 0;
-      padding: var(--space-3) 0;
-      background: transparent !important;
-      font: inherit;
+      padding: var(--space-3, 0.75rem) 0;
     }
     .preview-code code {
       counter-reset: preview-line;
-      font: inherit;
     }
     .preview-code .line {
       display: inline-block;
       width: 100%;
-      padding-right: var(--space-3);
+      padding-right: var(--space-3, 0.75rem);
       counter-increment: preview-line;
     }
     .preview-code .line::before {
       content: counter(preview-line);
       display: inline-block;
       width: 4ch;
-      margin-right: var(--space-3);
-      padding-left: var(--space-2);
-      color: var(--text-secondary);
+      margin-right: var(--space-3, 0.75rem);
+      padding-left: var(--space-2, 0.5rem);
       text-align: right;
       user-select: none;
     }
     .preview-code > pre:not(.shiki) {
-      padding: var(--space-3);
+      padding: var(--space-3, 0.75rem);
       white-space: pre;
     }
     .preview-state {
@@ -1452,49 +1453,26 @@ export class GcComposer extends LitElement {
       min-height: 150px;
       flex: 1;
       place-items: center;
-      padding: var(--space-3);
-      color: var(--text-muted);
-      font-size: var(--text-xs);
+      padding: var(--space-3, 0.75rem);
       text-align: center;
-    }
-    .preview-error {
-      color: var(--danger);
     }
     .mention-item {
       display: block;
       width: 100%;
-      padding: var(--space-1) var(--space-2);
-      background: transparent;
-      color: var(--accent-user);
-      border: none;
-      font-family: inherit;
-      font-size: var(--text-xs);
+      padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
       text-align: left;
       cursor: pointer;
-    }
-    .mention-item:hover,
-    .mention-item.active {
-      background: var(--surface-3);
     }
     .slash-item {
       display: grid;
       grid-template-columns: minmax(9rem, 15rem) minmax(0, 1fr) max-content;
       align-items: center;
-      column-gap: var(--space-3);
+      column-gap: var(--space-3, 0.75rem);
       width: 100%;
       min-height: 30px;
-      padding: var(--space-1) var(--space-3);
-      background: transparent;
-      color: var(--text);
-      border: none;
-      font-family: inherit;
-      font-size: var(--text-xs);
+      padding: var(--space-1, 0.25rem) var(--space-3, 0.75rem);
       text-align: left;
       cursor: pointer;
-    }
-    .slash-item:hover,
-    .slash-item.active {
-      background: var(--surface-3);
     }
     .slash-label,
     .slash-hint,
@@ -1504,27 +1482,11 @@ export class GcComposer extends LitElement {
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-    .slash-label {
-      color: var(--accent-assistant);
-      font-weight: 500;
-    }
-    .slash-hint {
-      color: var(--text-secondary);
-    }
     .slash-example {
       max-width: min(22vw, 18rem);
-      color: var(--text-secondary);
-      font-size: 0.68rem;
     }
     .slash-category {
       padding: 0.08rem 0.35rem;
-      border: 1px solid var(--border-default);
-      border-radius: 999px;
-      color: var(--text-secondary);
-      font-size: 0.56rem;
-      letter-spacing: 0.06em;
-      line-height: 1.2;
-      text-transform: uppercase;
     }
     .arg-item {
       grid-template-columns: max-content 1fr;
@@ -1537,16 +1499,6 @@ export class GcComposer extends LitElement {
       margin: auto;
       padding: 0;
       overflow: hidden;
-      border: 1px solid var(--border-default);
-      border-radius: 10px;
-      color: var(--text);
-      background: var(--surface-1);
-      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
-      font-family: inherit;
-    }
-    .command-help::backdrop {
-      background: color-mix(in srgb, var(--surface-0) 72%, transparent);
-      backdrop-filter: blur(3px);
     }
     .command-help-shell {
       display: grid;
@@ -1557,197 +1509,114 @@ export class GcComposer extends LitElement {
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
-      gap: var(--space-4);
-      padding: var(--space-5) var(--space-6) var(--space-4);
-      border-bottom: 1px solid var(--border-default);
-      background: var(--surface-0);
-    }
-    .command-help-kicker {
-      color: var(--accent-assistant);
-      font-size: 0.6rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
+      gap: var(--space-4, 1rem);
+      padding: var(--space-5, 1.25rem) var(--space-6, 1.5rem) var(--space-4, 1rem);
     }
     .command-help-header h2 {
-      margin: var(--space-1) 0 0;
-      font-size: 1.25rem;
-      letter-spacing: -0.03em;
+      margin: var(--space-1, 0.25rem) 0 0;
     }
     .command-help-header p {
-      margin: var(--space-1) 0 0;
-      color: var(--text-muted);
-      font-size: var(--text-xs);
+      margin: var(--space-1, 0.25rem) 0 0;
     }
     .command-help-close {
       width: 30px;
       height: 30px;
       flex: none;
       padding: 0;
-      border: 1px solid var(--border-default);
-      border-radius: 50%;
-      color: var(--text-muted);
-      background: transparent;
-      font: 1rem/1 inherit;
       cursor: pointer;
     }
     .command-help-toolbar {
       display: flex;
       align-items: center;
-      gap: var(--space-4);
-      padding: var(--space-3) var(--space-6);
-      border-bottom: 1px solid var(--border-default);
-      background: var(--surface-1);
+      gap: var(--space-4, 1rem);
+      padding: var(--space-3, 0.75rem) var(--space-6, 1.5rem);
     }
     .command-help-toolbar label {
       display: flex;
       min-width: 0;
       flex: 1;
       align-items: center;
-      gap: var(--space-2);
-      padding: 0 var(--space-3);
-      border: 1px solid var(--border-default);
-      border-radius: 5px;
-      background: var(--surface-0);
-      color: var(--text-muted);
+      gap: var(--space-2, 0.5rem);
+      padding: 0 var(--space-3, 0.75rem);
     }
     .command-help-search {
       width: 100%;
       padding: 0.55rem 0;
-      border: 0;
-      outline: 0;
-      color: var(--text);
-      background: transparent;
-      font: inherit;
     }
     .command-help-toolbar > span {
       flex: none;
-      color: var(--text-muted);
-      font-size: var(--text-xs);
     }
     .command-help-body {
       min-height: 0;
       overflow-y: auto;
       scrollbar-gutter: stable;
-      padding: var(--space-5) var(--space-6) var(--space-6);
+      padding: var(--space-5, 1.25rem) var(--space-6, 1.5rem) var(--space-6, 1.5rem);
     }
     .command-help-group + .command-help-group {
-      margin-top: var(--space-6);
+      margin-top: var(--space-6, 1.5rem);
     }
     .command-help-group > header {
       display: flex;
       align-items: center;
-      gap: var(--space-2);
-      margin-bottom: var(--space-2);
-      color: var(--text-secondary);
+      gap: var(--space-2, 0.5rem);
+      margin-bottom: var(--space-2, 0.5rem);
     }
     .command-help-group h3 {
       margin: 0;
-      font-size: 0.68rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
     }
     .command-help-group > header span {
       display: inline-grid;
       min-width: 1.2rem;
       height: 1.2rem;
       place-items: center;
-      border-radius: 999px;
-      color: var(--text-muted);
-      background: var(--surface-3);
-      font-size: 0.58rem;
     }
     .command-help-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: var(--space-2);
+      gap: var(--space-2, 0.5rem);
     }
     .command-help-item {
       display: grid;
       grid-template-columns: minmax(13rem, 18rem) minmax(0, 1fr);
       align-items: start;
-      gap: var(--space-4);
+      gap: var(--space-4, 1rem);
       min-width: 0;
-      padding: var(--space-3) var(--space-4);
-      border: 1px solid var(--border-default);
-      border-radius: 6px;
-      color: var(--text);
-      background: var(--surface-1);
-      font: inherit;
+      padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
       text-align: left;
       cursor: pointer;
     }
-    .command-help-item:hover,
-    .command-help-item:focus-visible {
-      background: var(--surface-2);
-    }
     .command-help-item code {
       min-width: 0;
-      color: var(--accent-assistant);
-      font: 0.7rem/1.45 inherit;
       overflow-wrap: anywhere;
       white-space: normal;
-    }
-    .command-namespace {
-      color: var(--text-muted);
-      font-weight: 400;
-    }
-    .command-entity {
-      color: var(--accent-assistant);
-      font-weight: 600;
     }
     .command-help-copy {
       display: grid;
       min-width: 0;
-      gap: var(--space-1);
-      color: var(--text-secondary);
-      font-size: 0.68rem;
-      line-height: 1.45;
+      gap: var(--space-1, 0.25rem);
     }
     .command-help-copy small {
       display: -webkit-box;
       overflow: hidden;
-      color: var(--text-muted);
-      font: 0.58rem/1.45 inherit;
       -webkit-box-orient: vertical;
       -webkit-line-clamp: 2;
     }
     .command-help-copy b {
       margin-right: 0.35rem;
-      color: var(--text-secondary);
-      font-weight: 500;
     }
     .command-help-empty {
       display: grid;
       min-height: 12rem;
       place-items: center;
-      color: var(--text-muted);
-      font-size: var(--text-xs);
     }
     .command-help-shell > footer {
       display: flex;
       align-items: center;
-      gap: var(--space-2);
-      padding: var(--space-2) var(--space-6);
-      border-top: 1px solid var(--border-default);
-      color: var(--text-muted);
-      background: var(--surface-0);
-      font-size: 0.6rem;
+      gap: var(--space-2, 0.5rem);
+      padding: var(--space-2, 0.5rem) var(--space-6, 1.5rem);
     }
     .command-help-shell > footer kbd {
       padding: 0.08rem 0.3rem;
-      border: 1px solid var(--border-default);
-      border-radius: 3px;
-      color: var(--text-secondary);
-      background: var(--surface-2);
-      font: inherit;
-    }
-    .arg-label {
-      color: var(--accent-user);
-      font-family: var(--font-mono, ui-monospace, monospace);
-    }
-    .composer.drag-active .composer-inner {
-      border-color: var(--border-accent);
-      background: color-mix(in srgb, var(--accent-user) 8%, var(--surface-2));
     }
     .attach-input {
       display: none;
@@ -1759,38 +1628,22 @@ export class GcComposer extends LitElement {
       width: 28px;
       height: 28px;
       padding: 0;
-      background: transparent;
-      color: var(--text-secondary);
-      border: none;
-      border-radius: 50%;
       cursor: pointer;
       flex-shrink: 0;
       margin-left: auto;
-      transition:
-        opacity 0.12s ease,
-        background 0.12s ease;
-    }
-    .attach-btn:hover:not([disabled]) {
-      color: var(--text);
-      background: var(--surface-3);
     }
     .attach-btn[disabled] {
-      opacity: 0.15;
       cursor: not-allowed;
     }
     .attachment-strip {
       display: flex;
       flex-wrap: wrap;
-      gap: var(--space-2);
+      gap: var(--space-2, 0.5rem);
     }
     .attachment-chip {
       position: relative;
       display: inline-flex;
       align-items: center;
-      background: var(--surface-3);
-      border: 1px solid var(--border-default);
-      border-radius: 6px;
-      font-size: var(--text-xs);
     }
     .attachment-chip.is-image {
       padding: 0;
@@ -1809,34 +1662,18 @@ export class GcComposer extends LitElement {
       object-fit: cover;
       display: block;
     }
-    .attachment-glyph {
-      font-size: 14px;
-      opacity: 0.65;
-    }
     .attachment-meta {
       display: flex;
       flex-direction: column;
       min-width: 0;
-      line-height: 1.2;
     }
     .attachment-name {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      font-weight: 500;
-    }
-    .attachment-size {
-      color: var(--text-secondary);
-      font-size: 0.65rem;
     }
     .attachment-remove {
-      background: rgba(0, 0, 0, 0.55);
-      color: #fff;
-      border: none;
-      border-radius: 50%;
       cursor: pointer;
-      font-size: 13px;
-      line-height: 1;
       padding: 0;
       width: 18px;
       height: 18px;
@@ -1848,37 +1685,16 @@ export class GcComposer extends LitElement {
       position: absolute;
       top: 3px;
       right: 3px;
-      opacity: 0;
-      transition: opacity 0.12s ease;
-    }
-    .attachment-chip.is-image:hover .attachment-remove,
-    .attachment-chip.is-image:focus-within .attachment-remove {
-      opacity: 1;
     }
     .attachment-chip.is-file .attachment-remove {
       margin-left: 0.2rem;
-      background: transparent;
-      color: var(--text);
-      opacity: 0.45;
       width: 16px;
       height: 16px;
-    }
-    .attachment-chip.is-file .attachment-remove:hover {
-      opacity: 1;
     }
     .composer-row {
       display: flex;
       align-items: center;
-      gap: var(--space-2);
-    }
-    .composer-hint {
-      font-size: 0.68rem;
-    }
-    .dim {
-      color: var(--text-secondary);
-    }
-    .err {
-      color: var(--danger);
+      gap: var(--space-2, 0.5rem);
     }
     .send {
       display: flex;
@@ -1887,19 +1703,10 @@ export class GcComposer extends LitElement {
       width: 28px;
       height: 28px;
       padding: 0;
-      background: var(--accent-user);
-      color: var(--surface-0);
-      border: none;
-      border-radius: 50%;
       cursor: pointer;
-      transition: opacity 0.12s ease;
       flex-shrink: 0;
     }
-    .send:hover:not(:disabled) {
-      opacity: 0.85;
-    }
     .send:disabled {
-      opacity: 0.25;
       cursor: not-allowed;
     }
     .stop {
@@ -1907,43 +1714,19 @@ export class GcComposer extends LitElement {
       align-items: center;
       gap: 0.35rem;
       padding: 0.25rem 0.7rem;
-      background: var(--surface-3);
-      color: var(--text);
-      border: 1px solid var(--border-default);
-      border-radius: var(--radius-md);
-      font-family: inherit;
-      font-size: 0.72rem;
       cursor: pointer;
-      transition: background 0.12s ease;
       flex-shrink: 0;
-    }
-    .stop:hover {
-      background: var(--surface-4);
     }
     textarea::-webkit-scrollbar {
       width: 8px;
     }
-    textarea::-webkit-scrollbar-thumb {
-      background: var(--surface-4);
-      border-radius: 4px;
-    }
-    textarea::-webkit-scrollbar-thumb:hover {
-      background: var(--border-strong);
-    }
-    textarea::-webkit-scrollbar-track {
-      background: transparent;
-    }
     :focus-visible {
-      outline: 2px solid var(--accent-assistant);
+      outline: 2px solid currentColor;
       outline-offset: 2px;
     }
     button:focus-visible {
-      outline: 2px solid var(--accent-assistant);
+      outline: 2px solid currentColor;
       outline-offset: -1px;
-      border-radius: var(--radius-md);
-    }
-    textarea:focus-visible {
-      outline: none;
     }
     @container (max-width: 560px) {
       :host([compact]) .composer.mention-open .composer-inner {
@@ -1959,8 +1742,6 @@ export class GcComposer extends LitElement {
       }
       .mention-preview {
         min-height: 0;
-        border-top: 1px solid var(--border-default);
-        border-left: 0;
       }
       .preview-state {
         min-height: 8rem;
@@ -1985,17 +1766,17 @@ export class GcComposer extends LitElement {
       .command-help-header,
       .command-help-toolbar,
       .command-help-body {
-        padding-right: var(--space-4);
-        padding-left: var(--space-4);
+        padding-right: var(--space-4, 1rem);
+        padding-left: var(--space-4, 1rem);
       }
       .command-help-item {
         grid-template-columns: minmax(0, 1fr);
-        gap: var(--space-2);
+        gap: var(--space-2, 0.5rem);
       }
     }
     @media (max-width: 560px) {
       :host([compact]) .composer.mention-open .composer-inner {
-        width: calc(100vw - (var(--space-3) * 2));
+        width: calc(100vw - (var(--space-3, 0.75rem) * 2));
       }
       .mention-picker.with-preview {
         height: min(52vh, 28rem);
@@ -2007,16 +1788,9 @@ export class GcComposer extends LitElement {
       }
       .mention-preview {
         min-height: 0;
-        border-top: 1px solid var(--border-default);
-        border-left: 0;
       }
       .preview-state {
         min-height: 8rem;
-      }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .send {
-        transition: none;
       }
     }
   `;

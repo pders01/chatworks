@@ -67,16 +67,17 @@ export class GcToast extends LitElement {
 
   override render() {
     return html`
-      <div class="stack" role="status" aria-live="polite">
+      <div class="stack" part="stack" role="status" aria-live="polite">
         ${repeat(
           this.items,
           (t) => t.id,
           (t) => html`
-            <div class="toast ${t.kind}" role="alert">
-              <span class="icon" aria-hidden="true">${KIND_ICONS[t.kind]}</span>
-              <span class="message">${t.message}</span>
+            <div class="toast ${t.kind}" part="toast ${t.kind}" role="alert">
+              <span class="icon" part="icon" aria-hidden="true">${KIND_ICONS[t.kind]}</span>
+              <span class="message" part="message">${t.message}</span>
               <button
                 class="close"
+                part="close"
                 aria-label="Dismiss notification"
                 @click=${() => this.dismiss(t.id)}
               >
@@ -95,33 +96,25 @@ export class GcToast extends LitElement {
        long messages don't stretch edge-to-edge. */
     :host {
       position: fixed;
-      bottom: var(--space-6);
+      bottom: var(--space-6, 1.5rem);
       left: 50%;
       transform: translateX(-50%);
       z-index: 200;
       pointer-events: none;
-      width: min(480px, calc(100vw - 2 * var(--space-5)));
+      width: min(480px, calc(100vw - 2 * var(--space-5, 1.25rem)));
     }
     .stack {
       display: flex;
       flex-direction: column-reverse;
-      gap: var(--space-2);
+      gap: var(--space-2, 0.5rem);
     }
     .toast {
       pointer-events: auto;
       display: grid;
       grid-template-columns: auto 1fr auto;
       align-items: center;
-      gap: var(--space-3);
-      padding: var(--space-3) var(--space-4);
-      border-radius: var(--radius-lg);
-      font-family: var(--font-sans, ui-sans-serif, system-ui, sans-serif);
-      font-size: var(--text-sm);
-      line-height: 1.4;
-      box-shadow:
-        0 10px 30px rgba(0, 0, 0, 0.45),
-        0 2px 4px rgba(0, 0, 0, 0.25);
-      animation: slide-in 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+      gap: var(--space-3, 0.75rem);
+      padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
     }
     .icon {
       display: inline-flex;
@@ -129,11 +122,7 @@ export class GcToast extends LitElement {
       justify-content: center;
       width: 22px;
       height: 22px;
-      border-radius: 50%;
-      font-size: 0.78rem;
-      font-weight: 700;
       flex-shrink: 0;
-      font-family: var(--font-mono, ui-monospace, monospace);
     }
     .message {
       min-width: 0;
@@ -146,80 +135,12 @@ export class GcToast extends LitElement {
       width: 22px;
       height: 22px;
       padding: 0;
-      background: transparent;
-      border: none;
-      border-radius: 4px;
-      color: inherit;
-      opacity: 0.55;
-      font-size: 1.1rem;
-      line-height: 1;
       cursor: pointer;
       flex-shrink: 0;
-      transition:
-        opacity 0.12s ease,
-        background 0.12s ease;
-    }
-    .close:hover {
-      opacity: 1;
-      background: rgba(255, 255, 255, 0.08);
     }
     .close:focus-visible {
       outline: 2px solid currentColor;
       outline-offset: 1px;
-    }
-
-    /* Kind variants. Each gets a stronger border and icon colour so
-       the message registers pre-attentively. */
-    .info {
-      background: var(--surface-2);
-      color: var(--text);
-      border: 1px solid var(--border-strong);
-    }
-    .info .icon {
-      background: var(--surface-4);
-      color: var(--text-secondary, var(--text));
-    }
-    .success {
-      background: var(--surface-2);
-      color: var(--text);
-      border: 1px solid var(--border-accent);
-    }
-    .success .icon {
-      background: var(--accent-assistant);
-      color: var(--surface-0);
-    }
-    .warn {
-      background: var(--surface-2);
-      color: var(--text);
-      border: 1px solid color-mix(in srgb, var(--warning, #e2b93a) 70%, var(--border-strong));
-    }
-    .warn .icon {
-      background: var(--warning, #e2b93a);
-      color: var(--surface-0);
-    }
-    .error {
-      background: var(--danger-bg);
-      color: var(--danger);
-      border: 1px solid var(--danger-border);
-    }
-    .error .icon {
-      background: var(--danger);
-      color: var(--danger-bg);
-    }
-
-    @keyframes slide-in {
-      from {
-        transform: translateY(14px);
-        opacity: 0;
-      }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .toast {
-        animation: none;
-      }
-      .close {
-        transition: none;
-      }
     }
   `;
 }

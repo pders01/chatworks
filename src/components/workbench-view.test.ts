@@ -3,7 +3,7 @@ import { WorkbenchRegistry } from "../lib/workbench.js";
 import { CwWorkbenchView } from "./workbench-view.js";
 
 describe("cw-workbench-view", () => {
-  test("mounts once across unrelated context updates and disposes on disconnect", async () => {
+  test("mounts once across unrelated updates and remounts after reconnect", async () => {
     const registry = new WorkbenchRegistry();
     let mounts = 0;
     let disposals = 0;
@@ -35,5 +35,14 @@ describe("cw-workbench-view", () => {
 
     host.remove();
     expect(disposals).toBe(1);
+
+    document.body.append(host);
+    await host.updateComplete;
+    await Promise.resolve();
+    expect(mounts).toBe(2);
+    expect(host.shadowRoot?.querySelector("example-surface")).not.toBeNull();
+
+    host.remove();
+    expect(disposals).toBe(2);
   });
 });

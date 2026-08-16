@@ -95,13 +95,15 @@ export class GcSessionSidebar extends LitElement {
     return html`
       <button
         class="new"
+        part="new"
         @click=${() => this.fire("gc:new-chat", {})}
         aria-label="New chat (${navigator.platform.includes("Mac") ? "⌘" : "Ctrl+"}K)"
       >
-        <span class="plus" aria-hidden="true">+</span> new chat
+        <span class="plus" part="plus" aria-hidden="true">+</span> new chat
       </button>
       <input
         class="session-filter"
+        part="session-filter"
         type="search"
         placeholder="filter sessions…"
         .value=${this.sessionFilter}
@@ -110,10 +112,10 @@ export class GcSessionSidebar extends LitElement {
         }}
         aria-label="Filter sessions"
       />
-      <div class="sidebar-label" id="sessions-label">sessions</div>
-      <ul class="sessions" role="list" aria-labelledby="sessions-label">
+      <div class="sidebar-label" part="sidebar-label" id="sessions-label">sessions</div>
+      <ul class="sessions" part="sessions" role="list" aria-labelledby="sessions-label">
         ${this.sessions.length === 0
-          ? html`<li class="sidebar-empty">no sessions yet</li>`
+          ? html`<li class="sidebar-empty" part="sidebar-empty">no sessions yet</li>`
           : this.sortedSessions()
               .filter(
                 (sess) =>
@@ -123,9 +125,10 @@ export class GcSessionSidebar extends LitElement {
               .map(
                 (sess) => html`
                   <li>
-                    <div class="sess-row">
+                    <div class="sess-row" part="sess-row">
                       <button
                         class="sess ${sess.id === this.selected ? "selected" : ""}"
+                        part="sess ${sess.id === this.selected ? "selected" : ""}"
                         @click=${() => this.fire("gc:select-session", { sessionId: sess.id })}
                         @dblclick=${(e: Event) => {
                           e.preventDefault();
@@ -143,6 +146,7 @@ export class GcSessionSidebar extends LitElement {
                         ${this.editingSessionId === sess.id
                           ? html`<input
                               class="rename-input"
+                              part="rename-input"
                               data-id=${sess.id}
                               .value=${sess.title}
                               @keydown=${(e: KeyboardEvent) => {
@@ -161,13 +165,17 @@ export class GcSessionSidebar extends LitElement {
                                 )}
                               @click=${(e: Event) => e.stopPropagation()}
                             />`
-                          : html`<span class="sess-title">${sess.title}</span>`}
-                        <span class="sess-meta" aria-label="${sess.messageCount} messages"
+                          : html`<span class="sess-title" part="sess-title">${sess.title}</span>`}
+                        <span
+                          class="sess-meta"
+                          part="sess-meta"
+                          aria-label="${sess.messageCount} messages"
                           >${sess.messageCount}</span
                         >
                       </button>
                       <button
                         class="sess-pin ${sess.pinned ? "pinned" : ""}"
+                        part="sess-pin ${sess.pinned ? "pinned" : ""}"
                         @click=${(e: Event) => {
                           e.stopPropagation();
                           void this.pinSession(sess.id, !sess.pinned);
@@ -179,6 +187,9 @@ export class GcSessionSidebar extends LitElement {
                       </button>
                       <button
                         class="sess-delete ${this.confirmingDeleteSession === sess.id
+                          ? "confirming"
+                          : ""}"
+                        part="sess-delete ${this.confirmingDeleteSession === sess.id
                           ? "confirming"
                           : ""}"
                         @click=${(e: Event) => {
@@ -214,58 +225,24 @@ export class GcSessionSidebar extends LitElement {
       flex-direction: column;
       min-height: 0;
       overflow: hidden;
-      font-family: ui-monospace, "JetBrains Mono", Menlo, monospace;
-      font-size: 0.82rem;
-      color: var(--text);
     }
     .new {
       margin: 0.85rem 0.85rem 0.6rem;
-      padding: var(--space-2) 0.7rem;
-      background: var(--surface-2);
-      color: var(--text);
-      border: 1px solid var(--border-default);
-      border-radius: 4px;
-      font-family: inherit;
-      font-size: inherit;
+      padding: var(--space-2, 0.5rem) 0.7rem;
       cursor: pointer;
       text-align: left;
       display: flex;
       align-items: center;
-      gap: var(--space-2);
-      transition:
-        background 0.12s ease,
-        border-color 0.12s ease;
-    }
-    .new:hover {
-      background: var(--surface-3);
-      border-color: var(--border-strong);
-    }
-    .new .plus {
-      color: var(--accent-assistant);
-      font-weight: 600;
+      gap: var(--space-2, 0.5rem);
     }
     .session-filter {
-      margin: 0 0.85rem var(--space-2);
-      padding: var(--space-1) var(--space-2);
-      background: var(--surface-0);
-      color: var(--text);
-      border: 1px solid var(--surface-4);
-      border-radius: var(--radius-md);
-      font-family: inherit;
-      font-size: var(--text-xs);
+      margin: 0 0.85rem var(--space-2, 0.5rem);
+      padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
       width: calc(100% - 1.7rem);
       box-sizing: border-box;
     }
-    .session-filter:focus {
-      outline: none;
-      border-color: var(--border-strong);
-    }
     .sidebar-label {
-      padding: var(--space-2) 0.95rem 0.35rem;
-      color: var(--text-secondary);
-      font-size: 0.65rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
+      padding: var(--space-2, 0.5rem) 0.95rem 0.35rem;
     }
     .sessions {
       list-style: none;
@@ -282,25 +259,11 @@ export class GcSessionSidebar extends LitElement {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: var(--space-2);
+      gap: var(--space-2, 0.5rem);
       width: 100%;
       padding: 0.4rem 0.6rem;
-      background: transparent;
-      border: 1px solid transparent;
-      border-radius: 4px;
-      color: var(--text);
-      font-family: inherit;
-      font-size: 0.76rem;
       text-align: left;
       cursor: pointer;
-      transition: background 0.1s ease;
-    }
-    .sess:hover {
-      background: var(--surface-2);
-    }
-    .sess.selected {
-      background: var(--surface-2);
-      border-color: var(--border-default);
     }
     .sess-row {
       display: flex;
@@ -314,42 +277,15 @@ export class GcSessionSidebar extends LitElement {
       flex-shrink: 0;
       width: 24px;
       height: 24px;
-      background: transparent;
-      color: var(--text);
-      border: none;
-      font-size: 0.9rem;
       cursor: pointer;
-      opacity: 0;
-      transition: opacity 0.1s;
-      border-radius: var(--radius-sm);
-    }
-    .sess-row:hover .sess-delete {
-      opacity: 0.4;
-    }
-    .sess-delete:hover {
-      opacity: 1 !important;
-      color: var(--danger);
     }
     .sess-delete:focus-visible {
-      opacity: 0.7;
-      outline: 2px solid var(--accent-user);
+      outline: 2px solid currentColor;
       outline-offset: -2px;
-    }
-    .sess-delete.confirming {
-      opacity: 1 !important;
-      color: var(--danger);
-      background: color-mix(in srgb, var(--danger) 15%, transparent);
     }
     .rename-input {
       width: 100%;
-      background: var(--surface-0);
-      color: var(--text);
-      border: 1px solid var(--border-strong);
-      border-radius: var(--radius-sm);
       padding: 0.1rem 0.3rem;
-      font-family: inherit;
-      font-size: inherit;
-      outline: none;
     }
     .sess-title {
       overflow: hidden;
@@ -358,73 +294,32 @@ export class GcSessionSidebar extends LitElement {
       flex: 1;
     }
     .sess-meta {
-      color: var(--text-secondary);
-      font-size: 0.68rem;
       flex-shrink: 0;
     }
     .sidebar-empty {
-      padding: var(--space-2) 0.85rem;
-      color: var(--text-secondary);
-      font-size: 0.72rem;
-      font-style: italic;
+      padding: var(--space-2, 0.5rem) 0.85rem;
     }
     .sess-pin {
       flex-shrink: 0;
       width: 24px;
       height: 24px;
-      background: transparent;
-      color: var(--text);
-      border: none;
-      font-size: 0.8rem;
       cursor: pointer;
-      opacity: 0;
-      transition: opacity 0.1s;
-      border-radius: var(--radius-sm);
       padding: 0;
-      line-height: 24px;
       text-align: center;
-    }
-    .sess-pin.pinned {
-      opacity: 0.6;
-      color: var(--accent-user);
-    }
-    .sess-row:hover .sess-pin {
-      opacity: 0.4;
-    }
-    .sess-pin:hover {
-      opacity: 1 !important;
-      color: var(--accent-user);
     }
     /* Scrollbar */
     .sessions::-webkit-scrollbar {
       width: 8px;
     }
-    .sessions::-webkit-scrollbar-thumb {
-      background: var(--surface-4);
-      border-radius: 4px;
-    }
-    .sessions::-webkit-scrollbar-thumb:hover {
-      background: var(--border-strong);
-    }
-    .sessions::-webkit-scrollbar-track {
-      background: transparent;
-    }
     /* Focus */
     :focus-visible {
-      outline: 2px solid var(--accent-assistant);
+      outline: 2px solid currentColor;
       outline-offset: 2px;
     }
     button:focus-visible,
     .sess:focus-visible {
-      outline: 2px solid var(--accent-assistant);
+      outline: 2px solid currentColor;
       outline-offset: -1px;
-      border-radius: var(--radius-md);
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .new,
-      .sess {
-        transition: none;
-      }
     }
   `;
 }

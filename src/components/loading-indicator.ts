@@ -2,11 +2,8 @@ import { LitElement, html, css, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
 /**
- * Small spinning circle, inline with text. Two sizes: "sm" (default,
- * ~10px for toolbar buttons) and "lg" (~20px for banners).
- *
- * The parent component is responsible for positioning; this element only
- * owns the spin animation and shape.
+ * Structurally sized loading marker. Applications own its shape and motion
+ * through the `indicator`, `sm`, and `lg` parts.
  */
 @customElement("cw-spinner")
 export class GcSpinner extends LitElement {
@@ -15,35 +12,26 @@ export class GcSpinner extends LitElement {
   static styles = css`
     :host {
       display: inline-block;
-      line-height: 0;
     }
     .dot {
       display: inline-block;
-      border-radius: 50%;
-      border-style: solid;
-      border-color: var(--border-default);
-      border-top-color: var(--text-accent, var(--text));
-      animation: gc-spin 0.8s linear infinite;
     }
     .dot.sm {
       width: 10px;
       height: 10px;
-      border-width: 1.5px;
     }
     .dot.lg {
       width: 20px;
       height: 20px;
-      border-width: 2px;
-    }
-    @keyframes gc-spin {
-      to {
-        transform: rotate(360deg);
-      }
     }
   `;
 
   override render() {
-    return html`<span class="dot ${this.size}" aria-hidden="true"></span>`;
+    return html`<span
+      class="dot ${this.size}"
+      part="indicator ${this.size}"
+      aria-hidden="true"
+    ></span>`;
   }
 }
 
@@ -69,9 +57,8 @@ export class GcLoadingBanner extends LitElement {
     .wrap {
       display: flex;
       align-items: center;
-      gap: var(--space-3);
-      padding: var(--space-4);
-      color: var(--text-muted);
+      gap: var(--space-3, 0.75rem);
+      padding: var(--space-4, 1rem);
     }
     .txt {
       display: flex;
@@ -79,24 +66,18 @@ export class GcLoadingBanner extends LitElement {
       gap: 2px;
       min-width: 0;
     }
-    .heading {
-      color: var(--text);
-      font-size: var(--text-sm);
-      font-weight: 500;
-    }
     .detail {
-      font-size: var(--text-xs);
       max-width: 60ch;
     }
   `;
 
   override render() {
     return html`
-      <div class="wrap" role="status" aria-live="polite">
-        <cw-spinner size="lg"></cw-spinner>
-        <div class="txt">
-          <div class="heading">${this.heading}</div>
-          ${this.detail ? html`<div class="detail">${this.detail}</div>` : nothing}
+      <div class="wrap" part="wrap" role="status" aria-live="polite">
+        <cw-spinner size="lg" part="spinner" exportparts="indicator, lg"></cw-spinner>
+        <div class="txt" part="txt">
+          <div class="heading" part="heading">${this.heading}</div>
+          ${this.detail ? html`<div class="detail" part="detail">${this.detail}</div>` : nothing}
           <slot></slot>
         </div>
       </div>

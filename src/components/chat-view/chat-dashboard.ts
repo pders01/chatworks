@@ -5,8 +5,8 @@ import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import { chatHostContext, repoHostContext, type ChatHost, type RepoHost } from "../../host.js";
 import "./../../components/loading-indicator.js";
 
-// Lazy-import markdown because it pulls marked + Shiki (~270 kB
-// gzipped). A static import here defeats the dynamic imports in
+// Lazy-import markdown because it pulls the parser and code pipeline. A static
+// import here defeats the dynamic imports in
 // chat-view.ts and kb-view.ts — vite warns "dynamic import will not
 // move module into another chunk" because the module is already in
 // the main bundle. Sharing the lazy pattern keeps the dashboard off
@@ -109,22 +109,28 @@ export class GcChatDashboard extends LitElement {
 
   override render() {
     return html`
-      <div class="empty-chat">
+      <div class="empty-chat" part="empty-chat">
         <slot name="empty-state">
-          <div class="empty-title">ready when you are</div>
-          <p class="empty-sub">
+          <div class="empty-title" part="empty-title">ready when you are</div>
+          <p class="empty-sub" part="empty-sub">
             ask about the repo — use <code>@path/to/file</code> to include file contents
           </p>
         </slot>
 
         ${this.suggestions.length > 0
           ? html`
-              <div class="empty-examples">
+              <div class="empty-examples" part="empty-examples">
                 ${this.suggestions.map(
                   (s) => html`
-                    <button class="example" @click=${() => this.prefillExample(s.prompt)}>
-                      <span class="example-head">${s.label}</span>
-                      <span class="example-body">${s.prompt.split("\n")[0].slice(0, 80)}</span>
+                    <button
+                      class="example"
+                      part="example"
+                      @click=${() => this.prefillExample(s.prompt)}
+                    >
+                      <span class="example-head" part="example-head">${s.label}</span>
+                      <span class="example-body" part="example-body"
+                        >${s.prompt.split("\n")[0].slice(0, 80)}</span
+                      >
                     </button>
                   `,
                 )}
@@ -133,14 +139,16 @@ export class GcChatDashboard extends LitElement {
           : nothing}
         ${this.summaryLoading || this.activityHtml
           ? html`
-              <div class="recent-activity">
-                <div class="recent-title">recent activity</div>
+              <div class="recent-activity" part="recent-activity">
+                <div class="recent-title" part="recent-title">recent activity</div>
                 ${this.summaryLoading
-                  ? html`<p class="activity-text loading">
+                  ? html`<p class="activity-text loading" part="activity-text loading">
                       <cw-spinner></cw-spinner>
                       summarizing recent changes…
                     </p>`
-                  : html`<div class="activity-text">${unsafeHTML(this.activityHtml)}</div>`}
+                  : html`<div class="activity-text" part="activity-text">
+                      ${unsafeHTML(this.activityHtml)}
+                    </div>`}
               </div>
             `
           : nothing}
@@ -151,34 +159,20 @@ export class GcChatDashboard extends LitElement {
   static override styles = css`
     :host {
       display: block;
-      font-family: ui-monospace, "JetBrains Mono", Menlo, monospace;
-      font-size: 0.82rem;
-      color: var(--text);
     }
     .empty-chat {
-      max-width: var(--content-max-width);
+      max-width: var(--content-max-width, 52rem);
       margin: 4rem auto 0;
       text-align: center;
     }
     .empty-title {
-      font-size: 1.1rem;
-      font-weight: 500;
-      margin-bottom: var(--space-2);
-      color: var(--text);
+      margin-bottom: var(--space-2, 0.5rem);
     }
     .empty-sub {
-      margin: 0 0 var(--space-7);
-      color: var(--text-secondary);
-      font-size: 0.82rem;
-      line-height: 1.6;
+      margin: 0 0 var(--space-7, 2rem);
     }
     .empty-sub code {
-      font-family: inherit;
       padding: 0.08em 0.4em;
-      background: var(--surface-2);
-      border: 1px solid var(--surface-4);
-      border-radius: 3px;
-      font-size: 0.9em;
     }
     .empty-examples {
       display: grid;
@@ -187,65 +181,34 @@ export class GcChatDashboard extends LitElement {
       text-align: left;
     }
     .example {
-      padding: var(--space-3) 0.95rem;
-      background: var(--surface-1-alt);
-      border: 1px solid var(--surface-4);
-      border-radius: 5px;
-      color: var(--text);
-      font-family: inherit;
-      font-size: inherit;
+      padding: var(--space-3, 0.75rem) 0.95rem;
       cursor: pointer;
       display: flex;
       flex-direction: column;
-      gap: var(--space-1);
+      gap: var(--space-1, 0.25rem);
       text-align: left;
-      transition:
-        background 0.12s ease,
-        border-color 0.12s ease;
-    }
-    .example:hover {
-      background: var(--surface-2);
-      border-color: var(--border-strong);
-    }
-    .example-head {
-      color: var(--accent-assistant);
-      font-size: 0.65rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
     }
     .example-body {
-      font-size: 0.78rem;
-      line-height: 1.4;
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
     .recent-activity {
-      margin-top: var(--space-4);
+      margin-top: var(--space-4, 1rem);
       text-align: left;
     }
     .recent-title {
-      margin-bottom: var(--space-2);
-      color: var(--text-secondary);
-      font-size: 0.65rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
+      margin-bottom: var(--space-2, 0.5rem);
     }
     .activity-text {
       margin: 0;
-      color: var(--text-secondary);
-      font-size: var(--text-xs);
-      line-height: 1.6;
-    }
-    .activity-text.loading {
-      font-style: italic;
     }
     /* Markdown-rendered content: lists get bullets, paragraphs get
        spacing. Keep typography muted so the list doesn't compete with
        the suggestion cards above. */
     .activity-text :is(ul, ol) {
-      margin: var(--space-1) 0;
+      margin: var(--space-1, 0.25rem) 0;
       padding-left: 1.3em;
     }
     .activity-text li {
@@ -255,16 +218,7 @@ export class GcChatDashboard extends LitElement {
       margin: 0.3em 0;
     }
     .activity-text code {
-      font-family: var(--font-mono, ui-monospace, monospace);
-      background: var(--surface-3);
       padding: 0 0.25em;
-      border-radius: 3px;
-      font-size: 0.9em;
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .example {
-        transition: none;
-      }
     }
   `;
 }

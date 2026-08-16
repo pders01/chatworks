@@ -46,8 +46,8 @@ import type { GcComposer } from "./chat-view/composer.js";
 import type { GcMessageList } from "./chat-view/message-list.js";
 import type { GcSessionSidebar } from "./chat-view/session-sidebar.js";
 
-// The markdown renderer pulls in `marked` + Shiki (via highlight.ts),
-// which together weigh ~270 kB gzipped. Loading them eagerly would
+// The markdown renderer pulls in `marked` and the host-configurable code
+// pipeline. Loading it eagerly would
 // balloon the cold-start bundle for users who haven't sent a chat turn
 // yet, so we lazy-import the module the first time it's needed. The
 // same module instance is cached across calls via this memoized promise.
@@ -96,8 +96,8 @@ export class GcChatView extends LitElement {
   /** Name of the LlmConfigHost.getConfig() entry that holds the per-
    * session USD spend cap. Empty string (default) disables the
    * lookup and uses the compiled `sessionMaxCostUsd` value instead.
-   * git-chat sets this to "GITCHAT_SESSION_MAX_COST_USD" at the
-   * call site to keep its existing config key. */
+   * Existing consumers can pass their historical config key at the
+   * call site without coupling that key to this component. */
   @property({ type: String }) sessionMaxCostKey = "";
 
   // Composer placeholder. Empty string keeps the composer's canonical
@@ -797,9 +797,10 @@ export class GcChatView extends LitElement {
         : cost < 0.001
           ? "<$0.001"
           : `~$${cost.toFixed(3)}`;
-    return html`<span class="model-indicator-sep">·</span>
+    return html`<span class="model-indicator-sep" part="model-indicator-sep">·</span>
       <span
         class="model-indicator-estimate"
+        part="model-indicator-estimate"
         title="Rough estimate: input tokens are chars/4; output assumed equal. Real cost comes back with the turn."
       >
         ≈${tokens.toLocaleString()}t · ${costStr}
@@ -821,14 +822,17 @@ export class GcChatView extends LitElement {
     return html`
       <div
         class="presend-confirm ${p.overCap ? "over-cap" : ""}"
+        part="presend-confirm ${p.overCap ? "over-cap" : ""}"
         role="alertdialog"
         aria-labelledby="presend-title"
       >
-        <div class="presend-head">
-          <span class="presend-icon" aria-hidden="true">${p.overCap ? "🛑" : "⚠"}</span>
+        <div class="presend-head" part="presend-head">
+          <span class="presend-icon" part="presend-icon" aria-hidden="true"
+            >${p.overCap ? "🛑" : "⚠"}</span
+          >
           <strong id="presend-title">${title}</strong>
         </div>
-        <dl class="presend-meta">
+        <dl class="presend-meta" part="presend-meta">
           <dt>destination</dt>
           <dd>${routeLine}</dd>
           <dt>model</dt>
@@ -843,10 +847,15 @@ export class GcChatView extends LitElement {
                   $${this.sessionCostUsd.toFixed(3)} of $${this.sessionMaxCostUsd.toFixed(2)} cap
                 </dd>
                 <dt>projected total</dt>
-                <dd class=${p.overCap ? "over-cap-value" : ""}>$${projectedTotal.toFixed(3)}</dd>`
+                <dd
+                  class=${p.overCap ? "over-cap-value" : ""}
+                  part=${p.overCap ? "over-cap-value" : nothing}
+                >
+                  $${projectedTotal.toFixed(3)}
+                </dd>`
             : nothing}
         </dl>
-        <p class="presend-note">
+        <p class="presend-note" part="presend-note">
           ${p.overCap
             ? html`This turn would push session spend past the configured
                 <code>$${this.sessionMaxCostUsd.toFixed(2)}</code> session cap. Confirming proceeds
@@ -857,13 +866,19 @@ export class GcChatView extends LitElement {
                 session — subsequent turns on the same route don't re-prompt until the model, base
                 URL, or profile changes.`}
         </p>
-        <div class="presend-actions">
-          <button type="button" class="presend-btn cancel" @click=${() => this.cancelPendingSend()}>
+        <div class="presend-actions" part="presend-actions">
+          <button
+            type="button"
+            class="presend-btn cancel"
+            part="presend-btn cancel"
+            @click=${() => this.cancelPendingSend()}
+          >
             cancel
           </button>
           <button
             type="button"
             class="presend-btn confirm"
+            part="presend-btn confirm"
             @click=${() => this.confirmPendingSend()}
           >
             send
@@ -1103,9 +1118,11 @@ export class GcChatView extends LitElement {
       return html`<cw-loading-banner heading="loading chat…"></cw-loading-banner>`;
     }
     if (this.state.phase === "error") {
-      return html`<div class="boot">
-        <span class="err">${this.state.message}</span>
-        <button class="retry-btn" @click=${() => void this.loadSessions()}>retry</button>
+      return html`<div class="boot" part="boot">
+        <span class="err" part="err">${this.state.message}</span>
+        <button class="retry-btn" part="retry-btn" @click=${() => void this.loadSessions()}>
+          retry
+        </button>
       </div>`;
     }
     const s = this.state;
@@ -1117,6 +1134,9 @@ export class GcChatView extends LitElement {
           zen: this.focusMode === "zen",
           "drawer-open": this.drawerOpen,
         })}
+        part="layout ${this.focusMode !== "off" ? "focused" : ""} ${this.focusMode === "zen"
+          ? "zen"
+          : ""} ${this.drawerOpen ? "drawer-open" : ""}"
         role="main"
         @keydown=${(e: KeyboardEvent) => {
           if (e.key === "Escape" && this.drawerOpen) {
@@ -1126,6 +1146,7 @@ export class GcChatView extends LitElement {
       >
         <button
           class="drawer-toggle"
+          part="drawer-toggle"
           @click=${() => this.toggleDrawer()}
           aria-label="Toggle sidebar"
           aria-expanded=${this.drawerOpen ? "true" : "false"}
@@ -1133,10 +1154,16 @@ export class GcChatView extends LitElement {
           ☰
         </button>
         ${this.drawerOpen
-          ? html`<div class="drawer-backdrop" @click=${() => (this.drawerOpen = false)}></div>`
+          ? html`<div
+              class="drawer-backdrop"
+              part="drawer-backdrop"
+              @click=${() => (this.drawerOpen = false)}
+            ></div>`
           : nothing}
-        <aside class="sidebar" aria-label="Chat sessions" tabindex="-1">
+        <aside class="sidebar" part="sidebar" aria-label="Chat sessions" tabindex="-1">
           <cw-session-sidebar
+            part="session-sidebar"
+            exportparts="new, plus, session-filter, sidebar-label, sessions, sidebar-empty, sess-row, sess, selected, rename-input, sess-title, sess-meta, sess-pin, pinned, sess-delete, confirming"
             .sessions=${s.sessions}
             .selected=${s.selected ?? ""}
             .repoId=${this.repoId}
@@ -1148,10 +1175,10 @@ export class GcChatView extends LitElement {
           ></cw-session-sidebar>
         </aside>
 
-        <section class="pane">
-          <div class="pane-hd">
+        <section class="pane" part="pane">
+          <div class="pane-hd" part="pane-hd">
             ${this.sessionTokensIn || this.sessionTokensOut
-              ? html`<span class="session-tokens"
+              ? html`<span class="session-tokens" part="session-tokens"
                   >${fmtNum(this.sessionTokensIn)} in · ${fmtNum(this.sessionTokensOut)} out ·
                   ${estimateCost("", this.sessionTokensIn, this.sessionTokensOut)}</span
                 >`
@@ -1159,6 +1186,7 @@ export class GcChatView extends LitElement {
             ${s.selected
               ? html`<button
                   class="export-btn"
+                  part="export-btn"
                   @click=${() => this.exportSession()}
                   title="Export as markdown"
                   aria-label="Export session"
@@ -1168,19 +1196,24 @@ export class GcChatView extends LitElement {
               : nothing}
             <button
               class="focus-btn"
+              part="focus-btn"
               @click=${this.toggleFocus}
               aria-label=${focusNextLabel(this.focusMode)}
               aria-pressed=${this.focusMode !== "off" ? "true" : "false"}
               title=${focusNextLabel(this.focusMode)}
             >
               ${focusGlyph(this.focusMode)}
-              <span class="focus-label">${focusButtonLabel(this.focusMode)}</span>
+              <span class="focus-label" part="focus-label"
+                >${focusButtonLabel(this.focusMode)}</span
+              >
             </button>
           </div>
 
           ${this.turns.length === 0
-            ? html`<div class="dashboard-wrap">
+            ? html`<div class="dashboard-wrap" part="dashboard-wrap">
                 <cw-chat-dashboard
+                  part="dashboard"
+                  exportparts="empty-chat, empty-title, empty-sub, empty-examples, example, example-head, example-body, recent-activity, recent-title, activity-text, loading"
                   .repoId=${this.repoId}
                   @gc:prefill-example=${this.onPrefillExample}
                 >
@@ -1188,6 +1221,8 @@ export class GcChatView extends LitElement {
                 </cw-chat-dashboard>
               </div>`
             : html`<cw-message-list
+                part="message-list"
+                exportparts="messages, messages-inner, turn, user, assistant, system, turn-label, turn-model, turn-actions, turn-action, primary, body, md, cursor, turn-attachments, turn-warnings, turn-warning, token-info, thinking-block, is-streaming, thinking-head, thinking-label, thinking-caret, thinking-body, tool-events, tool-event, running, done, error, tool-event-head, tool-dot, tool-dot--running, tool-dot--done, tool-dot--error, tool-name, tool-summary, tool-caret, tool-body, tool-body-label, tool-body-pre, is-error, attachment-chip, is-image, is-file, attachment-thumb, attachment-glyph, attachment-meta, attachment-name, attachment-size, edit-input, edit-actions"
                 .turns=${this.turns}
                 .sending=${this.sending}
                 ?unfocused=${this.focusMode === "focus"}
@@ -1198,17 +1233,28 @@ export class GcChatView extends LitElement {
               ></cw-message-list>`}
           ${this.pendingSend ? this.renderPendingConfirmation() : nothing}
           ${this.activeModel
-            ? html`<div class="model-indicator" role="status" aria-live="polite">
-                <span class="model-indicator-label">model</span>
-                <span class="model-indicator-value">${this.activeModel}</span>
+            ? html`<div
+                class="model-indicator"
+                part="model-indicator"
+                role="status"
+                aria-live="polite"
+              >
+                <span class="model-indicator-label" part="model-indicator-label">model</span>
+                <span class="model-indicator-value" part="model-indicator-value"
+                  >${this.activeModel}</span
+                >
                 ${this.activeProfileName
-                  ? html`<span class="model-indicator-sep">·</span>
-                      <span class="model-indicator-profile">${this.activeProfileName}</span>`
+                  ? html`<span class="model-indicator-sep" part="model-indicator-sep">·</span>
+                      <span class="model-indicator-profile" part="model-indicator-profile"
+                        >${this.activeProfileName}</span
+                      >`
                   : nothing}
                 ${this.renderCostEstimate()}
               </div>`
             : nothing}
           <cw-composer
+            part="composer"
+            exportparts="composer, drag-active, mention-open, composer-inner, input, attachment-strip, attachment-chip, is-image, is-file, attachment-thumb, attachment-glyph, attachment-meta, attachment-name, attachment-size, attachment-remove, mention-picker, with-preview, mention-list, mention-item, active, mention-preview, preview-code, preview-state, preview-error, slash-list, arg-list, slash-item, arg-item, slash-label, slash-hint, slash-example, slash-category, arg-label, composer-row, composer-hint, err, dim, attach-input, attach-btn, send, stop, command-help, command-help-shell, command-help-header, command-help-kicker, command-help-close, command-help-toolbar, command-help-search, command-help-body, command-help-group, command-help-grid, command-help-item, command-help-copy, command-help-empty, command-help-footer, command-help-key"
             .repoId=${this.repoId}
             .sending=${this.sending}
             .errorMsg=${this.error}
@@ -1222,7 +1268,9 @@ export class GcChatView extends LitElement {
             @gc:input-changed=${this.onComposerInputChanged}
           ></cw-composer>
         </section>
-        <div class="sr-only" role="status" aria-live="assertive">${this.announcement}</div>
+        <div class="sr-only" part="sr-only" role="status" aria-live="assertive">
+          ${this.announcement}
+        </div>
       </div>
     `;
   }
@@ -1236,41 +1284,22 @@ export class GcChatView extends LitElement {
       flex: 1;
       min-height: 0;
       min-width: 0;
-      font-family: ui-monospace, "JetBrains Mono", Menlo, monospace;
-      font-size: 0.82rem;
-      color: var(--text);
-      background: var(--surface-1);
     }
     .boot {
-      padding: var(--space-7);
-      opacity: 0.5;
-      font-size: 0.85rem;
+      padding: var(--space-7, 2rem);
     }
     .layout {
       display: grid;
-      grid-template-columns: var(--sidebar-width) 1fr;
+      grid-template-columns: var(--sidebar-width, 16rem) 1fr;
       flex: 1;
       min-height: 0;
       min-width: 0;
-      transition: grid-template-columns 0.2s ease;
     }
     .layout.focused {
       grid-template-columns: 0 1fr;
     }
     .layout.focused .sidebar {
       overflow: hidden;
-      border-right-width: 0;
-    }
-    /* Zen: fade the pane header so session tokens / export button
-       step back; focus button stays reachable. Hover anywhere in the
-       header zone brings it back to full opacity. */
-    .layout.zen .pane-hd {
-      opacity: 0.15;
-      transition: opacity 0.2s ease;
-    }
-    .layout.zen .pane-hd:hover,
-    .layout.zen .pane-hd:focus-within {
-      opacity: 1;
     }
     /* Tighter content max-width so reading is easier in zen. */
     .layout.zen {
@@ -1281,8 +1310,6 @@ export class GcChatView extends LitElement {
       flex-direction: column;
       min-height: 0;
       overflow: hidden;
-      border-right: 1px solid var(--surface-4);
-      background: var(--surface-0);
     }
     .sidebar cw-session-sidebar {
       display: flex;
@@ -1295,144 +1322,68 @@ export class GcChatView extends LitElement {
       flex-direction: column;
       min-height: 0;
       min-width: 0;
-      background: var(--surface-1);
       position: relative;
     }
     .pane-hd {
       display: flex;
       align-items: center;
       justify-content: flex-end;
-      padding: 0.4rem var(--space-3) 0;
+      padding: 0.4rem var(--space-3, 0.75rem) 0;
       flex-shrink: 0;
     }
     .export-btn {
-      padding: var(--space-1) var(--space-3);
-      background: transparent;
-      color: var(--text-secondary);
-      border: 1px solid transparent;
-      border-radius: var(--radius-sm);
-      font-family: inherit;
-      font-size: var(--text-xs);
+      padding: var(--space-1, 0.25rem) var(--space-3, 0.75rem);
       cursor: pointer;
-    }
-    .export-btn:hover {
-      color: var(--text);
-      border-color: var(--border-default);
     }
     .focus-btn {
       display: flex;
       align-items: center;
       gap: 0.35rem;
-      padding: var(--space-1) 0.55rem;
-      background: transparent;
-      color: var(--text-secondary);
-      border: 1px solid transparent;
-      border-radius: 3px;
-      font-family: inherit;
-      font-size: var(--text-xs);
+      padding: var(--space-1, 0.25rem) 0.55rem;
       cursor: pointer;
-      transition:
-        color 0.12s ease,
-        background 0.12s ease,
-        border-color 0.12s ease;
-    }
-    .focus-btn:hover {
-      color: var(--text);
-      background: var(--surface-2);
-      border-color: var(--border-default);
-    }
-    .focus-label {
-      letter-spacing: 0.05em;
     }
     .session-tokens {
       margin-right: auto;
-      color: var(--text-secondary);
-      font-size: var(--text-xs);
-      letter-spacing: 0.01em;
     }
     /* Pre-send confirmation card. Rendered above the composer when the
        user submits a turn that would call a remote paid provider they
        haven't confirmed yet this session. Deliberately prominent —
        we're asking for explicit consent before money leaves the wallet. */
     .presend-confirm {
-      max-width: var(--content-max-width);
-      margin: 0 auto var(--space-2);
-      padding: var(--space-3) var(--space-4);
-      background: var(--surface-2);
-      border: 1px solid var(--border-accent);
-      border-left: 3px solid var(--danger, #e88);
-      border-radius: 6px;
-      font-size: var(--text-sm);
-    }
-    .presend-confirm.over-cap {
-      border-left-width: 4px;
-      background: color-mix(in srgb, var(--danger, #e88) 6%, var(--surface-2));
-    }
-    .over-cap-value {
-      color: var(--danger, #e88);
-      font-weight: 600;
+      max-width: var(--content-max-width, 52rem);
+      margin: 0 auto var(--space-2, 0.5rem);
+      padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
     }
     .presend-head {
       display: flex;
       align-items: center;
-      gap: var(--space-2);
-      margin-bottom: var(--space-2);
-    }
-    .presend-icon {
-      font-size: 1rem;
+      gap: var(--space-2, 0.5rem);
+      margin-bottom: var(--space-2, 0.5rem);
     }
     .presend-meta {
       display: grid;
       grid-template-columns: max-content 1fr;
-      column-gap: var(--space-3);
-      row-gap: var(--space-1);
-      margin: var(--space-2) 0;
-      font-size: var(--text-xs);
-    }
-    .presend-meta dt {
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      opacity: 0.55;
-      font-size: 0.65rem;
+      column-gap: var(--space-3, 0.75rem);
+      row-gap: var(--space-1, 0.25rem);
+      margin: var(--space-2, 0.5rem) 0;
     }
     .presend-meta dd {
       margin: 0;
-      font-family: var(--font-mono, ui-monospace, monospace);
     }
     .presend-note {
-      font-size: var(--text-xs);
-      opacity: 0.75;
-      margin: var(--space-2) 0;
-      line-height: 1.5;
+      margin: var(--space-2, 0.5rem) 0;
     }
     .presend-note code {
-      font-family: var(--font-mono, ui-monospace, monospace);
-      background: var(--surface-3);
       padding: 0 0.25em;
-      border-radius: 3px;
     }
     .presend-actions {
       display: flex;
       justify-content: flex-end;
-      gap: var(--space-2);
+      gap: var(--space-2, 0.5rem);
     }
     .presend-btn {
-      padding: var(--space-1) var(--space-4);
-      border: 1px solid var(--border-default);
-      border-radius: var(--radius-sm);
-      background: var(--surface-2);
-      color: var(--text);
-      font-family: inherit;
-      font-size: var(--text-xs);
+      padding: var(--space-1, 0.25rem) var(--space-4, 1rem);
       cursor: pointer;
-    }
-    .presend-btn.confirm {
-      background: var(--accent-assistant);
-      color: #fff;
-      border-color: var(--accent-assistant);
-    }
-    .presend-btn:hover {
-      border-color: var(--border-strong);
     }
 
     /* Persistent active-model indicator, pinned directly above the
@@ -1442,40 +1393,19 @@ export class GcChatView extends LitElement {
     .model-indicator {
       display: flex;
       align-items: center;
-      gap: var(--space-1);
-      max-width: var(--content-max-width);
-      margin: 0 auto var(--space-1);
-      padding: 0 var(--space-7);
-      color: var(--text-secondary);
-      font-size: var(--text-xs);
+      gap: var(--space-1, 0.25rem);
+      max-width: var(--content-max-width, 52rem);
+      margin: 0 auto var(--space-1, 0.25rem);
+      padding: 0 var(--space-7, 2rem);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-    }
-    .model-indicator-label {
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      font-size: 0.6rem;
-    }
-    .model-indicator-value {
-      font-family: var(--font-mono, ui-monospace, monospace);
-      color: var(--accent-assistant);
-    }
-    .model-indicator-sep {
-      opacity: 0.4;
-    }
-    .model-indicator-profile {
-      font-style: italic;
-    }
-    .model-indicator-estimate {
-      font-family: var(--font-mono, ui-monospace, monospace);
-      opacity: 0.85;
     }
     .dashboard-wrap {
       flex: 1;
       min-height: 0;
       overflow-y: auto;
-      padding: var(--space-6) var(--space-7) var(--space-4);
+      padding: var(--space-6, 1.5rem) var(--space-7, 2rem) var(--space-4, 1rem);
     }
     cw-message-list {
       flex: 1;
@@ -1483,21 +1413,9 @@ export class GcChatView extends LitElement {
       display: flex;
     }
     .retry-btn {
-      margin-top: var(--space-3);
-      padding: var(--space-2) var(--space-4);
-      background: var(--surface-2);
-      color: var(--text);
-      border: 1px solid var(--border-default);
-      border-radius: var(--radius-md);
-      font-family: inherit;
-      font-size: var(--text-sm);
+      margin-top: var(--space-3, 0.75rem);
+      padding: var(--space-2, 0.5rem) var(--space-4, 1rem);
       cursor: pointer;
-    }
-    .retry-btn:hover {
-      background: var(--surface-3);
-    }
-    .err {
-      color: var(--danger);
     }
     /* Screen-reader only */
     .sr-only {
@@ -1509,25 +1427,15 @@ export class GcChatView extends LitElement {
       overflow: hidden;
       clip: rect(0, 0, 0, 0);
       white-space: nowrap;
-      border: 0;
     }
     /* Focus */
     :focus-visible {
-      outline: 2px solid var(--accent-assistant);
+      outline: 2px solid currentColor;
       outline-offset: 2px;
     }
     button:focus-visible {
-      outline: 2px solid var(--accent-assistant);
+      outline: 2px solid currentColor;
       outline-offset: -1px;
-      border-radius: var(--radius-md);
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .layout {
-        transition: none;
-      }
-      .focus-btn {
-        transition: none;
-      }
     }
     /* Mobile drawer */
     .drawer-toggle {
@@ -1544,18 +1452,12 @@ export class GcChatView extends LitElement {
       .drawer-toggle {
         display: block;
         position: fixed;
-        bottom: var(--space-5);
-        left: var(--space-4);
+        bottom: var(--space-5, 1.25rem);
+        left: var(--space-4, 1rem);
         z-index: 30;
         width: 44px;
         height: 44px;
-        border-radius: 50%;
-        background: var(--surface-2);
-        color: var(--text);
-        border: 1px solid var(--border-default);
-        font-size: 1.1rem;
         cursor: pointer;
-        box-shadow: var(--shadow-dropdown);
       }
       .sidebar {
         position: fixed;
@@ -1565,8 +1467,6 @@ export class GcChatView extends LitElement {
         width: 280px;
         z-index: 40;
         transform: translateX(-100%);
-        transition: transform 0.2s ease;
-        border-right: 1px solid var(--surface-4);
       }
       .drawer-open .sidebar {
         transform: translateX(0);
@@ -1575,7 +1475,6 @@ export class GcChatView extends LitElement {
         display: none;
         position: fixed;
         inset: 0;
-        background: rgba(0, 0, 0, 0.5);
         z-index: 35;
       }
       .drawer-open .drawer-backdrop {

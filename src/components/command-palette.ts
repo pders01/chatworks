@@ -130,15 +130,17 @@ export class CwCommandPalette extends LitElement {
     const listId = "cw-command-palette-list";
     const active = commands[this.activeIndex];
     return html`
-      <div class="backdrop" @click=${this.close}></div>
+      <div class="backdrop" part="backdrop" @click=${this.close}></div>
       <section
         class="palette"
+        part="palette"
         role="dialog"
         aria-modal="true"
         aria-label="Command palette"
         @keydown=${this.keydown}
       >
         <input
+          part="input"
           type="search"
           autocomplete="off"
           spellcheck="false"
@@ -151,7 +153,7 @@ export class CwCommandPalette extends LitElement {
           aria-activedescendant=${active ? `cw-command-${this.activeIndex}` : nothing}
           @input=${this.input}
         />
-        <div id=${listId} class="commands" role="listbox">
+        <div id=${listId} class="commands" part="commands" role="listbox">
           ${commands.length
             ? commands.map(
                 (command, index) => html`
@@ -161,23 +163,24 @@ export class CwCommandPalette extends LitElement {
                     role="option"
                     aria-selected=${index === this.activeIndex ? "true" : "false"}
                     class=${index === this.activeIndex ? "active" : ""}
+                    part="command ${index === this.activeIndex ? "active" : ""}"
                     ?disabled=${Boolean(this.running)}
                     @pointerenter=${() => (this.activeIndex = index)}
                     @click=${() => void this.execute(command)}
                   >
-                    <span class="copy">
+                    <span class="copy" part="copy">
                       <strong>${command.title}</strong>
                       ${command.description ? html`<small>${command.description}</small>` : nothing}
                     </span>
                     ${command.category
-                      ? html`<span class="category">${command.category}</span>`
+                      ? html`<span class="category" part="category">${command.category}</span>`
                       : nothing}
                   </button>
                 `,
               )
-            : html`<p class="empty">No matching commands</p>`}
+            : html`<p class="empty" part="empty">No matching commands</p>`}
         </div>
-        ${this.error ? html`<p class="error" role="alert">${this.error}</p>` : nothing}
+        ${this.error ? html`<p class="error" part="error" role="alert">${this.error}</p>` : nothing}
       </section>
     `;
   }
@@ -188,8 +191,6 @@ export class CwCommandPalette extends LitElement {
       inset: 0;
       z-index: 1000;
       display: block;
-      color: var(--text, CanvasText);
-      font-family: var(--font-sans, system-ui, sans-serif);
     }
     :host(:not([open])) {
       display: none;
@@ -197,7 +198,6 @@ export class CwCommandPalette extends LitElement {
     .backdrop {
       position: absolute;
       inset: 0;
-      background: rgb(0 0 0 / 0.38);
     }
     .palette {
       position: relative;
@@ -205,23 +205,12 @@ export class CwCommandPalette extends LitElement {
       max-height: min(70vh, 520px);
       margin: max(8vh, 2rem) auto 0;
       overflow: hidden;
-      border: 1px solid var(--border-default, #7776);
-      border-radius: var(--radius-md, 8px);
-      background: var(--surface-1, Canvas);
-      box-shadow: 0 20px 60px rgb(0 0 0 / 0.28);
     }
     input {
       box-sizing: border-box;
       width: 100%;
       height: 3rem;
       padding: 0 1rem;
-      border: 0;
-      border-bottom: 1px solid var(--border-default, #7776);
-      outline: 0;
-      color: inherit;
-      background: transparent;
-      font: inherit;
-      font-size: 0.95rem;
     }
     .commands {
       max-height: min(55vh, 420px);
@@ -236,16 +225,8 @@ export class CwCommandPalette extends LitElement {
       box-sizing: border-box;
       width: 100%;
       padding: 0.65rem 0.75rem;
-      border: 0;
-      border-radius: var(--radius-sm, 5px);
-      color: inherit;
-      background: transparent;
       text-align: left;
-      font: inherit;
       cursor: pointer;
-    }
-    button.active {
-      background: var(--surface-3, color-mix(in srgb, currentColor 10%, transparent));
     }
     .copy {
       display: grid;
@@ -254,16 +235,8 @@ export class CwCommandPalette extends LitElement {
     }
     strong {
       overflow: hidden;
-      font-size: 0.82rem;
-      font-weight: 550;
       text-overflow: ellipsis;
       white-space: nowrap;
-    }
-    small,
-    .category,
-    .empty {
-      color: var(--text-muted, color-mix(in srgb, currentColor 58%, transparent));
-      font-size: 0.72rem;
     }
     .category {
       flex: none;
@@ -272,11 +245,6 @@ export class CwCommandPalette extends LitElement {
     .error {
       margin: 0;
       padding: 1rem;
-    }
-    .error {
-      border-top: 1px solid var(--danger-border, #b4231855);
-      color: var(--danger, #b42318);
-      font-size: 0.75rem;
     }
   `;
 }

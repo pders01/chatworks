@@ -211,6 +211,8 @@ describe("highlightWordDiffs", () => {
     // Both sides get a <mark>; each mark should contain one of
     // "bar" or "baz" but not the unchanged "foo".
     expect(out).toContain("<mark");
+    expect(out).toContain('part="word-del"');
+    expect(out).toContain('part="word-add"');
     expect(out).toContain("bar");
     expect(out).toContain("baz");
     // "foo" appears twice (once per side) but should not be inside a mark.
@@ -323,6 +325,8 @@ describe("addLineNumbers", () => {
     const out = addLineNumbers(shikiDiff(["@@ -3 +3 @@", " ctx"]));
     const nums = parseLineNums(out);
     expect(nums[1]).toEqual({ old: "3", new: "3" });
+    expect(out).toContain('part="line-number old-line-number"');
+    expect(out).toContain('part="line-number new-line-number"');
   });
 
   test("file header lines (--- a/foo, +++ b/foo) get no digits", () => {

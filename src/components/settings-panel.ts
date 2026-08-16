@@ -36,7 +36,7 @@ export class GcSettingsPanel extends LitElement {
 
   @state() private configEntries: ConfigEntry[] = [];
   @state() private configLoading = false;
-  @state() private settingsSection = "appearance";
+  @state() private settingsSection = "layout";
   private configDebounceTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
 
   @state() private profiles: LLMProfile[] = [];
@@ -65,11 +65,16 @@ export class GcSettingsPanel extends LitElement {
   }
 
   override updated(changed: Map<string, unknown>) {
-    if (changed.has("open") && this.open) {
+    if (changed.has("open") && this.open) this.scheduleOpenLoad();
+  }
+
+  private scheduleOpenLoad() {
+    queueMicrotask(() => {
+      if (!this.isConnected || !this.open) return;
       void this.loadConfig().then(() => this.discoverModelsForCurrentBaseUrl());
       void this.loadProfiles();
       void this.loadCatalog();
-    }
+    });
   }
 
   // Let the parent's handleOverlay focus the panel without knowing about
@@ -363,9 +368,10 @@ export class GcSettingsPanel extends LitElement {
     if (inCatalog) return nothing; // catalog already seeds the combobox
     const discovering = this.discoveringModelsForUrl === baseUrl;
     const discovered = this.discoveredModelsByUrl.get(baseUrl);
-    return html`<div class="config-entry-action">
+    return html`<div class="config-entry-action" part="config-entry-action">
       <button
         class="config-action-btn"
+        part="config-action-btn"
         ?disabled=${discovering}
         @click=${() => void this.discoverModelsForCurrentBaseUrl({ force: true })}
         title="Query ${hostOf(baseUrl) || baseUrl} for its model list"
@@ -376,7 +382,7 @@ export class GcSettingsPanel extends LitElement {
             ? `\u21BB ${discovered.length} models`
             : "discover models"}
       </button>
-      <span class="config-action-hint">
+      <span class="config-action-hint" part="config-action-hint">
         Remote probe — click to query the endpoint with your API key.
       </span>
     </div>`;
@@ -523,7 +529,7 @@ export class GcSettingsPanel extends LitElement {
   }
 
   private static readonly SETTINGS_SECTIONS = [
-    { id: "appearance", label: "Appearance" },
+    { id: "layout", label: "Layout" },
     { id: "llm", label: "LLM" },
     { id: "chat", label: "Chat" },
     { id: "session", label: "Session" },
@@ -543,25 +549,27 @@ export class GcSettingsPanel extends LitElement {
       return html`<cw-spinner></cw-spinner><span>loading…</span>`;
     }
     if (entries.length === 0) {
-      return html`<p class="config-empty">no entries</p>`;
+      return html`<p class="config-empty" part="config-empty">no entries</p>`;
     }
     return html`
-      <div class="config-group-body">
+      <div class="config-group-body" part="config-group-body">
         ${entries.map((entry) => {
           const isSecret = this.isSecretEntry(entry);
           const modified = entry.value !== entry.defaultValue;
           const suggestions = this.configSuggestionsFor(entry.key);
           return html`
-            <div class="config-entry">
-              <div class="config-entry-header">
+            <div class="config-entry" part="config-entry">
+              <div class="config-entry-header" part="config-entry-header">
                 <label
                   class="config-key ${modified ? "config-modified" : ""}"
+                  part="config-key ${modified ? "config-modified" : ""}"
                   for="cfg-${entry.key}"
                   >${this.humanizeKey(entry.key)}</label
                 >
                 ${modified
                   ? html`<button
                       class="config-reset-btn"
+                      part="config-reset-btn"
                       @click=${() => this.resetConfigEntry(entry)}
                       title="Reset to default"
                       aria-label="Reset ${this.humanizeKey(entry.key)} to default"
@@ -574,6 +582,7 @@ export class GcSettingsPanel extends LitElement {
                 ? html`<input
                     id="cfg-${entry.key}"
                     class="config-input"
+                    part="config-input"
                     type="password"
                     autocomplete="off"
                     placeholder=${entry.value || "not set"}
@@ -585,6 +594,8 @@ export class GcSettingsPanel extends LitElement {
                   />`
                 : suggestions.length > 0 || this.comboboxEmptyHint(entry.key)
                   ? html`<cw-combobox
+                      part="combobox"
+                      exportparts="combobox-wrap, input, listbox, empty-hint, option, active, option-label, option-desc"
                       .options=${suggestions}
                       .value=${entry.value}
                       .label=${this.humanizeKey(entry.key)}
@@ -599,6 +610,7 @@ export class GcSettingsPanel extends LitElement {
                   : html`<input
                       id="cfg-${entry.key}"
                       class="config-input"
+                      part="config-input"
                       type="text"
                       autocomplete="off"
                       .value=${entry.value}
@@ -608,7 +620,7 @@ export class GcSettingsPanel extends LitElement {
                     />`}
               ${this.renderEntryAction(entry)}
               ${entry.description
-                ? html`<span id="cfg-desc-${entry.key}" class="config-desc"
+                ? html`<span id="cfg-desc-${entry.key}" class="config-desc" part="config-desc"
                     >${entry.description}</span
                   >`
                 : nothing}
@@ -619,34 +631,14 @@ export class GcSettingsPanel extends LitElement {
     `;
   }
 
-  private renderAppearance() {
+  private renderLayout() {
     const sidebarW = parseInt(settings.get("sidebar-width"));
     const contentW = parseInt(settings.get("content-max-width"));
     const fontSize = parseFloat(settings.get("font-size")) * 100;
-    const theme = settings.getTheme();
     return html`
-      <div class="setting-row">
-        <span class="setting-label">Theme</span>
-        <div class="theme-picker">
-          ${(["system", "light", "dark"] as const).map(
-            (t) => html`
-              <button
-                class="theme-btn ${theme === t ? "active" : ""}"
-                @click=${() => {
-                  settings.setTheme(t);
-                  this.requestUpdate();
-                }}
-              >
-                ${t}
-              </button>
-            `,
-          )}
-        </div>
-      </div>
-
-      <label class="setting-row">
-        <span class="setting-label">Sidebar width</span>
-        <div class="setting-control">
+      <label class="setting-row" part="setting-row">
+        <span class="setting-label" part="setting-label">Sidebar width</span>
+        <div class="setting-control" part="setting-control">
           <input
             type="range"
             min="180"
@@ -658,13 +650,13 @@ export class GcSettingsPanel extends LitElement {
               this.requestUpdate();
             }}
           />
-          <span class="setting-value">${sidebarW}px</span>
+          <span class="setting-value" part="setting-value">${sidebarW}px</span>
         </div>
       </label>
 
-      <label class="setting-row">
-        <span class="setting-label">Content max width</span>
-        <div class="setting-control">
+      <label class="setting-row" part="setting-row">
+        <span class="setting-label" part="setting-label">Content max width</span>
+        <div class="setting-control" part="setting-control">
           <input
             type="range"
             min="600"
@@ -677,13 +669,13 @@ export class GcSettingsPanel extends LitElement {
               this.requestUpdate();
             }}
           />
-          <span class="setting-value">${contentW}px</span>
+          <span class="setting-value" part="setting-value">${contentW}px</span>
         </div>
       </label>
 
-      <label class="setting-row">
-        <span class="setting-label">Font size</span>
-        <div class="setting-control">
+      <label class="setting-row" part="setting-row">
+        <span class="setting-label" part="setting-label">Font size</span>
+        <div class="setting-control" part="setting-control">
           <input
             type="range"
             min="60"
@@ -695,7 +687,7 @@ export class GcSettingsPanel extends LitElement {
               this.requestUpdate();
             }}
           />
-          <span class="setting-value">${Math.round(fontSize)}%</span>
+          <span class="setting-value" part="setting-value">${Math.round(fontSize)}%</span>
         </div>
       </label>
     `;
@@ -703,8 +695,8 @@ export class GcSettingsPanel extends LitElement {
 
   private renderSettingsSection() {
     switch (this.settingsSection) {
-      case "appearance":
-        return this.renderAppearance();
+      case "layout":
+        return this.renderLayout();
       case "llm":
         return this.renderLLMSection();
       default:
@@ -750,32 +742,38 @@ export class GcSettingsPanel extends LitElement {
   private renderLLMSection() {
     const status = this.effectiveLLMStatus();
     return html`
-      <div class="llm-status">
-        <div class="llm-status-row">
-          <span class="llm-status-label">Active model</span>
-          <span class="llm-status-value">${status.model}</span>
+      <div class="llm-status" part="llm-status">
+        <div class="llm-status-row" part="llm-status-row">
+          <span class="llm-status-label" part="llm-status-label">Active model</span>
+          <span class="llm-status-value" part="llm-status-value">${status.model}</span>
         </div>
-        <div class="llm-status-row">
-          <span class="llm-status-label">Backend</span>
-          <span class="llm-status-value">${status.backend}</span>
+        <div class="llm-status-row" part="llm-status-row">
+          <span class="llm-status-label" part="llm-status-label">Backend</span>
+          <span class="llm-status-value" part="llm-status-value">${status.backend}</span>
         </div>
-        <div class="llm-status-row">
-          <span class="llm-status-label">Source</span>
-          <span class="llm-status-value llm-status-source">${status.source}</span>
+        <div class="llm-status-row" part="llm-status-row">
+          <span class="llm-status-label" part="llm-status-label">Source</span>
+          <span class="llm-status-value llm-status-source" part="llm-status-value llm-status-source"
+            >${status.source}</span
+          >
         </div>
         ${status.modelDefault && status.modelDefault !== status.model
-          ? html`<div class="llm-status-row llm-status-subtle">
-              <span class="llm-status-label">Compiled default</span>
-              <span class="llm-status-value">${status.modelDefault}</span>
+          ? html`<div
+              class="llm-status-row llm-status-subtle"
+              part="llm-status-row llm-status-subtle"
+            >
+              <span class="llm-status-label" part="llm-status-label">Compiled default</span>
+              <span class="llm-status-value" part="llm-status-value">${status.modelDefault}</span>
             </div>`
           : nothing}
       </div>
-      <div class="profiles-section">
-        <div class="profiles-header">
-          <span class="profiles-label">Profiles</span>
-          <div class="profiles-header-actions">
+      <div class="profiles-section" part="profiles-section">
+        <div class="profiles-header" part="profiles-header">
+          <span class="profiles-label" part="profiles-label">Profiles</span>
+          <div class="profiles-header-actions" part="profiles-header-actions">
             <button
               class="action-btn"
+              part="action-btn"
               ?disabled=${this.catalogLoading}
               @click=${() => this.refreshCatalog()}
               title="Fetch latest provider/model catalog. Sources: catwalk.charm.sh (curated), openrouter.ai (aggregator), models.dev (long-tail providers). Models show their source after the context window size."
@@ -788,6 +786,7 @@ export class GcSettingsPanel extends LitElement {
             </button>
             <button
               class="action-btn"
+              part="action-btn"
               ?disabled=${this.localDiscovering}
               @click=${() => this.discoverLocal()}
               title="Detect LM Studio, Ollama, and other local endpoints"
@@ -800,6 +799,7 @@ export class GcSettingsPanel extends LitElement {
             </button>
             <button
               class="action-btn"
+              part="action-btn"
               @click=${() => {
                 this.editingProfile = null;
                 this.editingProfile = {};
@@ -809,36 +809,44 @@ export class GcSettingsPanel extends LitElement {
             </button>
           </div>
         </div>
-        <div class="profiles-list">
+        <div class="profiles-list" part="profiles-list">
           ${this.profiles.length === 0
-            ? html`<p class="config-empty">
+            ? html`<p class="config-empty" part="config-empty">
                 no profiles yet — click "+ new connection" to get started
               </p>`
             : this.profiles.map(
                 (p) => html`
-                  <div class="profile-item ${this.activeProfileId === p.id ? "active" : ""}">
+                  <div
+                    class="profile-item ${this.activeProfileId === p.id ? "active" : ""}"
+                    part="profile-item ${this.activeProfileId === p.id ? "active" : ""}"
+                  >
                     <button
                       class="profile-name"
+                      part="profile-name"
                       @click=${() => {
                         this.editingProfile = { ...p };
                       }}
                     >
                       ${p.name}
-                      <span class="profile-meta"
+                      <span class="profile-meta" part="profile-meta"
                         >${p.backend} · ${p.model || "uses LLM_MODEL / backend default"}</span
                       >
                     </button>
-                    <div class="profile-actions">
+                    <div class="profile-actions" part="profile-actions">
                       ${this.activeProfileId === p.id
-                        ? html`<span class="profile-active-badge">active</span>`
+                        ? html`<span class="profile-active-badge" part="profile-active-badge"
+                            >active</span
+                          >`
                         : html`<button
                             class="action-btn"
+                            part="action-btn"
                             @click=${() => this.activateProfile(p.id)}
                           >
                             activate
                           </button>`}
                       <button
                         class="action-btn danger"
+                        part="action-btn danger"
                         @click=${() => {
                           if (confirm(`Delete profile "${p.name}"?`)) this.deleteProfile(p.id);
                         }}
@@ -853,6 +861,7 @@ export class GcSettingsPanel extends LitElement {
         ${this.activeProfileId
           ? html`<button
               class="action-btn profile-deactivate"
+              part="action-btn profile-deactivate"
               @click=${() => this.activateProfile("")}
             >
               use manual settings
@@ -862,6 +871,8 @@ export class GcSettingsPanel extends LitElement {
 
       ${this.editingProfile
         ? html`<cw-connection-wizard
+            part="connection-wizard"
+            exportparts="wizard, wizard-header, wizard-title, mode-toggle, steps, step-dot, done, active, step-line, step-content, step-body, step-desc, field, field-hint, input, textarea, quick-connect, quick-label, quick-btn, connection-info, info-label, error, success, warn, advanced, btn, primary, secondary, auth-actions, wizard-footer, spacer, save-actions"
             .catalog=${this.catalog}
             .localEndpoints=${this.localEndpoints}
             .profile=${this.editingProfile.id ? this.editingProfile : null}
@@ -880,7 +891,7 @@ export class GcSettingsPanel extends LitElement {
           ></cw-connection-wizard>`
         : nothing}
 
-      <details class="advanced-config">
+      <details class="advanced-config" part="advanced-config">
         <summary>Advanced — raw config entries</summary>
         ${this.renderConfigGroup("llm")}
       </details>
@@ -896,9 +907,10 @@ export class GcSettingsPanel extends LitElement {
     if (!this.open) return nothing;
     const sections = (this.constructor as typeof GcSettingsPanel).SETTINGS_SECTIONS;
     return html`
-      <div class="modal-backdrop" @click=${() => this.requestClose()}>
+      <div class="modal-backdrop" part="modal-backdrop" @click=${() => this.requestClose()}>
         <div
           class="modal settings-modal"
+          part="modal settings-modal"
           role="dialog"
           aria-modal="true"
           aria-label="Settings"
@@ -906,29 +918,34 @@ export class GcSettingsPanel extends LitElement {
           @click=${(e: Event) => e.stopPropagation()}
           @keydown=${this.trapFocus}
         >
-          <nav class="settings-sidebar">
-            <h2 class="settings-title">Settings</h2>
+          <nav class="settings-sidebar" part="settings-sidebar">
+            <h2 class="settings-title" part="settings-title">Settings</h2>
             ${sections.map((s) => {
-              const mod = s.id !== "appearance" ? this.configGroupModifiedCount(s.id) : 0;
+              const mod = s.id !== "layout" ? this.configGroupModifiedCount(s.id) : 0;
               return html`
                 <button
                   class="settings-nav-item ${this.settingsSection === s.id ? "active" : ""}"
+                  part="settings-nav-item ${this.settingsSection === s.id ? "active" : ""}"
                   @click=${() => {
                     this.settingsSection = s.id;
                   }}
                 >
                   ${s.label}
-                  ${mod > 0 ? html`<span class="config-modified-badge">${mod}</span>` : nothing}
+                  ${mod > 0
+                    ? html`<span class="config-modified-badge" part="config-modified-badge"
+                        >${mod}</span
+                      >`
+                    : nothing}
                 </button>
               `;
             })}
-            <div class="settings-sidebar-footer">
+            <div class="settings-sidebar-footer" part="settings-sidebar-footer">
               <button
                 class="action-btn"
+                part="action-btn"
                 @click=${async () => {
                   if (!confirm("Reset all settings to defaults? This cannot be undone.")) return;
                   for (const k of settings.allKeys()) settings.reset(k);
-                  settings.setTheme("system");
                   for (const entry of this.configEntries) {
                     if (entry.value !== entry.defaultValue) {
                       await this.resetConfigEntry(entry);
@@ -941,12 +958,14 @@ export class GcSettingsPanel extends LitElement {
               </button>
             </div>
           </nav>
-          <div class="settings-content">
-            <h3 class="settings-section-title">
+          <div class="settings-content" part="settings-content">
+            <h3 class="settings-section-title" part="settings-section-title">
               ${this.settingsSectionLabel(this.settingsSection)}
             </h3>
             ${this.renderSettingsSection()}
-            <p class="modal-hint">changes apply immediately and persist across sessions</p>
+            <p class="modal-hint" part="modal-hint">
+              changes apply immediately and persist across sessions
+            </p>
           </div>
         </div>
       </div>
@@ -954,16 +973,17 @@ export class GcSettingsPanel extends LitElement {
   }
 
   static override styles = css`
-    :host {
-      font-family: ui-monospace, "JetBrains Mono", Menlo, monospace;
-      color: var(--text);
+    .settings-modal,
+    .settings-modal *,
+    .settings-modal *::before,
+    .settings-modal *::after {
+      box-sizing: border-box;
     }
 
     /* ── Modal chrome (duplicated from gc-app since shadow DOM walls off parent CSS) ── */
     .modal-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.4);
       z-index: 50;
     }
     .modal {
@@ -973,33 +993,25 @@ export class GcSettingsPanel extends LitElement {
       right: 0;
       margin-left: auto;
       margin-right: auto;
-      background: var(--surface-2);
-      border: 1px solid var(--border-default);
-      border-radius: var(--radius-xl);
-      padding: var(--space-6) var(--space-7);
+      padding: var(--space-6, 1.5rem) var(--space-7, 2rem);
       max-width: 720px;
       width: 90vw;
       max-height: calc(100vh - 120px);
       overflow-y: auto;
       z-index: 51;
-      box-shadow: var(--shadow-modal);
-      animation: panel-in 0.12s ease;
     }
     @keyframes panel-in {
       from {
-        opacity: 0;
         transform: translateY(-8px);
       }
     }
     .modal-hint {
-      margin: var(--space-4) 0 0;
-      color: var(--text-secondary);
-      font-size: var(--text-xs);
+      margin: var(--space-4, 1rem) 0 0;
       text-align: center;
     }
 
     :focus-visible {
-      outline: 2px solid var(--accent-assistant);
+      outline: 2px solid currentColor;
       outline-offset: 2px;
     }
 
@@ -1016,17 +1028,14 @@ export class GcSettingsPanel extends LitElement {
     .settings-sidebar {
       width: 200px;
       flex-shrink: 0;
-      border-right: 1px solid var(--border-default);
-      padding: var(--space-4);
+      padding: var(--space-4, 1rem);
       display: flex;
       flex-direction: column;
-      gap: var(--space-1);
+      gap: var(--space-1, 0.25rem);
     }
     .settings-title {
-      margin: 0 0 var(--space-3);
-      padding: var(--space-2) var(--space-3);
-      font-size: var(--text-lg);
-      font-weight: 500;
+      margin: 0 0 var(--space-3, 0.75rem);
+      padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
     }
     .settings-nav-item {
       display: flex;
@@ -1034,42 +1043,22 @@ export class GcSettingsPanel extends LitElement {
       justify-content: space-between;
       width: 100%;
       text-align: left;
-      padding: var(--space-2) var(--space-3);
-      border-radius: var(--radius-md);
-      background: none;
-      border: none;
-      color: var(--text);
-      font-family: inherit;
-      font-size: var(--text-sm);
+      padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
       cursor: pointer;
-      opacity: 0.65;
-      transition:
-        opacity 0.1s ease,
-        background 0.1s ease;
-    }
-    .settings-nav-item:hover {
-      opacity: 1;
-      background: var(--surface-3);
-    }
-    .settings-nav-item.active {
-      opacity: 1;
-      background: var(--surface-3);
     }
     .settings-sidebar-footer {
       margin-top: auto;
-      padding-top: var(--space-3);
+      padding-top: var(--space-3, 0.75rem);
     }
     .settings-content {
       flex: 1;
       min-width: 0;
       min-height: 0;
-      padding: var(--space-6) var(--space-7);
+      padding: var(--space-6, 1.5rem) var(--space-7, 2rem);
       overflow-y: auto;
     }
     .settings-section-title {
-      margin: 0 0 var(--space-4);
-      font-size: var(--text-base);
-      font-weight: 500;
+      margin: 0 0 var(--space-4, 1rem);
     }
     @media (max-width: 640px) {
       .settings-modal {
@@ -1079,16 +1068,13 @@ export class GcSettingsPanel extends LitElement {
         height: 100vh;
         width: 100vw;
         max-width: 100vw;
-        border-radius: 0;
       }
       .settings-sidebar {
         width: 100%;
         flex-direction: row;
         flex-wrap: wrap;
-        border-right: none;
-        border-bottom: 1px solid var(--border-default);
-        gap: var(--space-1);
-        padding: var(--space-3);
+        gap: var(--space-1, 0.25rem);
+        padding: var(--space-3, 0.75rem);
       }
       .settings-title {
         display: none;
@@ -1102,265 +1088,126 @@ export class GcSettingsPanel extends LitElement {
       }
     }
 
-    /* ── Appearance settings ──────────────────────────────────── */
+    /* ── Layout settings ──────────────────────────────────────── */
     .setting-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: var(--space-2) 0;
-      border-bottom: 1px solid var(--surface-4);
-    }
-    .setting-row:last-of-type {
-      border-bottom: none;
-    }
-    .setting-label {
-      font-size: var(--text-sm);
+      padding: var(--space-2, 0.5rem) 0;
     }
     .setting-control {
       display: flex;
       align-items: center;
-      gap: var(--space-2);
+      gap: var(--space-2, 0.5rem);
     }
     .setting-control input[type="range"] {
       width: 140px;
-      accent-color: var(--accent-assistant);
     }
     .setting-value {
       min-width: 4.5em;
-      color: var(--text-secondary);
-      font-size: var(--text-xs);
       text-align: right;
-      font-variant-numeric: tabular-nums;
-    }
-    .theme-picker {
-      display: flex;
-      gap: var(--space-1);
-    }
-    .theme-btn {
-      padding: var(--space-1) var(--space-3);
-      background: transparent;
-      color: var(--text-secondary);
-      border: 1px solid var(--border-default);
-      border-radius: var(--radius-md);
-      font-family: inherit;
-      font-size: var(--text-xs);
-      cursor: pointer;
-    }
-    .theme-btn:hover {
-      color: var(--text);
-      border-color: var(--border-strong);
-    }
-    .theme-btn.active {
-      color: var(--text);
-      background: var(--surface-3);
-      border-color: var(--accent-assistant);
-    }
-
-    /* ── Config entries (shared across groups) ────────────────── */
-    .config-modified-badge {
-      font-size: 0.6rem;
-      color: var(--accent-user);
-      font-variant-numeric: tabular-nums;
     }
     .config-group-body {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: var(--space-2) var(--space-4);
+      gap: var(--space-2, 0.5rem) var(--space-4, 1rem);
     }
     @media (max-width: 640px) {
       .config-group-body {
         grid-template-columns: 1fr;
       }
     }
-    .config-empty {
-      opacity: 0.4;
-      font-size: var(--text-sm);
-      font-style: italic;
-    }
     .config-entry {
       display: flex;
       flex-direction: column;
       gap: 2px;
-      padding: var(--space-2) 0;
+      padding: var(--space-2, 0.5rem) 0;
     }
     .config-entry-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
-    .config-key {
-      font-size: var(--text-xs);
-      font-weight: 500;
-    }
-    .config-modified {
-      color: var(--accent-user);
-    }
     .config-reset-btn {
-      font-family: inherit;
-      font-size: 0.6rem;
       padding: 0.05rem 0.35rem;
-      background: transparent;
-      color: var(--text);
-      border: 1px solid var(--border-default);
-      border-radius: var(--radius-sm);
       cursor: pointer;
-      opacity: 0.5;
-      transition: opacity 0.12s ease;
-    }
-    .config-reset-btn:hover {
-      opacity: 1;
     }
     .config-input {
       width: 100%;
       box-sizing: border-box;
-      padding: var(--space-1) var(--space-2);
-      background: var(--surface-0);
-      color: var(--text);
-      border: 1px solid var(--border-default);
-      border-radius: var(--radius-sm);
-      font-family: inherit;
-      font-size: var(--text-xs);
-      outline: none;
-      transition: border-color 0.12s ease;
-    }
-    .config-input:focus {
-      border-color: var(--accent-assistant);
+      padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
     }
     select.config-input {
       cursor: pointer;
     }
-    .config-desc {
-      font-size: 0.65rem;
-      opacity: 0.4;
-      line-height: 1.3;
-    }
     .config-entry-action {
       display: flex;
       align-items: center;
-      gap: var(--space-2);
-      margin-top: var(--space-1);
+      gap: var(--space-2, 0.5rem);
+      margin-top: var(--space-1, 0.25rem);
     }
     .config-action-btn {
-      padding: 0.15rem var(--space-2);
-      background: var(--surface-2);
-      color: var(--text);
-      border: 1px solid var(--border-default);
-      border-radius: var(--radius-sm);
-      font-family: inherit;
-      font-size: var(--text-xs);
+      padding: 0.15rem var(--space-2, 0.5rem);
       cursor: pointer;
     }
-    .config-action-btn:hover:not(:disabled) {
-      border-color: var(--border-strong);
-    }
     .config-action-btn:disabled {
-      opacity: 0.4;
       cursor: default;
-    }
-    .config-action-hint {
-      font-size: 0.65rem;
-      opacity: 0.45;
     }
 
     /* ── Advanced config collapsible ─────────────────────────── */
     .advanced-config {
-      margin-top: var(--space-4);
-      border: 1px solid var(--border-default);
-      border-radius: var(--radius-sm);
-      padding: var(--space-2) var(--space-3);
+      margin-top: var(--space-4, 1rem);
+      padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
     }
     .advanced-config summary {
-      font-size: var(--text-xs);
       cursor: pointer;
-      opacity: 0.5;
-      font-weight: 500;
     }
     .advanced-config[open] summary {
-      margin-bottom: var(--space-3);
+      margin-bottom: var(--space-3, 0.75rem);
     }
 
     /* ── LLM Active status ───────────────────────────────────── */
     .llm-status {
       display: flex;
       flex-direction: column;
-      gap: var(--space-1);
-      margin-bottom: var(--space-4);
-      padding: var(--space-3);
-      background: var(--surface-2);
-      border: 1px solid var(--border-default);
-      border-left: 3px solid var(--accent-assistant);
-      border-radius: var(--radius-md);
-      font-size: var(--text-xs);
+      gap: var(--space-1, 0.25rem);
+      margin-bottom: var(--space-4, 1rem);
+      padding: var(--space-3, 0.75rem);
     }
     .llm-status-row {
       display: grid;
       grid-template-columns: 8em 1fr;
       align-items: baseline;
-      column-gap: var(--space-3);
-    }
-    .llm-status-label {
-      opacity: 0.5;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      font-size: 0.65rem;
-    }
-    .llm-status-value {
-      font-family: var(--font-mono, ui-monospace, monospace);
-    }
-    .llm-status-source {
-      opacity: 0.7;
-      font-family: inherit;
-    }
-    .llm-status-subtle {
-      opacity: 0.6;
+      column-gap: var(--space-3, 0.75rem);
     }
 
     /* ── LLM Profiles ────────────────────────────────────────── */
     .profiles-section {
-      margin-bottom: var(--space-4);
-      padding-bottom: var(--space-4);
-      border-bottom: 1px solid var(--surface-4);
+      margin-bottom: var(--space-4, 1rem);
+      padding-bottom: var(--space-4, 1rem);
     }
     .profiles-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: var(--space-3);
+      margin-bottom: var(--space-3, 0.75rem);
     }
     .profiles-header-actions {
       display: flex;
-      gap: var(--space-2);
-    }
-    .profiles-label {
-      font-size: var(--text-xs);
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      opacity: 0.5;
+      gap: var(--space-2, 0.5rem);
     }
     .profiles-list {
       display: flex;
       flex-direction: column;
-      gap: var(--space-1);
+      gap: var(--space-1, 0.25rem);
     }
     .profile-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: var(--space-2) var(--space-3);
-      border-radius: var(--radius-md);
-      border: 1px solid var(--border-default);
-      transition: border-color 0.1s ease;
-    }
-    .profile-item.active {
-      border-color: var(--accent-assistant);
+      padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
     }
     .profile-name {
-      background: none;
-      border: none;
-      color: var(--text);
-      font-family: inherit;
-      font-size: var(--text-sm);
       cursor: pointer;
       text-align: left;
       padding: 0;
@@ -1368,26 +1215,8 @@ export class GcSettingsPanel extends LitElement {
       flex-direction: column;
       gap: 2px;
     }
-    .profile-name:hover {
-      opacity: 0.8;
-    }
-    .profile-meta {
-      font-size: var(--text-xs);
-      opacity: 0.5;
-    }
-    .profile-active-badge {
-      font-size: var(--text-xs);
-      color: var(--accent-assistant);
-      font-weight: 500;
-    }
     .profile-deactivate {
-      margin-top: var(--space-2);
-      opacity: 0.5;
-      font-size: var(--text-xs);
-    }
-
-    .action-btn.danger {
-      color: var(--danger, #e55);
+      margin-top: var(--space-2, 0.5rem);
     }
   `;
 }

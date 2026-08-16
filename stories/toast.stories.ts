@@ -28,10 +28,13 @@ class StoryToastFixture extends LitElement {
 
   override render() {
     return html`
-      <div class="story-frame constrained">
-        <button class="story-button trigger" @click=${this.notify}>
-          Show ${this.kind} notification
-        </button>
+      <div class="story-frame">
+        <section class="panel">
+          <span class="eyebrow">notification center</span>
+          <h1>${this.kind} feedback</h1>
+          <p>Toasts remain visible without blocking the workflow beneath them.</p>
+          <button class="trigger" @click=${this.notify}>Show ${this.kind} notification</button>
+        </section>
         <cw-toast></cw-toast>
       </div>
     `;
@@ -46,10 +49,36 @@ class StoryToastFixture extends LitElement {
       font-family: var(--font-sans);
     }
     .story-frame {
+      box-sizing: border-box;
       display: grid;
       min-height: 100vh;
-      place-items: start center;
-      padding: 3rem;
+      place-items: center;
+      padding: clamp(1rem, 4vw, 3rem);
+    }
+    .panel {
+      box-sizing: border-box;
+      width: min(100%, 460px);
+      padding: clamp(1.25rem, 4vw, 2rem);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-lg);
+      background: var(--surface-1);
+      box-shadow: var(--shadow-dropdown);
+    }
+    .eyebrow {
+      color: var(--text-muted);
+      font: var(--text-xs) var(--font-mono);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    h1 {
+      margin: 0.45rem 0;
+      font-size: clamp(1.2rem, 4vw, 1.65rem);
+    }
+    p {
+      margin: 0 0 1.25rem;
+      color: var(--text-secondary);
+      font-size: var(--text-sm);
+      line-height: 1.5;
     }
     button {
       padding: 0.55rem 0.8rem;

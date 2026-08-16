@@ -18,8 +18,8 @@ const meta = {
     detail: "Reading workspace metadata and extension contributions",
   },
   render: (args: LoadingArgs) => html`
-    <div class="story-frame constrained">
-      <div class="story-panel">
+    <div class="story-frame constrained centered">
+      <div class="story-panel" style="width:min(100%, 620px)">
         <cw-loading-banner .heading=${args.heading} .detail=${args.detail}></cw-loading-banner>
       </div>
     </div>
@@ -33,10 +33,13 @@ export const Banner: Story = {};
 
 export const SpinnerSizes: Story = {
   render: () => html`
-    <div class="story-frame">
-      <div style="display:flex; align-items:center; gap:2rem">
-        <span><cw-spinner size="sm"></cw-spinner> small</span>
-        <span><cw-spinner size="lg"></cw-spinner> large</span>
+    <div class="story-frame constrained centered">
+      <div class="story-panel" style="width:min(100%, 460px); padding:var(--space-5)">
+        <p class="story-label">inline progress</p>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-3)">
+          <div class="spinner-sample"><cw-spinner size="sm"></cw-spinner><span>compact</span></div>
+          <div class="spinner-sample"><cw-spinner size="lg"></cw-spinner><span>banner</span></div>
+        </div>
       </div>
     </div>
   `,

@@ -25,9 +25,27 @@ class StoryComposerFixture extends LitElement {
   @property({ type: Boolean }) embeddedControls = false;
 
   protected override updated(changed: Map<string, unknown>): void {
-    if (changed.has("value")) {
-      this.renderRoot.querySelector<GcComposer>("cw-composer")?.setInput(this.value);
-    }
+    if (!changed.has("value")) return;
+
+    const composer = this.renderRoot.querySelector<GcComposer>("cw-composer");
+    const value = this.value;
+    composer?.setInput(value);
+    if (!composer || !value) return;
+
+    void composer.updateComplete.then(() => {
+      if (this.value !== value) return;
+      const textarea = composer.shadowRoot?.querySelector("textarea");
+      if (!textarea) return;
+      textarea.focus();
+      textarea.setSelectionRange(value.length, value.length);
+      textarea.dispatchEvent(
+        new InputEvent("input", {
+          bubbles: true,
+          composed: true,
+          inputType: "insertText",
+        }),
+      );
+    });
   }
 
   override render() {
@@ -83,8 +101,16 @@ const meta = {
   },
   render: (args: ComposerArgs) => html`
     <cw-story-host .repoHost=${createStoryRepoHost()} .llmConfigHost=${createStoryLlmConfigHost()}>
-      <div class="story-frame constrained" style="align-items: end">
-        <div style="width: min(100%, 860px); margin-top: min(55vh, 28rem)">
+      <div class="story-frame constrained centered">
+        <section class="story-panel composer-stage">
+          <div class="composer-stage-intro">
+            <p class="story-label">composer dock</p>
+            <h2>Shape the next assistant turn</h2>
+            <p>
+              Draft a request, attach workspace context, or discover commands without leaving the
+              active workflow.
+            </p>
+          </div>
           <cw-story-composer-fixture
             .placeholder=${args.placeholder}
             .value=${args.value}
@@ -93,7 +119,7 @@ const meta = {
             .errorMsg=${args.errorMsg}
             .embeddedControls=${args.embeddedControls}
           ></cw-story-composer-fixture>
-        </div>
+        </section>
       </div>
     </cw-story-host>
   `,

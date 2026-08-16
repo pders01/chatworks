@@ -32,7 +32,7 @@ const meta = {
   },
   render: (args: ChatArgs) => html`
     <cw-story-host
-      .chatHost=${createStoryChatHost({ sessions: [] })}
+      .chatHost=${createStoryChatHost(args.repoId ? {} : { sessions: [] })}
       .repoHost=${createStoryRepoHost()}
       .llmConfigHost=${createStoryLlmConfigHost()}
     >

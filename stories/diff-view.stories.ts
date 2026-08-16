@@ -10,6 +10,7 @@ type DiffArgs = {
   wrap: boolean;
   showMetadata: boolean;
   emptyLabel: string;
+  height: number;
 };
 
 const patch = `diff --git a/src/workbench.ts b/src/workbench.ts
@@ -63,6 +64,7 @@ const meta = {
     wrap: false,
     showMetadata: false,
     emptyLabel: "no changes",
+    height: 680,
   },
   argTypes: {
     rawDiff: { control: "text" },
@@ -70,19 +72,22 @@ const meta = {
     wrap: { control: "boolean" },
     showMetadata: { control: "boolean" },
     emptyLabel: { control: "text" },
+    height: { control: { type: "range", min: 220, max: 760, step: 20 } },
   },
   render: (args: DiffArgs) => html`
-    <div class="story-frame">
-      <p class="story-label">reviewed patch</p>
-      <div class="story-panel" style="height: 680px">
-        <cw-diff-view
-          .rawDiff=${args.rawDiff}
-          .split=${args.split}
-          .wrap=${args.wrap}
-          .showMetadata=${args.showMetadata}
-          .emptyLabel=${args.emptyLabel}
-          style="height: 100%"
-        ></cw-diff-view>
+    <div class="story-frame constrained">
+      <div style="width:100%; max-width:980px; min-width:0">
+        <p class="story-label">reviewed patch</p>
+        <div class="story-panel" style="width:100%; min-width:0; height:${args.height}px">
+          <cw-diff-view
+            .rawDiff=${args.rawDiff}
+            .split=${args.split}
+            .wrap=${args.wrap}
+            .showMetadata=${args.showMetadata}
+            .emptyLabel=${args.emptyLabel}
+            style="height: 100%"
+          ></cw-diff-view>
+        </div>
       </div>
     </div>
   `,
@@ -107,7 +112,7 @@ export const Metadata: Story = {
 };
 
 export const Empty: Story = {
-  args: { rawDiff: "", emptyLabel: "working tree is clean" },
+  args: { rawDiff: "", emptyLabel: "working tree is clean", height: 260 },
 };
 
 export const Binary: Story = {
@@ -118,5 +123,6 @@ index 0000000..b128a92
 Binary files /dev/null and b/public/board.png differ
 `,
     showMetadata: true,
+    height: 260,
   },
 };

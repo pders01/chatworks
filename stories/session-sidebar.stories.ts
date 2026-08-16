@@ -20,8 +20,11 @@ const meta = {
   },
   render: (args: SidebarArgs) => html`
     <cw-story-host .chatHost=${createStoryChatHost()}>
-      <div class="story-frame constrained">
-        <div class="story-panel" style="width: 300px; height: 680px; display:flex">
+      <div class="story-frame constrained centered">
+        <div
+          class="story-panel"
+          style="width:300px; height:min(560px, calc(100vh - 2rem)); display:flex"
+        >
           <cw-session-sidebar
             .sessions=${args.empty ? [] : storySessions}
             .selected=${args.selected}

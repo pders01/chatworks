@@ -31,7 +31,7 @@ const meta = {
   },
   args: {
     options: modelOptions,
-    value: "qwen3-coder",
+    value: "",
     placeholder: "Select a model",
     emptyHint: "No models match",
   },
@@ -53,12 +53,23 @@ const meta = {
 export default meta;
 type Story = StoryObj<ComboboxArgs>;
 
-export const Models: Story = {};
+async function openCombobox(canvasElement: HTMLElement): Promise<void> {
+  const combobox = canvasElement.querySelector<GcCombobox>("cw-combobox");
+  if (!combobox) return;
+  await combobox.updateComplete;
+  combobox.shadowRoot?.querySelector("input")?.focus();
+  await combobox.updateComplete;
+}
+
+export const Models: Story = {
+  play: ({ canvasElement }) => openCombobox(canvasElement),
+};
 
 export const Empty: Story = {
   args: {
     options: [],
-    value: "",
+    value: "unavailable-model",
     emptyHint: "Connect a provider to discover models",
   },
+  play: ({ canvasElement }) => openCombobox(canvasElement),
 };

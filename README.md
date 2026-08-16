@@ -136,6 +136,8 @@ ignored, so a hostile host can't inject arbitrary CSS variables.
 bun install
 bun run storybook        # component catalog on http://localhost:6006
 bun run storybook:build  # static catalog in storybook-static/
+bunx playwright install chromium # once, for browser story tests
+bun run test:storybook   # Chromium render + axe matrix
 bun run check            # tsc --noEmit, including stories
 bun run test             # bun:test (happy-dom harness)
 bun run lint             # oxlint
@@ -144,7 +146,9 @@ bun run fmt              # oxfmt
 
 Storybook covers the chat, composer, message, session, settings, diff,
 workbench, input, loading, and notification surfaces. Use its toolbar to switch
-light/dark tokens and its accessibility panel to inspect the active story.
+light/dark tokens and its accessibility panel to inspect the active story. The
+browser test runs every story in Chromium at desktop dark, desktop light, and
+mobile dark viewports and fails on component accessibility violations.
 
 ## License
 

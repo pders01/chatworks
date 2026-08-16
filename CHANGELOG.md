@@ -22,6 +22,9 @@
 - Storybook 10 component catalog with light/dark design tokens, accessibility
   tooling, mock host services, interactive AI surfaces, diff states, and a
   composed board/canvas workbench example.
+- Package-local Storybook/Vitest browser coverage for every story in Chromium at
+  desktop dark, desktop light, and mobile dark viewports, with axe component
+  violations enforced in CI.
 
 ## v0.3.0 — optional RepoHost, dist/ build, npm rename, cw-* tags
 

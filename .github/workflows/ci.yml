@@ -35,6 +35,12 @@ jobs:
       - name: Build Storybook
         run: bun run storybook:build
 
+      - name: Install Chromium
+        run: bunx playwright install chromium --with-deps
+
+      - name: Test Storybook
+        run: bun run test:storybook
+
       - name: Test
         run: bun run test
 

@@ -2,7 +2,12 @@ import type { StorybookConfig } from "@storybook/web-components-vite";
 
 const config: StorybookConfig = {
   stories: ["../stories/**/*.mdx", "../stories/**/*.stories.ts"],
-  addons: ["@storybook/addon-docs", "@storybook/addon-a11y", "storybook/viewport"],
+  addons: [
+    "@storybook/addon-docs",
+    "@storybook/addon-a11y",
+    "@storybook/addon-vitest",
+    "storybook/viewport",
+  ],
   framework: {
     name: "@storybook/web-components-vite",
     options: {},
@@ -20,8 +25,11 @@ const config: StorybookConfig = {
     ]);
     const include = new Set([
       ...(config.optimizeDeps?.include ?? []),
+      "aria-query",
       "lit",
       "lit/directive-helpers.js",
+      "lz-string",
+      "pretty-format",
       "lit-html",
       "lit-html/directive-helpers.js",
     ]);

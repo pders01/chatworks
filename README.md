@@ -31,7 +31,7 @@ Peer dependencies: `lit`, `@bufbuild/protobuf`, `@connectrpc/connect`,
 import "@jpahd/chatworks";              // registers all custom elements
 import { settings } from "@jpahd/chatworks";
 
-settings.applyAll();                      // apply persisted theme + CSS vars
+settings.applyAll();                      // apply persisted layout preferences
 ```
 
 ```html
@@ -54,7 +54,7 @@ window.addEventListener("gc:open-file", (e) => {
 
 ## Public API
 
-Subpath exports map to the underlying source so apps can pull only the
+Subpath exports map to compiled ESM and declarations so apps can pull only the
 pieces they need:
 
 | Subpath                | What it gives you                                    |
@@ -70,12 +70,12 @@ pieces they need:
 | `.../settings-panel`   | `<cw-settings-panel>` registration                   |
 | `.../toast`, `.../loading-indicator`, `.../combobox` | Standalone UI primitives          |
 | `.../transport`        | Connect-RPC client singletons (`repoClient`, `chatClient`, `authClient`) |
-| `.../settings`         | Theme + CSS-variable preference store, with host-theme override hooks |
+| `.../settings`         | Sidebar, content-width, and font-size preference store |
 | `.../events`           | Event-payload types + `HTMLElementEventMap` augmentation |
 | `.../catalog`          | Model catalog (providers, models, pricing)           |
 | `.../slash`            | Slash-command parser + suggestion engine             |
 | `.../attachments`      | @-mention attachment helpers                         |
-| `.../markdown`, `.../highlight`, `.../clipboard`, `.../focus` | Misc helpers   |
+| `.../markdown`, `.../highlight`, `.../clipboard`, `.../focus` | Misc helpers; highlighting is host-configured |
 | `.../proto/{auth,chat,repo}` | Generated protobuf clients + message types     |
 
 ## Workbench extensions
@@ -111,24 +111,39 @@ implementation.
 > The proto package is still named `gitchat.v1` for historical reasons;
 > a rename to `chatworks.v1` is on the roadmap.
 
-## Embedding host hooks
+## Presentation
 
-The settings module reads `data-theme` overrides and resolved design
-tokens posted from a host (e.g. a VS Code webview). Wire them up at
-boot:
+Chatworks components are unstyled by default. Their shadow styles contain only
+layout, overflow/overlay behavior, semantic visibility, and a visible
+`currentColor` focus fallback. Applications own colors, surfaces, typography,
+borders, radii, shadows, and motion through the components' stable CSS parts.
+State-specific part tokens such as `active`, `error`, `addition`, and `deletion`
+let application styles distinguish semantic states without a built-in palette.
 
-```ts
-import { settings } from "@jpahd/chatworks";
+```css
+cw-combobox::part(input) {
+  color: var(--app-text);
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+}
 
-window.addEventListener("message", (e) => {
-  if (e.source !== window.parent) return;
-  if (e.data?.type === "gc.theme")  settings.setHostTheme(e.data.theme);
-  if (e.data?.type === "gc.tokens") settings.setHostTokens(e.data.tokens);
-});
+cw-diff-view::part(addition) {
+  background: var(--app-diff-addition);
+}
 ```
 
-The host-token allow-list is fixed (15 entries) — anything outside it is
-ignored, so a hostile host can't inject arbitrary CSS variables.
+Code is escaped and line-wrapped without syntax colors by default. A trusted
+application highlighter is an explicit opt-in:
+
+```ts
+import { setSyntaxHighlighter } from "@jpahd/chatworks/highlight";
+
+setSyntaxHighlighter((code, language) => renderCodeWithParts(code, language));
+```
+
+Optional sidebar, content-width, and font-size preferences remain available
+through the settings module. See [Styling Chatworks](docs/styling.md) for the
+part and syntax-presentation contract.
 
 ## Development
 
@@ -146,8 +161,8 @@ bun run fmt              # oxfmt
 
 Storybook covers the chat, composer, message, session, settings, diff,
 workbench, input, loading, and notification surfaces. Use its toolbar to switch
-light/dark tokens and its accessibility panel to inspect the active story. The
-browser test runs every story in Chromium at desktop dark, desktop light, and
+the catalog-owned light/dark presentation and its accessibility panel to inspect the active
+story. The browser test runs every story in Chromium at desktop dark, desktop light, and
 mobile dark viewports and fails on component accessibility violations.
 
 ## License

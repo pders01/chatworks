@@ -2,11 +2,28 @@
 
 ## Unreleased
 
+### Changed
+
+- Made component defaults presentation-free. Shadow styles now retain only
+  structural layout, interaction geometry, semantic visibility, and a minimal
+  `currentColor` focus fallback; applications own palette, surfaces, typography,
+  decorative borders/radii, shadows, and motion through stable CSS parts.
+- Removed theme persistence and host palette injection from the settings API;
+  applications now own light/dark selection while Chatworks retains layout
+  preferences only.
+- Replaced bundled Shiki presentation with escaped line-wrapped code by default.
+  Applications can install a trusted syntax renderer explicitly through
+  `setSyntaxHighlighter`; Shiki is no longer a runtime dependency.
+- Reduced file-mention preview height, made empty comboboxes explicit without a
+  sentinel value, and constrained the settings docs fixture to its canvas.
+- Deferred settings loading and workbench mounting until after their triggering
+  render, eliminating Lit `change-in-update` development warnings.
+
 ### Added
 
 - Transport-independent `<cw-diff-view>` with unified and split layouts,
-  Shiki highlighting, line numbers, and word-level changes. Consumers
-  supply `rawDiff`; fetching remains host-owned.
+  optional host highlighting, line numbers, and word-level changes. Consumers
+  supply `rawDiff`; fetching and syntax presentation remain host-owned.
 - `@jpahd/chatworks/diff` pure diff transforms.
 - Public subpath exports for the lower-level composer, message list, and
   session sidebar so coding-agent and other custom shells can compose
@@ -19,9 +36,10 @@
   other renderer and are disposed safely across navigation and async races.
 - A transport-independent workbench contract and board-style extension
   example in `docs/workbench.md`.
-- Storybook 10 component catalog with light/dark design tokens, accessibility
-  tooling, mock host services, interactive AI surfaces, diff states, and a
-  composed board/canvas workbench example.
+- Storybook 10 component catalog with neutral light/dark schemes, accessibility
+  tooling, mock host services, interactive AI surfaces, guided connection
+  success/failure states, diff states, and a composed board/canvas workbench
+  example.
 - Package-local Storybook/Vitest browser coverage for every story in Chromium at
   desktop dark, desktop light, and mobile dark viewports, with axe component
   violations enforced in CI.

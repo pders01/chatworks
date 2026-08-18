@@ -16,7 +16,7 @@
 // Naming convention: `gc:<noun-or-verb-phrase>`. Dispatchers use
 // `bubbles: true, composed: true` so events cross shadow roots.
 
-import type { ClientAttachment } from "./chat-types.js";
+import type { AttachmentInfo, ClientAttachment, ToolEvent, Turn } from "./chat-types.js";
 
 // ── Cross-cutting events (fired by multiple components) ──────────
 
@@ -76,6 +76,19 @@ export interface InputChangedDetail {
   attachmentBytes: number;
 }
 
+export interface RemoveAttachmentDetail {
+  attachment: AttachmentInfo;
+}
+
+export interface ToggleToolEventDetail {
+  toolEvent: ToolEvent;
+  expanded: boolean;
+}
+
+export interface ToggleThinkingDetail {
+  expanded: boolean;
+}
+
 export interface EditTurnDetail {
   text: string;
   replaceFromMessageId: string;
@@ -83,11 +96,9 @@ export interface EditTurnDetail {
 }
 
 export interface UpdateTurnsDetail {
-  // message-list owns the turn list locally for retry/regenerate/edit
-  // and notifies chat-view with the new array so the shared state stays
-  // consistent. Using `unknown` here keeps the event map import-light;
-  // the chat-view handler narrows via its Turn type.
-  turns: unknown[];
+  // Message-list emits an immutable updater so chat-view can apply a
+  // disclosure change to its latest turn array without stale snapshots.
+  updater: (turns: Turn[]) => Turn[];
 }
 
 // ── Session sidebar events ───────────────────────────────────────
@@ -146,6 +157,9 @@ declare global {
     "gc:stop": CustomEvent<Record<string, never>>;
     "gc:slash-action": CustomEvent<SlashActionDetail>;
     "gc:input-changed": CustomEvent<InputChangedDetail>;
+    "gc:remove-attachment": CustomEvent<RemoveAttachmentDetail>;
+    "gc:toggle-tool-event": CustomEvent<ToggleToolEventDetail>;
+    "gc:toggle-thinking": CustomEvent<ToggleThinkingDetail>;
 
     // chat message list
     "gc:retry": CustomEvent<Record<string, never>>;

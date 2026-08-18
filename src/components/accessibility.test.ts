@@ -1,7 +1,10 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { GcComposer } from "./chat-view/composer.js";
+import { GcMessageList } from "./chat-view/message-list.js";
+import { CwChatTurn } from "./chat-turn.js";
 import { GcCombobox } from "./combobox.js";
 import { CwDiffView } from "./diff-view.js";
+import { MessageRole, type Turn } from "../lib/chat-types.js";
 
 afterEach(() => {
   document.body.replaceChildren();
@@ -77,6 +80,118 @@ describe("component accessibility semantics", () => {
     expect(composer.shadowRoot?.getElementById(activeId ?? "")).not.toBeNull();
     expect(listbox?.querySelector("[role='option'] button")).toBeNull();
     expect(listbox?.querySelector("[role='option']")?.getAttribute("part")).toContain("active");
+  });
+
+  test("preserves attachment parts through the message-list compatibility wrapper", async () => {
+    const attachment = {
+      filename: "notes.md",
+      mimeType: "text/markdown",
+      size: 12,
+      data: new Uint8Array(),
+    };
+    const messages = new GcMessageList();
+    messages.turns = [
+      {
+        id: "user-1",
+        role: MessageRole.USER,
+        content: "Review this file",
+        attachments: [attachment],
+      },
+    ];
+    document.body.append(messages);
+    await messages.updateComplete;
+
+    const turn = messages.shadowRoot?.querySelector<CwChatTurn>("cw-chat-turn");
+    await turn?.updateComplete;
+    const primitive = turn?.shadowRoot?.querySelector<HTMLElement>("cw-attachment");
+    expect(turn?.getAttribute("exportparts")).toContain("attachment-chip");
+    expect(primitive?.getAttribute("part")).toBe("attachment");
+    expect(primitive?.getAttribute("exportparts")).toContain("attachment-chip");
+    expect((primitive as unknown as { attachment?: unknown })?.attachment).toBe(attachment);
+  });
+
+  test("preserves tool parts and turn ownership through the message-list wrapper", async () => {
+    const toolEvent = {
+      id: "read-contract",
+      name: "read",
+      argsJson: '{"path":"docs/workbench.md"}',
+      state: "done" as const,
+    };
+    const turns: Turn[] = [
+      {
+        id: "assistant-1",
+        role: MessageRole.ASSISTANT,
+        content: "Review complete",
+        tools: [toolEvent],
+      },
+    ];
+    const messages = new GcMessageList();
+    messages.turns = turns;
+    document.body.append(messages);
+    await messages.updateComplete;
+
+    const turn = messages.shadowRoot?.querySelector<CwChatTurn>("cw-chat-turn");
+    await turn?.updateComplete;
+    const primitive = turn?.shadowRoot?.querySelector<HTMLElement>("cw-tool-event");
+    expect(turn?.getAttribute("exportparts")).toContain("tool-body-pre");
+    expect(primitive?.getAttribute("exportparts")).toContain("tool-event");
+    expect(primitive?.getAttribute("exportparts")).toContain("tool-body-pre");
+    expect((primitive as unknown as { toolEvent?: unknown })?.toolEvent).toBe(toolEvent);
+
+    let updated = turns;
+    messages.addEventListener("gc:update-turns", (event) => {
+      updated = event.detail.updater(turns);
+    });
+    primitive?.dispatchEvent(
+      new CustomEvent("gc:toggle-tool-event", {
+        detail: { toolEvent, expanded: true },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+
+    expect(updated).not.toBe(turns);
+    expect(updated[0]?.tools?.[0]?.expanded).toBe(true);
+    expect(messages.turns).toBe(turns);
+  });
+
+  test("preserves thinking parts and turn ownership through the message-list wrapper", async () => {
+    const turns: Turn[] = [
+      {
+        id: "assistant-thinking",
+        role: MessageRole.ASSISTANT,
+        content: "",
+        thinking: "Review the display boundary.",
+      },
+    ];
+    const messages = new GcMessageList();
+    messages.turns = turns;
+    document.body.append(messages);
+    await messages.updateComplete;
+
+    const turn = messages.shadowRoot?.querySelector<CwChatTurn>("cw-chat-turn");
+    await turn?.updateComplete;
+    const primitive = turn?.shadowRoot?.querySelector<HTMLElement>("cw-thinking-disclosure");
+    expect(turn?.getAttribute("exportparts")).toContain("thinking-body");
+    expect(primitive?.getAttribute("exportparts")).toContain("thinking-block");
+    expect(primitive?.getAttribute("exportparts")).toContain("thinking-body");
+    expect((primitive as unknown as { thinking?: unknown })?.thinking).toBe(turns[0]?.thinking);
+
+    let updated = turns;
+    messages.addEventListener("gc:update-turns", (event) => {
+      updated = event.detail.updater(turns);
+    });
+    primitive?.dispatchEvent(
+      new CustomEvent("gc:toggle-thinking", {
+        detail: { expanded: true },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+
+    expect(updated).not.toBe(turns);
+    expect(updated[0]?.thinkingExpanded).toBe(true);
+    expect(messages.turns).toBe(turns);
   });
 
   test("makes a rendered diff scroller keyboard focusable and named", async () => {

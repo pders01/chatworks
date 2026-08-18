@@ -63,16 +63,20 @@ export type ToolEvent = {
   expanded?: boolean;
 };
 
-// ClientAttachment is the composer/rendering shape for a user-uploaded
-// file. `url` is an object URL created once for image previews — we
-// lean on browser-tab lifetime rather than bookkeeping revocations,
-// since the upload caps keep total memory bounded.
-export type ClientAttachment = {
+// AttachmentInfo is the transport-free display shape accepted by attachment
+// components. ClientAttachment adds the upload bytes used by the composer.
+export type AttachmentInfo = {
   mimeType: string;
   filename: string;
   size: number;
-  data: Uint8Array;
   url?: string;
+};
+
+// `url` is an object URL created once for image previews. We lean on
+// browser-tab lifetime rather than bookkeeping revocations because upload caps
+// keep total memory bounded.
+export type ClientAttachment = AttachmentInfo & {
+  data: Uint8Array;
 };
 
 // Per-model pricing in dollars per million tokens.

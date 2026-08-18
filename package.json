@@ -33,6 +33,22 @@
       "types": "./dist/components/chat-view/composer.d.ts",
       "import": "./dist/components/chat-view/composer.js"
     },
+    "./attachment": {
+      "types": "./dist/components/attachment.d.ts",
+      "import": "./dist/components/attachment.js"
+    },
+    "./tool-event": {
+      "types": "./dist/components/tool-event.d.ts",
+      "import": "./dist/components/tool-event.js"
+    },
+    "./thinking-disclosure": {
+      "types": "./dist/components/thinking-disclosure.d.ts",
+      "import": "./dist/components/thinking-disclosure.js"
+    },
+    "./chat-turn": {
+      "types": "./dist/components/chat-turn.d.ts",
+      "import": "./dist/components/chat-turn.js"
+    },
     "./message-list": {
       "types": "./dist/components/chat-view/message-list.d.ts",
       "import": "./dist/components/chat-view/message-list.js"

@@ -13,6 +13,10 @@
 // ── Custom-element registrations ─────────────────────────────────
 import "./components/toast.js";
 import "./components/loading-indicator.js";
+import "./components/attachment.js";
+import "./components/chat-turn.js";
+import "./components/thinking-disclosure.js";
+import "./components/tool-event.js";
 import "./components/combobox.js";
 import "./components/connection-wizard.js";
 import "./components/chat-view.js";

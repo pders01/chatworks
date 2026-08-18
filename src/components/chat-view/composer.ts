@@ -28,6 +28,8 @@ import {
   type ActionArgContext,
 } from "../../lib/slash.js";
 import { buildAvailabilityContext, formatSources, isProviderAvailable } from "../../lib/catalog.js";
+import { browserStyles } from "../../styles.js";
+import "../attachment.js";
 
 // Rendered form of an action-arg suggestion. Shape mirrors ComboboxOption
 // but is local to the composer so slash.ts stays pure — lib/ has no DOM
@@ -1035,7 +1037,9 @@ export class GcComposer extends LitElement {
           <slot name="controls"></slot>
           ${this.pendingAttachments.length > 0
             ? html`<div class="attachment-strip" part="attachment-strip" role="list">
-                ${this.pendingAttachments.map((a, i) => this.renderAttachmentChip(a, i))}
+                ${this.pendingAttachments.map((attachment, index) =>
+                  this.renderAttachment(attachment, index),
+                )}
               </div>`
             : nothing}
           <textarea
@@ -1171,9 +1175,9 @@ export class GcComposer extends LitElement {
               ${this.errorMsg
                 ? html`<span class="err" part="err">⚠ ${this.errorMsg}</span>`
                 : this.sending
-                  ? html`<span class="dim" part="dim">streaming…</span>`
+                  ? html`<span class="dim" part="dim">Generating response…</span>`
                   : html`<span class="dim" part="dim"
-                      >↵ send · shift+↵ newline · drag or paste to attach</span
+                      >Enter to send · Shift+Enter for a new line · Paste or attach files</span
                     >`}
             </span>
             <input
@@ -1254,46 +1258,19 @@ export class GcComposer extends LitElement {
     `;
   }
 
-  private renderAttachmentChip(a: ClientAttachment, index: number) {
-    const isImage = a.mimeType.startsWith("image/") && a.url;
-    const tooltip = `${a.filename} · ${fmtBytes(a.size)}`;
-    const remove = html`<button
-      type="button"
-      class="attachment-remove"
-      part="attachment-remove"
-      aria-label="Remove ${a.filename}"
-      title="Remove"
-      @click=${() => this.removeAttachment(index)}
-    >
-      ×
-    </button>`;
-    if (isImage) {
-      return html`<div
-        class="attachment-chip is-image"
-        part="attachment-chip is-image"
-        role="listitem"
-        title=${tooltip}
-      >
-        <img src=${a.url!} alt=${a.filename} class="attachment-thumb" part="attachment-thumb" />
-        ${remove}
-      </div>`;
-    }
-    return html`<div
-      class="attachment-chip is-file"
-      part="attachment-chip is-file"
-      role="listitem"
-      title=${tooltip}
-    >
-      <span class="attachment-glyph" part="attachment-glyph" aria-hidden="true">📄</span>
-      <span class="attachment-meta" part="attachment-meta">
-        <span class="attachment-name" part="attachment-name">${a.filename}</span>
-        <span class="attachment-size" part="attachment-size">${fmtBytes(a.size)}</span>
-      </span>
-      ${remove}
-    </div>`;
+  private renderAttachment(attachment: ClientAttachment, index: number) {
+    return html`<cw-attachment
+      part="attachment"
+      exportparts="attachment-chip, is-image, is-file, removable, attachment-thumb, attachment-glyph, attachment-meta, attachment-name, attachment-size, attachment-remove"
+      .attachment=${attachment}
+      removable
+      list-item
+      @gc:remove-attachment=${() => this.removeAttachment(index)}
+    ></cw-attachment>`;
   }
 
   static override styles = css`
+    ${browserStyles}
     :host {
       display: block;
       container-type: inline-size;
@@ -1318,10 +1295,13 @@ export class GcComposer extends LitElement {
       max-width: var(--content-max-width, 52rem);
       margin: 0 auto;
       box-sizing: border-box;
-      padding: 0.65rem 0.85rem var(--space-2, 0.5rem);
+      padding: var(--space-3, 0.75rem);
       display: flex;
       flex-direction: column;
-      gap: 0.4rem;
+      gap: var(--space-2, 0.5rem);
+      border: 1px solid var(--cw-border-color);
+      border-radius: 0.75rem;
+      background: Canvas;
     }
     :host([unfocused]) .composer-inner {
       max-width: 1000px;
@@ -1341,10 +1321,13 @@ export class GcComposer extends LitElement {
       width: 100%;
       box-sizing: border-box;
       resize: none;
-      padding: 0.15rem 0.05rem;
-      min-height: 1.5em;
+      padding: var(--space-1, 0.25rem);
+      min-height: 2.5rem;
       max-height: 40vh;
       overflow-y: auto;
+      border: 0;
+      color: inherit;
+      background: transparent;
       field-sizing: content;
     }
     /* Slash completion remains a compact popover. File mentions expand the
@@ -1358,8 +1341,12 @@ export class GcComposer extends LitElement {
       max-height: min(38vh, 330px);
       overflow-y: auto;
       scrollbar-gutter: stable;
-      margin: 0 0 var(--space-1, 0.25rem);
-      padding: var(--space-1, 0.25rem) 0;
+      margin: 0 0 var(--space-2, 0.5rem);
+      padding: var(--space-1, 0.25rem);
+      border: 1px solid var(--cw-border-color);
+      border-radius: 0.5rem;
+      background: Canvas;
+      box-shadow: 0 0.5rem 1.5rem color-mix(in srgb, CanvasText 16%, transparent);
       list-style: none;
     }
     .slash-list:focus-visible,
@@ -1375,6 +1362,9 @@ export class GcComposer extends LitElement {
       display: grid;
       min-height: 18rem;
       overflow: hidden;
+      border: 1px solid var(--cw-border-color);
+      border-radius: 0.5rem;
+      background: Canvas;
     }
     .mention-picker.with-preview {
       height: clamp(16rem, 34vh, 22rem);
@@ -1459,9 +1449,18 @@ export class GcComposer extends LitElement {
     .mention-item {
       display: block;
       width: 100%;
-      padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
+      padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+      border: 1px solid transparent;
+      border-radius: 0.375rem;
+      color: inherit;
+      background: transparent;
       text-align: left;
       cursor: pointer;
+    }
+    .mention-item.active,
+    .slash-item.active {
+      color: HighlightText;
+      background: Highlight;
     }
     .slash-item {
       display: grid;
@@ -1469,8 +1468,12 @@ export class GcComposer extends LitElement {
       align-items: center;
       column-gap: var(--space-3, 0.75rem);
       width: 100%;
-      min-height: 30px;
-      padding: var(--space-1, 0.25rem) var(--space-3, 0.75rem);
+      min-height: 2.5rem;
+      padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+      border: 1px solid transparent;
+      border-radius: 0.375rem;
+      color: inherit;
+      background: transparent;
       text-align: left;
       cursor: pointer;
     }
@@ -1625,9 +1628,12 @@ export class GcComposer extends LitElement {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 28px;
-      height: 28px;
+      width: 2.25rem;
+      height: 2.25rem;
       padding: 0;
+      border-color: transparent;
+      color: inherit;
+      background: transparent;
       cursor: pointer;
       flex-shrink: 0;
       margin-left: auto;
@@ -1640,73 +1646,32 @@ export class GcComposer extends LitElement {
       flex-wrap: wrap;
       gap: var(--space-2, 0.5rem);
     }
-    .attachment-chip {
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-    }
-    .attachment-chip.is-image {
-      padding: 0;
-      overflow: hidden;
-      width: 56px;
-      height: 56px;
-    }
-    .attachment-chip.is-file {
-      gap: 0.4rem;
-      padding: 5px 6px 5px 8px;
-      max-width: 240px;
-    }
-    .attachment-thumb {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-    .attachment-meta {
-      display: flex;
-      flex-direction: column;
-      min-width: 0;
-    }
-    .attachment-name {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .attachment-remove {
-      cursor: pointer;
-      padding: 0;
-      width: 18px;
-      height: 18px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .attachment-chip.is-image .attachment-remove {
-      position: absolute;
-      top: 3px;
-      right: 3px;
-    }
-    .attachment-chip.is-file .attachment-remove {
-      margin-left: 0.2rem;
-      width: 16px;
-      height: 16px;
-    }
     .composer-row {
       display: flex;
       align-items: center;
       gap: var(--space-2, 0.5rem);
     }
+    .composer-hint {
+      color: var(--cw-muted-color);
+      font-size: 0.875rem;
+    }
     .send {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 28px;
-      height: 28px;
+      width: 2.25rem;
+      height: 2.25rem;
       padding: 0;
+      border-color: Highlight;
+      color: HighlightText;
+      background: Highlight;
       cursor: pointer;
       flex-shrink: 0;
     }
     .send:disabled {
+      border-color: var(--cw-border-color);
+      color: var(--cw-muted-color);
+      background: ButtonFace;
       cursor: not-allowed;
     }
     .stop {

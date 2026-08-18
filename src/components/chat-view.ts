@@ -45,6 +45,7 @@ import "./chat-view/composer.js";
 import type { GcComposer } from "./chat-view/composer.js";
 import type { GcMessageList } from "./chat-view/message-list.js";
 import type { GcSessionSidebar } from "./chat-view/session-sidebar.js";
+import { browserStyles } from "../styles.js";
 
 // The markdown renderer pulls in `marked` and the host-configurable code
 // pipeline. Loading it eagerly would
@@ -1217,12 +1218,17 @@ export class GcChatView extends LitElement {
                   .repoId=${this.repoId}
                   @gc:prefill-example=${this.onPrefillExample}
                 >
-                  <slot name="empty-state" slot="empty-state"></slot>
+                  <slot name="empty-state" slot="empty-state">
+                    <div class="empty-title" part="empty-title">Ready when you are</div>
+                    <p class="empty-sub" part="empty-sub">
+                      Ask a question, describe a task, or attach context to begin.
+                    </p>
+                  </slot>
                 </cw-chat-dashboard>
               </div>`
             : html`<cw-message-list
                 part="message-list"
-                exportparts="messages, messages-inner, turn, user, assistant, system, turn-label, turn-model, turn-actions, turn-action, primary, body, md, cursor, turn-attachments, turn-warnings, turn-warning, token-info, thinking-block, is-streaming, thinking-head, thinking-label, thinking-caret, thinking-body, tool-events, tool-event, running, done, error, tool-event-head, tool-dot, tool-dot--running, tool-dot--done, tool-dot--error, tool-name, tool-summary, tool-caret, tool-body, tool-body-label, tool-body-pre, is-error, attachment-chip, is-image, is-file, attachment-thumb, attachment-glyph, attachment-meta, attachment-name, attachment-size, edit-input, edit-actions"
+                exportparts="messages, messages-inner, turn, user, assistant, system, turn-label, turn-model, turn-actions, turn-action, primary, body, md, cursor, turn-attachments, turn-warnings, turn-warning, token-info, thinking-block, is-streaming, thinking-head, thinking-label, thinking-caret, thinking-body, tool-events, tool-event, running, done, error, tool-event-head, tool-dot, tool-dot--running, tool-dot--done, tool-dot--error, tool-name, tool-summary, tool-caret, tool-body, tool-body-label, tool-body-pre, is-error, attachment, attachment-chip, is-image, is-file, attachment-thumb, attachment-glyph, attachment-meta, attachment-name, attachment-size, edit-input, edit-actions"
                 .turns=${this.turns}
                 .sending=${this.sending}
                 ?unfocused=${this.focusMode === "focus"}
@@ -1239,7 +1245,7 @@ export class GcChatView extends LitElement {
                 role="status"
                 aria-live="polite"
               >
-                <span class="model-indicator-label" part="model-indicator-label">model</span>
+                <span class="model-indicator-label" part="model-indicator-label">Model</span>
                 <span class="model-indicator-value" part="model-indicator-value"
                   >${this.activeModel}</span
                 >
@@ -1254,7 +1260,7 @@ export class GcChatView extends LitElement {
             : nothing}
           <cw-composer
             part="composer"
-            exportparts="composer, drag-active, mention-open, composer-inner, input, attachment-strip, attachment-chip, is-image, is-file, attachment-thumb, attachment-glyph, attachment-meta, attachment-name, attachment-size, attachment-remove, mention-picker, with-preview, mention-list, mention-item, active, mention-preview, preview-code, preview-state, preview-error, slash-list, arg-list, slash-item, arg-item, slash-label, slash-hint, slash-example, slash-category, arg-label, composer-row, composer-hint, err, dim, attach-input, attach-btn, send, stop, command-help, command-help-shell, command-help-header, command-help-kicker, command-help-close, command-help-toolbar, command-help-search, command-help-body, command-help-group, command-help-grid, command-help-item, command-help-copy, command-help-empty, command-help-footer, command-help-key"
+            exportparts="composer, drag-active, mention-open, composer-inner, input, attachment-strip, attachment, attachment-chip, is-image, is-file, removable, attachment-thumb, attachment-glyph, attachment-meta, attachment-name, attachment-size, attachment-remove, mention-picker, with-preview, mention-list, mention-item, active, mention-preview, preview-code, preview-state, preview-error, slash-list, arg-list, slash-item, arg-item, slash-label, slash-hint, slash-example, slash-category, arg-label, composer-row, composer-hint, err, dim, attach-input, attach-btn, send, stop, command-help, command-help-shell, command-help-header, command-help-kicker, command-help-close, command-help-toolbar, command-help-search, command-help-body, command-help-group, command-help-grid, command-help-item, command-help-copy, command-help-empty, command-help-footer, command-help-key"
             .repoId=${this.repoId}
             .sending=${this.sending}
             .errorMsg=${this.error}
@@ -1276,6 +1282,7 @@ export class GcChatView extends LitElement {
   }
 
   static override styles = css`
+    ${browserStyles}
     :host([hidden]) {
       display: none !important;
     }
@@ -1310,6 +1317,8 @@ export class GcChatView extends LitElement {
       flex-direction: column;
       min-height: 0;
       overflow: hidden;
+      border-inline-end: 1px solid var(--cw-border-color);
+      background: Canvas;
     }
     .sidebar cw-session-sidebar {
       display: flex;
@@ -1323,24 +1332,37 @@ export class GcChatView extends LitElement {
       min-height: 0;
       min-width: 0;
       position: relative;
+      background: Canvas;
     }
     .pane-hd {
       display: flex;
+      min-height: 3rem;
       align-items: center;
       justify-content: flex-end;
-      padding: 0.4rem var(--space-3, 0.75rem) 0;
+      padding: var(--space-1, 0.25rem) var(--space-3, 0.75rem);
+      border-block-end: 1px solid var(--cw-border-color);
       flex-shrink: 0;
     }
     .export-btn {
       padding: var(--space-1, 0.25rem) var(--space-3, 0.75rem);
+      border-color: transparent;
+      color: inherit;
+      background: transparent;
       cursor: pointer;
     }
     .focus-btn {
       display: flex;
       align-items: center;
-      gap: 0.35rem;
-      padding: var(--space-1, 0.25rem) 0.55rem;
+      gap: var(--space-1, 0.25rem);
+      padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
+      border-color: transparent;
+      color: inherit;
+      background: transparent;
       cursor: pointer;
+    }
+    .export-btn:hover,
+    .focus-btn:hover {
+      background: ButtonFace;
     }
     .session-tokens {
       margin-right: auto;
@@ -1394,6 +1416,8 @@ export class GcChatView extends LitElement {
       display: flex;
       align-items: center;
       gap: var(--space-1, 0.25rem);
+      color: var(--cw-muted-color);
+      font-size: 0.875rem;
       max-width: var(--content-max-width, 52rem);
       margin: 0 auto var(--space-1, 0.25rem);
       padding: 0 var(--space-7, 2rem);
@@ -1402,10 +1426,21 @@ export class GcChatView extends LitElement {
       text-overflow: ellipsis;
     }
     .dashboard-wrap {
+      display: grid;
       flex: 1;
       min-height: 0;
+      align-items: center;
       overflow-y: auto;
       padding: var(--space-6, 1.5rem) var(--space-7, 2rem) var(--space-4, 1rem);
+    }
+    .empty-title {
+      margin-bottom: var(--space-2, 0.5rem);
+      font-size: 1.25rem;
+      font-weight: 650;
+    }
+    .empty-sub {
+      margin: 0;
+      color: var(--cw-muted-color);
     }
     cw-message-list {
       flex: 1;

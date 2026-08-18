@@ -4,10 +4,10 @@
 
 ### Changed
 
-- Made component defaults presentation-free. Shadow styles now retain only
-  structural layout, interaction geometry, semantic visibility, and a minimal
-  `currentColor` focus fallback; applications own palette, surfaces, typography,
-  decorative borders/radii, shadows, and motion through stable CSS parts.
+- Reworked component defaults as an enhanced browser baseline with system fonts
+  and colors, readable spacing, native-sized controls, visible focus, and modest
+  standalone surfaces. Applications still own branding and product-shell
+  composition through stable CSS parts.
 - Removed theme persistence and host palette injection from the settings API;
   applications now own light/dark selection while Chatworks retains layout
   preferences only.
@@ -19,8 +19,26 @@
 - Deferred settings loading and workbench mounting until after their triggering
   render, eliminating Lit `change-in-update` development warnings.
 
+### Fixed
+
+- Kept Lit template indentation out of split diff table cells so preserved
+  whitespace no longer spreads source lines across oversized rows.
+
 ### Added
 
+- Small transport-free `<cw-attachment>` primitive with optional removal,
+  standalone package export, semantic events, and compatibility part forwarding
+  through the existing composer, message list, and chat view.
+- Transport-free `<cw-tool-event>` primitive with caller-owned disclosure state,
+  a semantic toggle event, standalone package export, and compatibility part
+  forwarding through the existing message list and chat view.
+- Native `<cw-thinking-disclosure>` primitive with caller-owned reasoning text
+  and disclosure state, a semantic toggle event, standalone package export, and
+  compatibility part forwarding through the existing message list and chat view.
+- Transport-free `<cw-chat-turn>` display composition with one `Turn` property,
+  caller-owned `actions` and `body` slots, nested chat primitives, a standalone
+  package export, and compatibility part forwarding. Message-list retains
+  ordering, editing, retry/regeneration policy, and scroll pinning.
 - Transport-independent `<cw-diff-view>` with unified and split layouts,
   optional host highlighting, line numbers, and word-level changes. Consumers
   supply `rawDiff`; fetching and syntax presentation remain host-owned.
@@ -43,6 +61,9 @@
 - Package-local Storybook/Vitest browser coverage for every story in Chromium at
   desktop dark, desktop light, and mobile dark viewports, with axe component
   violations enforced in CI.
+- A clean temporary packed-package consumer check covering compiled export
+  targets, declaration resolution, custom-element registration, Vite bundling,
+  unpublished-source exclusion, and Lit/reactive-element deduplication.
 
 ## v0.3.0 — optional RepoHost, dist/ build, npm rename, cw-* tags
 

@@ -61,7 +61,11 @@ pieces they need:
 |------------------------|------------------------------------------------------|
 | `@jpahd/chatworks`              | Default barrel — registers components, re-exports runtime singletons |
 | `.../chat-view`        | `<cw-chat-view>` registration                        |
-| `.../composer`, `.../message-list`, `.../session-sidebar` | Lower-level chat primitives for custom shells |
+| `.../composer`, `.../message-list`, `.../session-sidebar` | Compatibility chat compositions for custom shells |
+| `.../attachment` | Small transport-free file/image attachment primitive |
+| `.../tool-event` | Transport-free tool invocation summary and disclosure primitive |
+| `.../thinking-disclosure` | Native assistant reasoning/progress disclosure primitive |
+| `.../chat-turn` | One transport-free turn with caller-owned action/body slots |
 | `.../diff-view`        | Transport-independent `<cw-diff-view>` unified/split renderer |
 | `.../diff`             | Pure diff HTML transforms (line numbers, word and split diff) |
 | `.../workbench`        | Extension host, view/command registry, services, context, and storage |
@@ -113,12 +117,12 @@ implementation.
 
 ## Presentation
 
-Chatworks components are unstyled by default. Their shadow styles contain only
-layout, overflow/overlay behavior, semantic visibility, and a visible
-`currentColor` focus fallback. Applications own colors, surfaces, typography,
-borders, radii, shadows, and motion through the components' stable CSS parts.
-State-specific part tokens such as `active`, `error`, `addition`, and `deletion`
-let application styles distinguish semantic states without a built-in palette.
+Chatworks components use an enhanced browser-default baseline: system fonts and
+colors, readable spacing, native-sized controls, visible focus, and enough
+surface treatment for standalone use. They do not prescribe a brand or product
+shell. Applications can replace the baseline—including layout—through stable CSS
+parts. State-specific tokens such as `active`, `error`, `addition`, and
+`deletion` expose semantic state without coupling consumers to a theme.
 
 ```css
 cw-combobox::part(input) {
@@ -155,15 +159,17 @@ bunx playwright install chromium # once, for browser story tests
 bun run test:storybook   # Chromium render + axe matrix
 bun run check            # tsc --noEmit, including stories
 bun run test             # bun:test (happy-dom harness)
+bun run test:package     # pack and verify a clean TypeScript/Vite consumer
 bun run lint             # oxlint
 bun run fmt              # oxfmt
 ```
 
 Storybook covers the chat, composer, message, session, settings, diff,
-workbench, input, loading, and notification surfaces. Use its toolbar to switch
-the catalog-owned light/dark presentation and its accessibility panel to inspect the active
-story. The browser test runs every story in Chromium at desktop dark, desktop light, and
-mobile dark viewports and fails on component accessibility violations.
+workbench, input, loading, and notification surfaces. Its toolbar switches the
+canvas color scheme without applying a global component-part skin, and its
+accessibility panel inspects the active story. The browser test runs every story
+in Chromium at desktop dark, desktop light, and mobile dark viewports and fails
+on component accessibility violations.
 
 ## License
 

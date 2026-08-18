@@ -1,5 +1,6 @@
 import { LitElement, html, css, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import { browserStyles } from "../styles.js";
 
 /**
  * Structurally sized loading marker. Applications own its shape and motion
@@ -10,11 +11,16 @@ export class GcSpinner extends LitElement {
   @property({ type: String }) size: "sm" | "lg" = "sm";
 
   static styles = css`
+    ${browserStyles}
     :host {
       display: inline-block;
     }
     .dot {
       display: inline-block;
+      border: 2px solid var(--cw-border-color);
+      border-block-start-color: AccentColor;
+      border-radius: 50%;
+      animation: cw-spin 0.8s linear infinite;
     }
     .dot.sm {
       width: 10px;
@@ -23,6 +29,16 @@ export class GcSpinner extends LitElement {
     .dot.lg {
       width: 20px;
       height: 20px;
+    }
+    @keyframes cw-spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .dot {
+        animation: none;
+      }
     }
   `;
 
@@ -51,6 +67,7 @@ export class GcLoadingBanner extends LitElement {
   @property({ type: String }) detail = "";
 
   static styles = css`
+    ${browserStyles}
     :host {
       display: block;
     }

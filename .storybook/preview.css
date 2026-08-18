@@ -1,95 +1,95 @@
 :root,
 :root[data-color-scheme="dark"] {
-  --surface-0: #0d0d0d;
-  --surface-1: #0d0d0d;
-  --surface-1-alt: #0d0d0d;
-  --surface-2: #161616;
-  --surface-3: #202020;
-  --surface-4: #303030;
-  --surface-5: #444444;
-  --border-default: #353535;
-  --border-strong: #5b5b5b;
-  --border-accent: #f2f2f2;
-  --border-focus: #f2f2f2;
-  --text: #f2f2f2;
-  --text-default: #f2f2f2;
-  --text-secondary: #b8b8b8;
-  --text-muted: #8f8f8f;
+  --surface-0: #111315;
+  --surface-1: #171a1d;
+  --surface-1-alt: #1b1f23;
+  --surface-2: #202429;
+  --surface-3: #292e34;
+  --surface-4: #363d45;
+  --surface-5: #4a535d;
+  --border-default: #343b42;
+  --border-strong: #58636e;
+  --border-accent: #7da7ff;
+  --border-focus: #7da7ff;
+  --text: #eef1f4;
+  --text-default: #eef1f4;
+  --text-secondary: #c1c8cf;
+  --text-muted: #929ca6;
   --text-strong: #ffffff;
-  --text-accent: #f2f2f2;
-  --accent: #f2f2f2;
-  --accent-assistant: #f2f2f2;
-  --accent-user: #f2f2f2;
-  --accent-link-dim: #a8a8a8;
-  --success: #f2f2f2;
-  --warning: #f2f2f2;
-  --danger: #f2f2f2;
-  --danger-bg: #161616;
-  --danger-border: #5b5b5b;
-  --action-bg: #161616;
-  --action-bg-hover: #202020;
-  --border-user-rule: #353535;
-  --gutter-bg: #161616;
+  --text-accent: #a9c4ff;
+  --accent: #7da7ff;
+  --accent-assistant: #a9c4ff;
+  --accent-user: #7da7ff;
+  --accent-link-dim: #9ab6ef;
+  --success: #74c991;
+  --warning: #e4bd62;
+  --danger: #ff8b8b;
+  --danger-bg: #2a1b1d;
+  --danger-border: #85464c;
+  --action-bg: #202429;
+  --action-bg-hover: #292e34;
+  --border-user-rule: #343b42;
+  --gutter-bg: #171a1d;
   --line-bg: transparent;
-  --shadow-dropdown: none;
-  --shadow-modal: none;
+  --shadow-dropdown: 0 0.75rem 2rem rgb(0 0 0 / 0.32);
+  --shadow-modal: 0 1.25rem 4rem rgb(0 0 0 / 0.4);
 }
 
 :root[data-color-scheme="light"] {
-  --surface-0: #ffffff;
+  --surface-0: #f5f7f8;
   --surface-1: #ffffff;
-  --surface-1-alt: #ffffff;
-  --surface-2: #f7f7f7;
-  --surface-3: #efefef;
-  --surface-4: #dfdfdf;
-  --surface-5: #c8c8c8;
-  --border-default: #d2d2d2;
-  --border-strong: #a5a5a5;
-  --border-accent: #111111;
-  --border-focus: #111111;
-  --text: #111111;
-  --text-default: #111111;
-  --text-secondary: #4f4f4f;
-  --text-muted: #686868;
-  --text-strong: #000000;
-  --text-accent: #111111;
-  --accent: #111111;
-  --accent-assistant: #111111;
-  --accent-user: #111111;
-  --accent-link-dim: #686868;
-  --success: #111111;
-  --warning: #111111;
-  --danger: #111111;
-  --danger-bg: #f7f7f7;
-  --danger-border: #a5a5a5;
-  --action-bg: #f7f7f7;
-  --action-bg-hover: #efefef;
-  --border-user-rule: #d2d2d2;
-  --gutter-bg: #f7f7f7;
+  --surface-1-alt: #fafbfc;
+  --surface-2: #f0f3f5;
+  --surface-3: #e6eaed;
+  --surface-4: #d7dde2;
+  --surface-5: #c1c9d0;
+  --border-default: #d5dbe0;
+  --border-strong: #9ba6af;
+  --border-accent: #315fae;
+  --border-focus: #315fae;
+  --text: #20252a;
+  --text-default: #20252a;
+  --text-secondary: #4c565f;
+  --text-muted: #626d76;
+  --text-strong: #111417;
+  --text-accent: #244f9b;
+  --accent: #315fae;
+  --accent-assistant: #244f9b;
+  --accent-user: #315fae;
+  --accent-link-dim: #496da9;
+  --success: #247a43;
+  --warning: #8a6416;
+  --danger: #b4232c;
+  --danger-bg: #fff1f1;
+  --danger-border: #d99398;
+  --action-bg: #f0f3f5;
+  --action-bg-hover: #e6eaed;
+  --border-user-rule: #d5dbe0;
+  --gutter-bg: #f0f3f5;
   --line-bg: transparent;
-  --shadow-dropdown: none;
-  --shadow-modal: none;
+  --shadow-dropdown: 0 0.75rem 2rem rgb(31 40 48 / 0.14);
+  --shadow-modal: 0 1.25rem 4rem rgb(31 40 48 / 0.18);
 }
 
 :root {
   --font-sans:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-  --text-xs: 0.72rem;
-  --text-sm: 0.8rem;
-  --text-base: 0.86rem;
-  --text-lg: 1rem;
+  --text-xs: 0.8125rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
   --space-4: 1rem;
-  --space-5: 1.25rem;
-  --space-6: 1.5rem;
-  --space-7: 2rem;
-  --radius-sm: 2px;
-  --radius-md: 3px;
-  --radius-lg: 4px;
-  --radius-xl: 4px;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
   --sidebar-width: 260px;
   --content-max-width: 820px;
   --composer-gutter: 1rem;
@@ -97,6 +97,7 @@
   color: var(--text);
   background: var(--surface-0);
   font-family: var(--font-sans);
+  line-height: 1.5;
 }
 
 html,
@@ -140,8 +141,8 @@ body,
 .story-label {
   margin: 0 0 var(--space-3);
   color: var(--text-muted);
-  font: 600 var(--text-xs)/1 var(--font-mono);
-  letter-spacing: 0.08em;
+  font: 650 var(--text-xs)/1.2 var(--font-sans);
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
@@ -201,172 +202,9 @@ button.story-button:hover {
   font-size: var(--text-sm);
 }
 
-/* Catalog-owned component treatment. Chatworks exposes these internals as
-   parts but does not ship any of this presentation in component styles. */
-:is(
-  cw-chat-view,
-  cw-chat-dashboard,
-  cw-composer,
-  cw-message-list,
-  cw-session-sidebar,
-  cw-combobox,
-  cw-command-palette,
-  cw-connection-wizard,
-  cw-diff-view,
-  cw-loading-banner,
-  cw-settings-panel,
-  cw-toast,
-  cw-workbench-switcher,
-  cw-workbench-view
-) {
-  color: var(--text);
-  font-family: var(--font-mono);
-  font-size: var(--text-base);
-}
-
-:is(cw-composer, cw-combobox, cw-command-palette, cw-connection-wizard, cw-settings-panel)::part(
-  input
-),
-:is(cw-composer, cw-command-palette, cw-workbench-switcher)::part(item),
-:is(cw-composer, cw-command-palette)::part(command),
-:is(cw-composer, cw-session-sidebar, cw-settings-panel, cw-connection-wizard)::part(btn),
-:is(cw-composer, cw-session-sidebar, cw-settings-panel)::part(action-btn) {
-  color: var(--text);
-  background: var(--surface-2);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-sm);
-  font: inherit;
-}
-
-:is(cw-composer, cw-combobox, cw-command-palette, cw-session-sidebar, cw-workbench-switcher)::part(
-  active
-),
-:is(cw-composer, cw-combobox, cw-command-palette, cw-session-sidebar, cw-settings-panel)::part(
-  selected
-) {
-  background: var(--surface-3);
-  border-color: var(--border-strong);
-}
-
-cw-composer::part(composer-inner),
-cw-composer::part(slash-list),
-cw-composer::part(mention-picker),
-cw-command-palette::part(palette),
-cw-settings-panel::part(settings-modal),
-cw-connection-wizard::part(wizard),
-cw-message-list::part(thinking-block),
-cw-message-list::part(tool-event),
-cw-toast::part(toast) {
-  color: var(--text);
-  background: var(--surface-1);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-dropdown);
-}
-
-cw-composer::part(input) {
-  background: transparent;
-  border: 0;
-}
-
-cw-composer::part(mention-item),
-cw-composer::part(slash-item),
-cw-message-list::part(turn-action),
-cw-session-sidebar::part(new),
-cw-session-sidebar::part(sess),
-cw-session-sidebar::part(sess-pin),
-cw-session-sidebar::part(sess-delete),
-cw-toast::part(close),
-cw-workbench-switcher::part(item) {
-  color: var(--text);
-  background: transparent;
-  border: 0;
-  font: inherit;
-}
-
-cw-composer::part(send) {
-  color: var(--surface-0);
-  background: var(--accent-user);
-  border: 0;
-  border-radius: 50%;
-}
-
-:is(cw-chat-view, cw-chat-dashboard, cw-composer, cw-message-list, cw-session-sidebar)::part(dim),
-:is(cw-chat-view, cw-composer, cw-message-list, cw-session-sidebar)::part(token-info),
-:is(cw-command-palette, cw-workbench-view)::part(empty) {
-  color: var(--text-muted);
-}
-
-:is(
-  cw-chat-view,
-  cw-composer,
-  cw-message-list,
-  cw-command-palette,
-  cw-connection-wizard,
-  cw-settings-panel,
-  cw-toast,
-  cw-workbench-view
-)::part(error) {
-  color: var(--danger);
-}
-
-cw-command-palette::part(backdrop),
-cw-settings-panel::part(modal-backdrop) {
-  background: rgb(0 0 0 / 0.45);
-}
-
-cw-diff-view {
-  background: var(--surface-1);
-  font-family: var(--font-mono);
-}
-
-cw-diff-view::part(file-label),
-cw-diff-view::part(metadata) {
-  background: var(--surface-1);
-}
-
-cw-diff-view::part(hunk) {
-  color: var(--text-secondary);
-  background: var(--surface-2);
-  border-block: 1px solid var(--border-default);
-}
-
-cw-diff-view::part(addition) {
-  background: color-mix(in srgb, var(--success) 9%, var(--surface-1));
-}
-
-cw-diff-view::part(deletion) {
-  background: color-mix(in srgb, var(--danger) 9%, var(--surface-1));
-}
-
-cw-diff-view::part(word-add) {
-  color: inherit;
-  background: color-mix(in srgb, var(--success) 18%, transparent);
-}
-
-cw-diff-view::part(word-del) {
-  color: inherit;
-  background: color-mix(in srgb, var(--danger) 18%, transparent);
-}
-
-cw-spinner::part(indicator) {
-  border: 2px solid var(--border-default);
-  border-top-color: var(--text-accent);
-  border-radius: 50%;
-  animation: catalog-spin 0.8s linear infinite;
-}
-
-@keyframes catalog-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  cw-spinner::part(indicator) {
-    animation: none;
-  }
-}
+/* Component stories intentionally do not apply a catalog-wide part skin.
+   The components' enhanced browser defaults remain visible here. Individual
+   fixtures style only the application content they own. */
 
 @media (max-width: 520px) {
   .composer-stage {

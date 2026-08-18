@@ -1,6 +1,7 @@
 import { LitElement, html, css } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
+import { browserStyles } from "../styles.js";
 
 type ToastKind = "info" | "success" | "warn" | "error";
 
@@ -91,10 +92,11 @@ export class GcToast extends LitElement {
   }
 
   static override styles = css`
+    ${browserStyles}
     /* Centered bottom-anchored stack — more discoverable than a
        corner, not as intrusive as screen-center. Constrained width so
        long messages don't stretch edge-to-edge. */
-    :host {
+      :host {
       position: fixed;
       bottom: var(--space-6, 1.5rem);
       left: 50%;
@@ -115,6 +117,10 @@ export class GcToast extends LitElement {
       align-items: center;
       gap: var(--space-3, 0.75rem);
       padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+      border: 1px solid var(--cw-border-color);
+      border-radius: 0.5rem;
+      background: Canvas;
+      box-shadow: 0 0.75rem 2rem color-mix(in srgb, CanvasText 18%, transparent);
     }
     .icon {
       display: inline-flex;

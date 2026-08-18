@@ -13,6 +13,7 @@ import {
   type ParsedDiffLine,
 } from "../lib/diff.js";
 import "./loading-indicator.js";
+import { browserStyles } from "../styles.js";
 
 let highlightModule: Promise<typeof import("../lib/highlight.js")> | null = null;
 function loadHighlight() {
@@ -178,11 +179,15 @@ export class CwDiffView extends LitElement {
   }
 
   static override styles = css`
+    ${browserStyles}
     :host {
       display: block;
       min-width: 0;
       min-height: 0;
       overflow: hidden;
+      font-family: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 0.875rem;
+      line-height: 1.5;
     }
     .error {
       margin: 0;
@@ -216,6 +221,9 @@ export class CwDiffView extends LitElement {
       position: sticky;
       left: 0;
       padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+      border-block-end: 1px solid var(--cw-border-color);
+      background: Canvas;
+      font-weight: 650;
     }
     .metadata {
       position: sticky;
@@ -238,8 +246,9 @@ export class CwDiffView extends LitElement {
       width: max-content;
       min-width: 100%;
       gap: var(--space-3, 0.75rem);
-      padding: 0.36rem var(--space-3, 0.75rem);
+      padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
       box-sizing: border-box;
+      background: ButtonFace;
     }
     .hunk-range {
       flex: none;

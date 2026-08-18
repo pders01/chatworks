@@ -4,6 +4,7 @@ import { consume } from "@lit/context";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import { chatHostContext, repoHostContext, type ChatHost, type RepoHost } from "../../host.js";
 import "./../../components/loading-indicator.js";
+import { browserStyles } from "../../styles.js";
 
 // Lazy-import markdown because it pulls the parser and code pipeline. A static
 // import here defeats the dynamic imports in
@@ -111,9 +112,9 @@ export class GcChatDashboard extends LitElement {
     return html`
       <div class="empty-chat" part="empty-chat">
         <slot name="empty-state">
-          <div class="empty-title" part="empty-title">ready when you are</div>
+          <div class="empty-title" part="empty-title">Ready when you are</div>
           <p class="empty-sub" part="empty-sub">
-            ask about the repo — use <code>@path/to/file</code> to include file contents
+            Ask about the repository, or use <code>@path/to/file</code> to include context.
           </p>
         </slot>
 
@@ -157,19 +158,23 @@ export class GcChatDashboard extends LitElement {
   }
 
   static override styles = css`
+    ${browserStyles}
     :host {
       display: block;
     }
     .empty-chat {
       max-width: var(--content-max-width, 52rem);
-      margin: 4rem auto 0;
+      margin: 0 auto;
       text-align: center;
     }
     .empty-title {
       margin-bottom: var(--space-2, 0.5rem);
+      font-size: 1.25rem;
+      font-weight: 650;
     }
     .empty-sub {
       margin: 0 0 var(--space-7, 2rem);
+      color: var(--cw-muted-color);
     }
     .empty-sub code {
       padding: 0.08em 0.4em;
@@ -181,12 +186,16 @@ export class GcChatDashboard extends LitElement {
       text-align: left;
     }
     .example {
-      padding: var(--space-3, 0.75rem) 0.95rem;
+      padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
       cursor: pointer;
       display: flex;
       flex-direction: column;
       gap: var(--space-1, 0.25rem);
+      border-radius: 0.5rem;
       text-align: left;
+    }
+    .example-head {
+      font-weight: 600;
     }
     .example-body {
       display: -webkit-box;

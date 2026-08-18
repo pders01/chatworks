@@ -1,6 +1,7 @@
 import { LitElement, css, html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { asDisposable, type Disposable, type WorkbenchRegistry } from "../lib/workbench.js";
+import { browserStyles } from "../styles.js";
 
 @customElement("cw-workbench-view")
 export class CwWorkbenchView extends LitElement {
@@ -132,6 +133,7 @@ export class CwWorkbenchView extends LitElement {
   }
 
   static override styles = css`
+    ${browserStyles}
     :host {
       position: relative;
       display: block;

@@ -1,5 +1,6 @@
 import { LitElement, html, css, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { browserStyles } from "../styles.js";
 
 /**
  * A combobox option with a value and display label.
@@ -319,6 +320,7 @@ export class GcCombobox extends LitElement {
   }
 
   static override styles = css`
+    ${browserStyles}
     :host {
       display: block;
       position: relative;
@@ -339,23 +341,40 @@ export class GcCombobox extends LitElement {
       position: fixed;
       z-index: 9999;
       margin: 0;
-      padding: var(--space-1, 4px) 0;
+      padding: var(--space-1, 4px);
       max-height: 240px;
       overflow-y: auto;
+      border: 1px solid var(--cw-border-color);
+      border-radius: 0.5rem;
+      background: Canvas;
+      box-shadow: 0 0.5rem 1.5rem color-mix(in srgb, CanvasText 16%, transparent);
       list-style: none;
     }
     .empty-hint {
       padding: var(--space-2, 8px);
-      /* Muted via color, not opacity — opacity would fade the .listbox
-         background too, making the dropdown see-through. */
+      color: var(--cw-muted-color);
     }
     .option {
       display: flex;
       flex-direction: column;
-      gap: 1px;
-      padding: var(--space-1, 4px) var(--space-2, 8px);
+      gap: var(--space-1, 4px);
+      padding: var(--space-2, 8px) var(--space-3, 12px);
       cursor: pointer;
-      margin: 0 var(--space-1, 4px);
+      border-radius: 0.375rem;
+    }
+    .option.active {
+      color: HighlightText;
+      background: Highlight;
+    }
+    .option-label {
+      font-weight: 600;
+    }
+    .option-desc {
+      color: var(--cw-muted-color);
+      font-size: 0.875rem;
+    }
+    .option.active .option-desc {
+      color: inherit;
     }
   `;
 }

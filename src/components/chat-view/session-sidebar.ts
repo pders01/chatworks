@@ -3,6 +3,7 @@ import { customElement, property, state } from "lit/decorators.js";
 import { consume } from "@lit/context";
 import { chatHostContext, type ChatHost, type ChatSession } from "../../host.js";
 import { messageOf } from "../../lib/chat-types.js";
+import { browserStyles } from "../../styles.js";
 
 @customElement("cw-session-sidebar")
 export class GcSessionSidebar extends LitElement {
@@ -99,23 +100,23 @@ export class GcSessionSidebar extends LitElement {
         @click=${() => this.fire("gc:new-chat", {})}
         aria-label="New chat (${navigator.platform.includes("Mac") ? "⌘" : "Ctrl+"}K)"
       >
-        <span class="plus" part="plus" aria-hidden="true">+</span> new chat
+        <span class="plus" part="plus" aria-hidden="true">+</span> New chat
       </button>
       <input
         class="session-filter"
         part="session-filter"
         type="search"
-        placeholder="filter sessions…"
+        placeholder="Filter sessions…"
         .value=${this.sessionFilter}
         @input=${(e: Event) => {
           this.sessionFilter = (e.target as HTMLInputElement).value;
         }}
         aria-label="Filter sessions"
       />
-      <div class="sidebar-label" part="sidebar-label" id="sessions-label">sessions</div>
+      <div class="sidebar-label" part="sidebar-label" id="sessions-label">Sessions</div>
       <ul class="sessions" part="sessions" role="list" aria-labelledby="sessions-label">
         ${this.sessions.length === 0
-          ? html`<li class="sidebar-empty" part="sidebar-empty">no sessions yet</li>`
+          ? html`<li class="sidebar-empty" part="sidebar-empty">No sessions yet</li>`
           : this.sortedSessions()
               .filter(
                 (sess) =>
@@ -220,6 +221,7 @@ export class GcSessionSidebar extends LitElement {
   }
 
   static override styles = css`
+    ${browserStyles}
     :host {
       display: flex;
       flex-direction: column;
@@ -227,8 +229,12 @@ export class GcSessionSidebar extends LitElement {
       overflow: hidden;
     }
     .new {
-      margin: 0.85rem 0.85rem 0.6rem;
-      padding: var(--space-2, 0.5rem) 0.7rem;
+      margin: var(--space-4, 1rem) var(--space-4, 1rem) var(--space-3, 0.75rem);
+      padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+      border-color: Highlight;
+      color: HighlightText;
+      background: Highlight;
+      font-weight: 600;
       cursor: pointer;
       text-align: left;
       display: flex;
@@ -236,17 +242,20 @@ export class GcSessionSidebar extends LitElement {
       gap: var(--space-2, 0.5rem);
     }
     .session-filter {
-      margin: 0 0.85rem var(--space-2, 0.5rem);
-      padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
-      width: calc(100% - 1.7rem);
+      margin: 0 var(--space-4, 1rem) var(--space-3, 0.75rem);
+      padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+      width: calc(100% - 2rem);
       box-sizing: border-box;
     }
     .sidebar-label {
-      padding: var(--space-2, 0.5rem) 0.95rem 0.35rem;
+      padding: var(--space-2, 0.5rem) var(--space-4, 1rem);
+      color: var(--cw-muted-color);
+      font-size: 0.875rem;
+      font-weight: 600;
     }
     .sessions {
       list-style: none;
-      padding: 0 0.4rem 0.4rem;
+      padding: 0 var(--space-2, 0.5rem) var(--space-2, 0.5rem);
       margin: 0;
       overflow-y: auto;
       flex: 1;
@@ -261,9 +270,20 @@ export class GcSessionSidebar extends LitElement {
       align-items: center;
       gap: var(--space-2, 0.5rem);
       width: 100%;
-      padding: 0.4rem 0.6rem;
+      padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+      border: 1px solid transparent;
+      border-radius: 0.375rem;
+      color: inherit;
+      background: transparent;
       text-align: left;
       cursor: pointer;
+    }
+    .sess:hover {
+      background: ButtonFace;
+    }
+    .sess.selected {
+      color: HighlightText;
+      background: Highlight;
     }
     .sess-row {
       display: flex;
@@ -275,8 +295,11 @@ export class GcSessionSidebar extends LitElement {
     }
     .sess-delete {
       flex-shrink: 0;
-      width: 24px;
-      height: 24px;
+      width: 2.25rem;
+      height: 2.25rem;
+      border-color: transparent;
+      color: inherit;
+      background: transparent;
       cursor: pointer;
     }
     .sess-delete:focus-visible {
@@ -295,17 +318,30 @@ export class GcSessionSidebar extends LitElement {
     }
     .sess-meta {
       flex-shrink: 0;
+      color: var(--cw-muted-color);
+      font-size: 0.8125rem;
+    }
+    .sess.selected .sess-meta {
+      color: inherit;
     }
     .sidebar-empty {
-      padding: var(--space-2, 0.5rem) 0.85rem;
+      padding: var(--space-2, 0.5rem) var(--space-4, 1rem);
+      color: var(--cw-muted-color);
     }
     .sess-pin {
       flex-shrink: 0;
-      width: 24px;
-      height: 24px;
-      cursor: pointer;
+      width: 2.25rem;
+      height: 2.25rem;
       padding: 0;
+      border-color: transparent;
+      color: inherit;
+      background: transparent;
+      cursor: pointer;
       text-align: center;
+    }
+    .sess-pin:hover,
+    .sess-delete:hover {
+      background: ButtonFace;
     }
     /* Scrollbar */
     .sessions::-webkit-scrollbar {

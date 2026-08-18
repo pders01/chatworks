@@ -13,6 +13,7 @@ import {
 import { formatSources, providerSources, isLocalhostURL } from "../lib/catalog.js";
 import "./combobox.js";
 import type { ComboboxOption } from "./combobox.js";
+import { browserStyles } from "../styles.js";
 
 type Step = "provider" | "auth" | "model" | "save";
 
@@ -744,6 +745,7 @@ export class GcConnectionWizard extends LitElement {
   }
 
   static override styles = css`
+    ${browserStyles}
     :host {
       display: block;
     }
@@ -773,7 +775,12 @@ export class GcConnectionWizard extends LitElement {
     }
     .step-dot {
       padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
+      border-radius: 999px;
       cursor: pointer;
+    }
+    .step-dot.active {
+      color: HighlightText;
+      background: Highlight;
     }
     .step-dot:disabled {
       cursor: default;
@@ -782,6 +789,10 @@ export class GcConnectionWizard extends LitElement {
       flex: 1;
       height: 1px;
       min-width: 12px;
+      background: var(--cw-border-color);
+    }
+    .step-line.done {
+      background: Highlight;
     }
 
     /* Step content */
@@ -792,6 +803,7 @@ export class GcConnectionWizard extends LitElement {
     }
     .step-desc {
       margin: 0;
+      color: var(--cw-muted-color);
     }
 
     /* Fields */
@@ -841,7 +853,10 @@ export class GcConnectionWizard extends LitElement {
     }
     .warn {
       margin: 0;
-      padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
+      padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+      border-radius: 0.375rem;
+      color: MarkText;
+      background: Mark;
     }
 
     /* Advanced */

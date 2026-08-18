@@ -1,6 +1,7 @@
 import { LitElement, css, html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import type { WorkbenchRegistry } from "../lib/workbench.js";
+import { browserStyles } from "../styles.js";
 
 @customElement("cw-workbench-switcher")
 export class CwWorkbenchSwitcher extends LitElement {
@@ -66,6 +67,7 @@ export class CwWorkbenchSwitcher extends LitElement {
   }
 
   static override styles = css`
+    ${browserStyles}
     :host {
       display: inline-flex;
       min-width: 0;

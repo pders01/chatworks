@@ -1,6 +1,7 @@
 import { LitElement, css, html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import type { WorkbenchCommand, WorkbenchRegistry } from "../lib/workbench.js";
+import { browserStyles } from "../styles.js";
 
 @customElement("cw-command-palette")
 export class CwCommandPalette extends LitElement {
@@ -186,6 +187,7 @@ export class CwCommandPalette extends LitElement {
   }
 
   static override styles = css`
+    ${browserStyles}
     :host {
       position: fixed;
       inset: 0;
@@ -198,6 +200,7 @@ export class CwCommandPalette extends LitElement {
     .backdrop {
       position: absolute;
       inset: 0;
+      background: color-mix(in srgb, CanvasText 36%, transparent);
     }
     .palette {
       position: relative;
@@ -205,12 +208,21 @@ export class CwCommandPalette extends LitElement {
       max-height: min(70vh, 520px);
       margin: max(8vh, 2rem) auto 0;
       overflow: hidden;
+      border: 1px solid var(--cw-border-color);
+      border-radius: 0.75rem;
+      background: Canvas;
+      box-shadow: 0 1rem 3rem color-mix(in srgb, CanvasText 24%, transparent);
     }
     input {
       box-sizing: border-box;
       width: 100%;
       height: 3rem;
       padding: 0 1rem;
+      border: 0;
+      border-block-end: 1px solid var(--cw-border-color);
+      border-radius: 0;
+      color: inherit;
+      background: transparent;
     }
     .commands {
       max-height: min(55vh, 420px);
@@ -224,9 +236,17 @@ export class CwCommandPalette extends LitElement {
       gap: 1rem;
       box-sizing: border-box;
       width: 100%;
-      padding: 0.65rem 0.75rem;
+      padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+      border: 1px solid transparent;
+      border-radius: 0.375rem;
+      color: inherit;
+      background: transparent;
       text-align: left;
       cursor: pointer;
+    }
+    button.active {
+      color: HighlightText;
+      background: Highlight;
     }
     .copy {
       display: grid;
@@ -240,11 +260,19 @@ export class CwCommandPalette extends LitElement {
     }
     .category {
       flex: none;
+      color: var(--cw-muted-color);
+      font-size: 0.8125rem;
+    }
+    button.active .category {
+      color: inherit;
     }
     .empty,
     .error {
       margin: 0;
       padding: 1rem;
+    }
+    .empty {
+      color: var(--cw-muted-color);
     }
   `;
 }

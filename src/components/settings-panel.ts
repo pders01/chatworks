@@ -22,6 +22,7 @@ import "./combobox.js";
 import "./connection-wizard.js";
 import "./loading-indicator.js";
 import type { ComboboxOption } from "./combobox.js";
+import { browserStyles } from "../styles.js";
 
 @customElement("cw-settings-panel")
 export class GcSettingsPanel extends LitElement {
@@ -973,10 +974,11 @@ export class GcSettingsPanel extends LitElement {
   }
 
   static override styles = css`
+    ${browserStyles}
     .settings-modal,
-    .settings-modal *,
-    .settings-modal *::before,
-    .settings-modal *::after {
+      .settings-modal *,
+      .settings-modal *::before,
+      .settings-modal *::after {
       box-sizing: border-box;
     }
 
@@ -985,6 +987,7 @@ export class GcSettingsPanel extends LitElement {
       position: fixed;
       inset: 0;
       z-index: 50;
+      background: color-mix(in srgb, CanvasText 36%, transparent);
     }
     .modal {
       position: fixed;
@@ -998,6 +1001,10 @@ export class GcSettingsPanel extends LitElement {
       width: 90vw;
       max-height: calc(100vh - 120px);
       overflow-y: auto;
+      border: 1px solid var(--cw-border-color);
+      border-radius: 0.75rem;
+      background: Canvas;
+      box-shadow: 0 1rem 3rem color-mix(in srgb, CanvasText 24%, transparent);
       z-index: 51;
     }
     @keyframes panel-in {
@@ -1032,6 +1039,8 @@ export class GcSettingsPanel extends LitElement {
       display: flex;
       flex-direction: column;
       gap: var(--space-1, 0.25rem);
+      border-inline-end: 1px solid var(--cw-border-color);
+      background: ButtonFace;
     }
     .settings-title {
       margin: 0 0 var(--space-3, 0.75rem);
@@ -1042,9 +1051,17 @@ export class GcSettingsPanel extends LitElement {
       align-items: center;
       justify-content: space-between;
       width: 100%;
-      text-align: left;
       padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+      border: 1px solid transparent;
+      border-radius: 0.375rem;
+      color: inherit;
+      background: transparent;
+      text-align: left;
       cursor: pointer;
+    }
+    .settings-nav-item.active {
+      color: HighlightText;
+      background: Highlight;
     }
     .settings-sidebar-footer {
       margin-top: auto;
@@ -1059,6 +1076,7 @@ export class GcSettingsPanel extends LitElement {
     }
     .settings-section-title {
       margin: 0 0 var(--space-4, 1rem);
+      font-size: 1.25rem;
     }
     @media (max-width: 640px) {
       .settings-modal {

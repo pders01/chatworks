@@ -32,6 +32,9 @@ jobs:
       - name: Build
         run: bun run build
 
+      - name: Test packed package
+        run: bun scripts/test-packed-package.ts
+
       - name: Build Storybook
         run: bun run storybook:build
 

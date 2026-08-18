@@ -106,12 +106,7 @@ export class CwDiffView extends LitElement {
                   ${splitDiffHtml(this.rendered).map(
                     ({ left, right }) => html`
                       <tr>
-                        <td class="side old" part="side old">
-                          ${left ? unsafeHTML(left) : nothing}
-                        </td>
-                        <td class="side new" part="side new">
-                          ${right ? unsafeHTML(right) : nothing}
-                        </td>
+                        ${this.renderSplitSide("old", left)} ${this.renderSplitSide("new", right)}
                       </tr>
                     `,
                   )}
@@ -121,6 +116,11 @@ export class CwDiffView extends LitElement {
           : this.renderUnified()}
       </div>
     `;
+  }
+
+  private renderSplitSide(kind: "old" | "new", content: string): TemplateResult {
+    const tokens = `side ${kind}`;
+    return html`<td class=${tokens} part=${tokens}>${content ? unsafeHTML(content) : nothing}</td>`;
   }
 
   private renderUnified(): TemplateResult {

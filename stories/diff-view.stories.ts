@@ -9,6 +9,7 @@ type DiffArgs = {
   split: boolean;
   wrap: boolean;
   showMetadata: boolean;
+  truncated: boolean;
   emptyLabel: string;
   height: number;
 };
@@ -63,6 +64,7 @@ const meta = {
     split: false,
     wrap: false,
     showMetadata: false,
+    truncated: false,
     emptyLabel: "no changes",
     height: 680,
   },
@@ -71,6 +73,7 @@ const meta = {
     split: { control: "boolean" },
     wrap: { control: "boolean" },
     showMetadata: { control: "boolean" },
+    truncated: { control: "boolean" },
     emptyLabel: { control: "text" },
     height: { control: { type: "range", min: 220, max: 760, step: 20 } },
   },
@@ -84,6 +87,7 @@ const meta = {
             .split=${args.split}
             .wrap=${args.wrap}
             .showMetadata=${args.showMetadata}
+            .truncated=${args.truncated}
             .emptyLabel=${args.emptyLabel}
             style="height: 100%"
           ></cw-diff-view>
@@ -113,6 +117,13 @@ export const Metadata: Story = {
 
 export const Empty: Story = {
   args: { rawDiff: "", emptyLabel: "working tree is clean", height: 260 },
+};
+
+export const Truncated: Story = {
+  args: {
+    truncated: true,
+    height: 420,
+  },
 };
 
 export const Binary: Story = {

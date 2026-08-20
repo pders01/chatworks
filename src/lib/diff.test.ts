@@ -67,9 +67,35 @@ describe("parseUnifiedDiff", () => {
     );
 
     expect(parsed.files[0].hunks).toHaveLength(0);
+    expect(parsed.files[0]).toMatchObject({
+      oldPath: "old.png",
+      newPath: "new.png",
+      binary: true,
+      binaryMessage: "binary files differ",
+    });
     expect(parsed.files[0].metadata.map(({ content }) => content)).toContain(
       "Binary files a/old.png and b/new.png differ",
     );
+  });
+
+  test("recognizes Git binary patch payloads without parsing them as text hunks", () => {
+    const parsed = parseUnifiedDiff(
+      [
+        "diff --git a/image.png b/image.png",
+        "index 1111111..2222222 100644",
+        "GIT binary patch",
+        "literal 4",
+        "LcmZQzU|;|M00aO5",
+      ].join("\n"),
+    );
+
+    expect(parsed.files[0]).toMatchObject({
+      oldPath: "image.png",
+      newPath: "image.png",
+      binary: true,
+      binaryMessage: "binary patch",
+      hunks: [],
+    });
   });
 
   test("starts an anonymous file for a bare hunk", () => {

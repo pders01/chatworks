@@ -28,6 +28,8 @@ export interface ParsedDiffFile {
   newPath: string;
   metadata: Array<{ content: string; sourceIndex: number }>;
   hunks: ParsedDiffHunk[];
+  binary: boolean;
+  binaryMessage: string;
 }
 
 export interface ParsedDiff {
@@ -49,7 +51,7 @@ export function parseUnifiedDiff(rawDiff: string): ParsedDiff {
 
   const ensureFile = (): ParsedDiffFile => {
     if (!file) {
-      file = { oldPath: "", newPath: "", metadata: [], hunks: [] };
+      file = createParsedFile();
       files.push(file);
     }
     return file;
@@ -58,7 +60,13 @@ export function parseUnifiedDiff(rawDiff: string): ParsedDiff {
   for (let sourceIndex = 0; sourceIndex < source.length; sourceIndex++) {
     const raw = source[sourceIndex];
     if (raw.startsWith("diff --git ")) {
-      file = { oldPath: "", newPath: "", metadata: [{ content: raw, sourceIndex }], hunks: [] };
+      file = createParsedFile();
+      const paths = raw.match(/^diff --git a\/(.+) b\/(.+)$/);
+      if (paths) {
+        file.oldPath = paths[1];
+        file.newPath = paths[2];
+      }
+      file.metadata.push({ content: raw, sourceIndex });
       files.push(file);
       hunk = null;
       continue;
@@ -88,6 +96,19 @@ export function parseUnifiedDiff(rawDiff: string): ParsedDiff {
       current.metadata.push({ content: raw, sourceIndex });
       if (raw.startsWith("--- ")) current.oldPath = normalizeDiffPath(raw.slice(4));
       if (raw.startsWith("+++ ")) current.newPath = normalizeDiffPath(raw.slice(4));
+      const binaryPaths = raw.match(/^Binary files (.+) and (.+) differ$/);
+      if (binaryPaths) {
+        current.binary = true;
+        current.binaryMessage = "binary files differ";
+        if (!current.oldPath) current.oldPath = normalizeDiffPath(binaryPaths[1]);
+        if (!current.newPath) current.newPath = normalizeDiffPath(binaryPaths[2]);
+      } else if (raw === "GIT binary patch") {
+        current.binary = true;
+        current.binaryMessage = "binary patch";
+      } else if (/^Binary file .+ has changed$/.test(raw)) {
+        current.binary = true;
+        current.binaryMessage = "binary file changed";
+      }
       continue;
     }
 
@@ -144,6 +165,17 @@ export function extractDiffLineHtml(highlightedDiff: string): string[] {
     if (isCodeLine) removeFirstTextCharacter(clone);
     return clone.innerHTML;
   });
+}
+
+function createParsedFile(): ParsedDiffFile {
+  return {
+    oldPath: "",
+    newPath: "",
+    metadata: [],
+    hunks: [],
+    binary: false,
+    binaryMessage: "",
+  };
 }
 
 function normalizeDiffPath(path: string): string {

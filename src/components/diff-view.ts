@@ -34,6 +34,8 @@ export class CwDiffView extends LitElement {
   @property({ type: Boolean }) split = false;
   @property({ type: Boolean, reflect: true }) wrap = false;
   @property({ type: Boolean, attribute: "show-metadata" }) showMetadata = false;
+  /** True when the host stopped fetching before the complete patch was returned. */
+  @property({ type: Boolean }) truncated = false;
   @property({ type: String }) emptyLabel = "no changes";
   /** Accessible name for the focusable diff scroller. */
   @property({ type: String }) label = "Code changes";
@@ -93,9 +95,15 @@ export class CwDiffView extends LitElement {
     if (this.phase === "empty" || !this.rendered) {
       return html`<div class="empty" part="empty">${this.emptyLabel}</div>`;
     }
+    const hasBinaryFile = this.parsed.files.some((file) => file.binary);
     return html`
       <div class="viewport" part="viewport" role="region" aria-label=${this.label} tabindex="0">
-        ${this.split
+        ${this.truncated
+          ? html`<div class="truncated" part="truncated" role="status">
+              Diff preview truncated. Remaining changes are not shown.
+            </div>`
+          : nothing}
+        ${this.split && !hasBinaryFile
           ? html`<div class="diff split" part="diff split">
               <table>
                 <colgroup>
@@ -131,12 +139,17 @@ export class CwDiffView extends LitElement {
   }
 
   private renderFile(file: ParsedDiffFile, showFileLabel: boolean): TemplateResult {
+    const visibleMetadata = file.binary
+      ? metadataBeforeBinaryPayload(file.metadata)
+      : file.metadata;
     const metadata = this.showMetadata
-      ? file.metadata
-      : file.metadata.filter(({ content }) => !isBoilerplateMetadata(content));
+      ? visibleMetadata
+      : visibleMetadata.filter(
+          ({ content }) => !isBoilerplateMetadata(content) && !isBinaryMetadata(content),
+        );
     const path = file.newPath || file.oldPath;
     return html`<section class="file" part="file">
-      ${showFileLabel && path
+      ${(showFileLabel || file.binary) && path
         ? html`<div class="file-label" part="file-label">${path}</div>`
         : nothing}
       ${metadata.map(
@@ -144,8 +157,13 @@ export class CwDiffView extends LitElement {
           <code>${this.lineHtml(line.sourceIndex, line.content)}</code>
         </div>`,
       )}
-      ${file.hunks.map((hunk) => this.renderHunk(hunk))}
-      ${file.hunks.length === 0 && metadata.length === 0
+      ${file.binary
+        ? html`<div class="file-state binary" part="file-state binary">
+            <strong>Binary file changed</strong>
+            <span>No text preview is available for this file.</span>
+          </div>`
+        : file.hunks.map((hunk) => this.renderHunk(hunk))}
+      ${!file.binary && file.hunks.length === 0 && metadata.length === 0
         ? html`<div class="no-text-change" part="no-text-change">no textual changes</div>`
         : nothing}
     </section>`;
@@ -198,6 +216,34 @@ export class CwDiffView extends LitElement {
       display: grid;
       min-height: 8rem;
       place-items: center;
+    }
+    .truncated {
+      position: sticky;
+      top: 0;
+      left: 0;
+      z-index: 3;
+      width: 100%;
+      padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+      box-sizing: border-box;
+      border-block-end: 1px solid var(--cw-border-color);
+      background: Canvas;
+      color: GrayText;
+      font-family: system-ui, sans-serif;
+    }
+    .file-state {
+      position: sticky;
+      left: 0;
+      display: grid;
+      min-height: 8rem;
+      place-content: center;
+      gap: var(--space-1, 0.25rem);
+      padding: var(--space-4, 1rem);
+      box-sizing: border-box;
+      text-align: center;
+      font-family: system-ui, sans-serif;
+    }
+    .file-state span {
+      color: GrayText;
     }
     .viewport {
       width: 100%;
@@ -343,6 +389,21 @@ export class CwDiffView extends LitElement {
 
 function isBoilerplateMetadata(line: string): boolean {
   return /^(diff --git |index |--- |\+\+\+ )/.test(line);
+}
+
+function isBinaryMetadata(line: string): boolean {
+  return (
+    line === "GIT binary patch" ||
+    /^Binary files .+ and .+ differ$/.test(line) ||
+    /^Binary file .+ has changed$/.test(line)
+  );
+}
+
+function metadataBeforeBinaryPayload(
+  metadata: ParsedDiffFile["metadata"],
+): ParsedDiffFile["metadata"] {
+  const payloadStart = metadata.findIndex(({ content }) => content === "GIT binary patch");
+  return payloadStart < 0 ? metadata : metadata.slice(0, payloadStart + 1);
 }
 
 function formatRange(start: number, count: number): string {

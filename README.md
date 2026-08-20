@@ -68,6 +68,7 @@ pieces they need:
 | `.../chat-turn` | One transport-free turn with caller-owned action/body slots |
 | `.../diff-view`        | Transport-independent `<cw-diff-view>` unified/split renderer |
 | `.../diff`             | Pure diff HTML transforms (line numbers, word and split diff) |
+| `.../commit-graph`     | Pure newest-first commit lane assignment for custom renderers |
 | `.../workbench`        | Extension host, view/command registry, services, context, and storage |
 | `.../workbench-view`, `.../workbench-switcher` | Registry-driven view mounting and navigation |
 | `.../command-palette`  | Searchable workbench command surface |

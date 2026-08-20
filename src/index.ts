@@ -80,6 +80,12 @@ export {
   type ParsedDiffHunk,
   type ParsedDiffLine,
 } from "./lib/diff.js";
+export {
+  layoutGraph,
+  type GraphCommitInput,
+  type GraphLayout,
+  type GraphNode,
+} from "./lib/commit-graph.js";
 export { toast } from "./components/toast.js";
 
 // ── Public types (event payloads) ────────────────────────────────

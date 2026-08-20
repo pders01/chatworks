@@ -29,6 +29,8 @@
 
 ### Added
 
+- Transport-independent commit lane assignment through the primary barrel and
+  `@jpahd/chatworks/commit-graph` for application-owned history rendering.
 - Small transport-free `<cw-attachment>` primitive with optional removal,
   standalone package export, semantic events, and compatibility part forwarding
   through the existing composer, message list, and chat view.

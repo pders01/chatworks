@@ -81,6 +81,10 @@
       "types": "./dist/lib/diff.d.ts",
       "import": "./dist/lib/diff.js"
     },
+    "./commit-graph": {
+      "types": "./dist/lib/commit-graph.d.ts",
+      "import": "./dist/lib/commit-graph.js"
+    },
     "./settings-panel": {
       "types": "./dist/components/settings-panel.d.ts",
       "import": "./dist/components/settings-panel.js"

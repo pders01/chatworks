@@ -4,6 +4,9 @@
 
 ### Changed
 
+- Completed `RepoHost.listCommits` with optional path filtering and `hasMore`
+  pagination metadata, and added optional normalized `RepoHost.getBlame` line
+  attribution while keeping protocol types behind the Connect adapter.
 - Reworked component defaults as an enhanced browser baseline with system fonts
   and colors, readable spacing, native-sized controls, visible focus, and modest
   standalone surfaces. Applications still own branding and product-shell

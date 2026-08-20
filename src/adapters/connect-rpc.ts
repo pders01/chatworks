@@ -32,6 +32,8 @@ export interface ConnectRpcHosts {
   authHost: AuthHost;
 }
 
+const fullGitObjectId = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/i;
+
 /**
  * Build the default Connect-RPC-backed hosts. With no options, hits
  * same-origin endpoints with cookies included. `credentials: "include"`
@@ -59,8 +61,26 @@ export function createConnectRpcHosts(opts: CreateConnectRpcHostsOptions = {}): 
   const repoHost = {
     listRepos: (req) => repoClient.listRepos(req),
     listBranches: (req) => repoClient.listBranches(req),
-    listCommits: (req) => repoClient.listCommits(req),
+    listCommits: async ({ repoId, ref, limit, offset, path }) => {
+      const response = await repoClient.listCommits({ repoId, ref, limit, offset, path });
+      return { commits: response.commits, hasMore: response.hasMore };
+    },
     listTree: (req) => repoClient.listTree(req),
+    getBlame: async ({ repoId, ref, path }) => {
+      const response = await repoClient.getBlame({ repoId, ref, path });
+      return {
+        lines: response.lines.map((line, index) => ({
+          lineNumber: index + 1,
+          text: line.text,
+          authorName: line.authorName,
+          authorEmail: line.authorEmail,
+          authorTime: line.date,
+          sha: fullGitObjectId.test(line.commitSha) ? line.commitSha : undefined,
+          shortSha: line.commitSha.slice(0, 7),
+          message: line.commitMessage,
+        })),
+      };
+    },
     getDiff: (req) => repoClient.getDiff(req),
   } satisfies RepoHost;
 

@@ -76,6 +76,19 @@ export interface ChangedFile {
   fromPath: string;
 }
 
+export interface BlameLine {
+  lineNumber: number;
+  text: string;
+  authorName: string;
+  authorEmail: string;
+  authorTime: bigint;
+  /** Full commit object ID when the host can provide it. */
+  sha?: string;
+  /** Abbreviated commit object ID, suitable for display and ref lookup. */
+  shortSha: string;
+  message: string;
+}
+
 export interface ChatSession {
   id: string;
   repoId: string;
@@ -229,14 +242,16 @@ export interface RepoHost {
     ref?: string;
     limit: number;
     offset: number;
+    path?: string;
     branch?: string;
-  }): Promise<{ commits: CommitEntry[] }>;
+  }): Promise<{ commits: CommitEntry[]; hasMore: boolean }>;
   listTree(req: {
     repoId: string;
     ref?: string;
     path: string;
   }): Promise<{ entries: TreeEntry[]; refResolved: string }>;
   getFilePreview?(req: { repoId: string; ref?: string; path: string }): Promise<FilePreview>;
+  getBlame?(req: { repoId: string; ref?: string; path: string }): Promise<{ lines: BlameLine[] }>;
   getDiff(req: {
     repoId: string;
     fromRef: string;

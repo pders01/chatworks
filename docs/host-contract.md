@@ -69,8 +69,9 @@ render without file mentions or commit suggestions.
 | --- | --- |
 | `listRepos()` | All repos the host exposes. |
 | `listBranches({ repoId })` | Local branches + tags, ordered by committer time. |
-| `listCommits({ repoId, ref?, limit, offset })` | Commits newest-first. |
+| `listCommits({ repoId, ref?, path?, limit, offset })` | Commits newest-first, optionally filtered to commits that touched `path`. Returns `hasMore` for offset pagination. |
 | `listTree({ repoId, ref?, path })` | Directory entries at `path` under `ref` (or default branch). |
+| `getBlame?({ repoId, ref?, path })` | Optional per-line attribution. Lines are numbered from 1 and expose `shortSha` plus a full `sha` when available. |
 | `getDiff({ repoId, fromRef, toRef, path, … })` | Unified diff for a single file between two refs. Used by inline `[[diff from=X to=Y path=Z]]` markers. |
 
 ### `ChatHost` — sessions, messages, activity summary

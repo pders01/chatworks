@@ -126,7 +126,23 @@ import { CwThinkingDisclosure } from "@jpahd/chatworks/thinking-disclosure";
 import { CwToolEvent } from "@jpahd/chatworks/tool-event";
 import { WorkbenchRegistry } from "@jpahd/chatworks/workbench";
 import { MessageRole, type Turn } from "@jpahd/chatworks/chat-types";
-import type { ChatHost } from "@jpahd/chatworks/host";
+import type { ChatHost, RepoHost } from "@jpahd/chatworks/host";
+
+async function inspectRepositoryHistory(repoHost: RepoHost): Promise<boolean> {
+  const response = await repoHost.listCommits({
+    repoId: "packed-consumer",
+    path: "src/index.ts",
+    limit: 25,
+    offset: 0,
+  });
+  if (!repoHost.getBlame) return response.hasMore;
+
+  const blame = await repoHost.getBlame({
+    repoId: "packed-consumer",
+    path: "src/index.ts",
+  });
+  return blame.lines.every((line) => line.lineNumber > 0 && line.shortSha.length > 0);
+}
 
 const turn: Turn = {
   id: "packed-consumer",
@@ -142,6 +158,7 @@ const elements = [
 (elements[1] as CwChatTurn).turn = turn;
 document.body.append(...elements);
 void new WorkbenchRegistry();
+void inspectRepositoryHistory;
 void (undefined as ChatHost | undefined);
 `,
   );

@@ -241,6 +241,7 @@ export function createStoryRepoHost(): RepoHost {
             parentShas: ["323321e"],
           },
         ],
+        hasMore: false,
       };
     },
     async listTree({ path }) {
@@ -297,6 +298,22 @@ export class WorkbenchRegistry {
         binary: false,
         truncated: false,
         language: "typescript",
+      };
+    },
+    async getBlame() {
+      return {
+        lines: [
+          {
+            lineNumber: 1,
+            text: "export interface WorkbenchView {",
+            authorName: "Chatworks",
+            authorEmail: "story@example.test",
+            authorTime: 1_725_000_000n,
+            sha: "ddab30ba81d8cafe000000000000000000000000",
+            shortSha: "ddab30b",
+            message: "feat(workbench): add extension runtime",
+          },
+        ],
       };
     },
     async getDiff() {

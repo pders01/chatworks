@@ -12,14 +12,9 @@ import {
   type ParsedDiffHunk,
   type ParsedDiffLine,
 } from "../lib/diff.js";
+import { highlight } from "../lib/highlight.js";
 import "./loading-indicator.js";
 import { browserStyles } from "../styles.js";
-
-let highlightModule: Promise<typeof import("../lib/highlight.js")> | null = null;
-function loadHighlight() {
-  if (!highlightModule) highlightModule = import("../lib/highlight.js");
-  return highlightModule;
-}
 
 /**
  * Transport-independent unified diff renderer.
@@ -72,7 +67,6 @@ export class CwDiffView extends LitElement {
     this.error = "";
     const parsed = parseUnifiedDiff(rawDiff);
     try {
-      const { highlight } = await loadHighlight();
       let highlighted = await highlight(rawDiff, "diff");
       if (generation !== this.generation || rawDiff !== this.rawDiff) return;
       highlighted = highlightWordDiffs(highlighted);

@@ -11,6 +11,7 @@ import {
   type RepoHost,
 } from "../../host.js";
 import { type ClientAttachment, fmtBytes, messageOf } from "../../lib/chat-types.js";
+import { highlight } from "../../lib/highlight.js";
 import {
   ALLOWED_ATTACHMENT_MIMES,
   MAX_ATTACHMENT_BYTES,
@@ -578,7 +579,6 @@ export class GcComposer extends LitElement {
 
   private async highlightMentionPreview(preview: FilePreview, seq: number): Promise<void> {
     try {
-      const { highlight } = await import("../../lib/highlight.js");
       const rendered = await highlight(preview.content, previewLanguage(preview.language));
       if (seq === this.mentionPreviewSeq) this.mentionPreviewHtml = rendered;
     } catch {

@@ -221,7 +221,7 @@ export class CwDiffView extends LitElement {
       box-sizing: border-box;
       border-block-end: 1px solid var(--cw-border-color);
       background: Canvas;
-      color: GrayText;
+      color: var(--cw-muted-color);
       font-family: system-ui, sans-serif;
     }
     .file-state {
@@ -237,7 +237,7 @@ export class CwDiffView extends LitElement {
       font-family: system-ui, sans-serif;
     }
     .file-state span {
-      color: GrayText;
+      color: var(--cw-muted-color);
     }
     .viewport {
       width: 100%;

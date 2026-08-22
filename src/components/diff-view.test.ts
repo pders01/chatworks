@@ -45,6 +45,31 @@ Binary files /dev/null and b/image.png differ
   expect(diff.shadowRoot?.textContent).not.toContain("Binary files /dev/null");
 });
 
+test("keeps textual files split when the same patch includes a binary file", async () => {
+  const diff = new CwDiffView();
+  diff.split = true;
+  diff.rawDiff = `diff --git a/image.png b/image.png
+new file mode 100644
+index 0000000..b128a92
+Binary files /dev/null and b/image.png differ
+diff --git a/file.ts b/file.ts
+index 1111111..2222222 100644
+--- a/file.ts
++++ b/file.ts
+@@ -1 +1 @@
+-old
++new
+`;
+  document.body.append(diff);
+
+  await settleDiff(diff, ".mixed-split table");
+
+  expect(diff.shadowRoot?.querySelector(".binary")?.textContent).toContain("Binary file changed");
+  expect(diff.shadowRoot?.querySelector(".mixed-split")?.getAttribute("part")).toContain("split");
+  expect(diff.shadowRoot?.querySelector(".split-file")?.textContent).toContain("old");
+  expect(diff.shadowRoot?.querySelector(".split-file")?.textContent).toContain("new");
+});
+
 test("announces host-owned truncation independently of patch contents", async () => {
   const diff = new CwDiffView();
   diff.truncated = true;

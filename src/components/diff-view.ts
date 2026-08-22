@@ -89,7 +89,6 @@ export class CwDiffView extends LitElement {
     if (this.phase === "empty" || !this.rendered) {
       return html`<div class="empty" part="empty">${this.emptyLabel}</div>`;
     }
-    const hasBinaryFile = this.parsed.files.some((file) => file.binary);
     return html`
       <div class="viewport" part="viewport" role="region" aria-label=${this.label} tabindex="0">
         ${this.truncated
@@ -97,27 +96,55 @@ export class CwDiffView extends LitElement {
               Diff preview truncated. Remaining changes are not shown.
             </div>`
           : nothing}
-        ${this.split && !hasBinaryFile
-          ? html`<div class="diff split" part="diff split">
-              <table>
-                <colgroup>
-                  <col />
-                  <col />
-                </colgroup>
-                <tbody>
-                  ${splitDiffHtml(this.rendered).map(
-                    ({ left, right }) => html`
-                      <tr>
-                        ${this.renderSplitSide("old", left)} ${this.renderSplitSide("new", right)}
-                      </tr>
-                    `,
-                  )}
-                </tbody>
-              </table>
-            </div>`
-          : this.renderUnified()}
+        ${this.split ? this.renderSplit() : this.renderUnified()}
       </div>
     `;
+  }
+
+  private renderSplit(): TemplateResult {
+    const hasBinaryFile = this.parsed.files.some((file) => file.binary);
+    if (!hasBinaryFile) {
+      return html`<div class="diff split" part="diff split">
+        ${this.renderSplitTable(this.rendered)}
+      </div>`;
+    }
+
+    return html`<div class="diff split mixed-split" part="diff split">
+      ${this.parsed.files.map((file, index) =>
+        file.binary
+          ? this.renderFile(file, true)
+          : html`<section class="file split-file" part="file">
+              ${filePath(file)
+                ? html`<div class="file-label" part="file-label">${filePath(file)}</div>`
+                : nothing}
+              ${this.renderSplitTable(
+                sliceRenderedDiff(
+                  this.rendered,
+                  firstSourceIndex(file),
+                  firstSourceIndex(this.parsed.files[index + 1]),
+                ),
+              )}
+            </section>`,
+      )}
+    </div>`;
+  }
+
+  private renderSplitTable(rendered: string): TemplateResult {
+    return html`<table>
+      <colgroup>
+        <col />
+        <col />
+      </colgroup>
+      <tbody>
+        ${splitDiffHtml(rendered).map(
+          ({ left, right }) => html`
+            <tr>
+              ${this.renderSplitSide("old", left)} ${this.renderSplitSide("new", right)}
+            </tr>
+          `,
+        )}
+      </tbody>
+    </table>`;
   }
 
   private renderSplitSide(kind: "old" | "new", content: string): TemplateResult {
@@ -360,6 +387,9 @@ export class CwDiffView extends LitElement {
       width: 100%;
       min-width: 720px;
     }
+    .mixed-split > .file + .file {
+      border-block-start: 1px solid var(--cw-border-color);
+    }
     table {
       width: 100%;
       table-layout: fixed;
@@ -379,6 +409,26 @@ export class CwDiffView extends LitElement {
       visibility: hidden;
     }
   `;
+}
+
+function filePath(file: ParsedDiffFile): string {
+  return file.newPath || file.oldPath;
+}
+
+function firstSourceIndex(file: ParsedDiffFile | undefined): number | undefined {
+  if (!file) return undefined;
+  return file.metadata[0]?.sourceIndex ?? file.hunks[0]?.sourceIndex;
+}
+
+function sliceRenderedDiff(rendered: string, start = 0, end?: number): string {
+  const container = document.createElement("div");
+  container.innerHTML = rendered;
+  const lines = Array.from(container.querySelectorAll("code .line"));
+  const selected = lines
+    .slice(start, end)
+    .map((line) => line.outerHTML)
+    .join("");
+  return `<code>${selected}</code>`;
 }
 
 function isBoilerplateMetadata(line: string): boolean {

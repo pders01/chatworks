@@ -199,14 +199,30 @@ function removeFirstTextCharacter(element: Element): void {
 // the default plain renderer and an installed host highlighter must preserve
 // that structural contract for diff transforms.
 
+/** One row of a side-by-side diff.
+ *
+ * `leftKind`/`rightKind` are set only when that side is a changed line
+ * ("deletion" on the old side, "addition" on the new side). Context and
+ * file-header rows leave both undefined; an empty side opposite a changed
+ * line is a filler cell the renderer can dim. */
+export interface SplitDiffRow {
+  left: string;
+  right: string;
+  leftKind?: "deletion" | "addition";
+  rightKind?: "deletion" | "addition";
+}
+
 /** Convert a line-wrapped unified-diff HTML blob into side-by-side pairs.
  * Consecutive -/+ runs are zipped
  * row-by-row; unchanged context lines mirror on both sides. Orphan
  * deletes get an empty right side; orphan adds get an empty left side.
  *
+ * Rows carry per-side change kinds so split renderers can distinguish
+ * changed lines from context without re-inspecting text prefixes.
+ *
  * The input can come in two shapes: a `.line`-wrapped variant (preferred)
  * or a plain newline-split body. Both are handled. */
-export function splitDiffHtml(unifiedHtml: string): Array<{ left: string; right: string }> {
+export function splitDiffHtml(unifiedHtml: string): SplitDiffRow[] {
   const tmp = document.createElement("div");
   tmp.innerHTML = unifiedHtml;
   const code = tmp.querySelector("code");
@@ -214,13 +230,16 @@ export function splitDiffHtml(unifiedHtml: string): Array<{ left: string; right:
   const lineEls = code.querySelectorAll(".line");
   const lines =
     lineEls.length > 0 ? Array.from(lineEls).map((el) => el.innerHTML) : code.innerHTML.split("\n");
-  const pairs: Array<{ left: string; right: string }> = [];
+  const pairs: SplitDiffRow[] = [];
   const delBuf: string[] = [];
   const addBuf: string[] = [];
   const flushBuffers = () => {
     const max = Math.max(delBuf.length, addBuf.length);
     for (let i = 0; i < max; i++) {
-      pairs.push({ left: delBuf[i] ?? "", right: addBuf[i] ?? "" });
+      const row: SplitDiffRow = { left: delBuf[i] ?? "", right: addBuf[i] ?? "" };
+      if (delBuf[i] !== undefined) row.leftKind = "deletion";
+      if (addBuf[i] !== undefined) row.rightKind = "addition";
+      pairs.push(row);
     }
     delBuf.length = 0;
     addBuf.length = 0;

@@ -11,6 +11,7 @@ import {
   type ParsedDiffFile,
   type ParsedDiffHunk,
   type ParsedDiffLine,
+  type SplitDiffRow,
 } from "../lib/diff.js";
 import { highlight } from "../lib/highlight.js";
 import "./loading-indicator.js";
@@ -137,9 +138,9 @@ export class CwDiffView extends LitElement {
       </colgroup>
       <tbody>
         ${splitDiffHtml(rendered).map(
-          ({ left, right }) => html`
+          (row) => html`
             <tr>
-              ${this.renderSplitSide("old", left)} ${this.renderSplitSide("new", right)}
+              ${this.renderSplitSide("old", row)} ${this.renderSplitSide("new", row)}
             </tr>
           `,
         )}
@@ -147,8 +148,17 @@ export class CwDiffView extends LitElement {
     </table>`;
   }
 
-  private renderSplitSide(kind: "old" | "new", content: string): TemplateResult {
-    const tokens = `side ${kind}`;
+  private renderSplitSide(side: "old" | "new", row: SplitDiffRow): TemplateResult {
+    const content = side === "old" ? row.left : row.right;
+    const kind = side === "old" ? row.leftKind : row.rightKind;
+    const counterpartKind = side === "old" ? row.rightKind : row.leftKind;
+    // Tokens: structural `side old|new`, then a change kind on real edited
+    // lines, or `filler` when this side is empty padding opposite a change.
+    const tokens = kind
+      ? `side ${side} ${kind}`
+      : !content && counterpartKind
+        ? `side ${side} filler`
+        : `side ${side}`;
     return html`<td class=${tokens} part=${tokens}>${content ? unsafeHTML(content) : nothing}</td>`;
   }
 

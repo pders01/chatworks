@@ -147,37 +147,39 @@ describe("splitDiffHtml", () => {
 
   test("single del/add pair zips into one row", () => {
     const out = splitDiffHtml(shikiDiff(["-old line", "+new line"]));
-    expect(out).toEqual([{ left: "-old line", right: "+new line" }]);
+    expect(out).toEqual([
+      { left: "-old line", right: "+new line", leftKind: "deletion", rightKind: "addition" },
+    ]);
   });
 
   test("del-only run produces empty right sides", () => {
     const out = splitDiffHtml(shikiDiff(["-one", "-two"]));
     expect(out).toEqual([
-      { left: "-one", right: "" },
-      { left: "-two", right: "" },
+      { left: "-one", right: "", leftKind: "deletion" },
+      { left: "-two", right: "", leftKind: "deletion" },
     ]);
   });
 
   test("add-only run produces empty left sides", () => {
     const out = splitDiffHtml(shikiDiff(["+one", "+two"]));
     expect(out).toEqual([
-      { left: "", right: "+one" },
-      { left: "", right: "+two" },
+      { left: "", right: "+one", rightKind: "addition" },
+      { left: "", right: "+two", rightKind: "addition" },
     ]);
   });
 
   test("uneven del/add — shorter side gets padded with empties", () => {
     const out = splitDiffHtml(shikiDiff(["-one", "-two", "+NEW"]));
     expect(out).toEqual([
-      { left: "-one", right: "+NEW" },
-      { left: "-two", right: "" },
+      { left: "-one", right: "+NEW", leftKind: "deletion", rightKind: "addition" },
+      { left: "-two", right: "", leftKind: "deletion" },
     ]);
   });
 
   test("context flush: accumulated -/+ flush before the context row", () => {
     const out = splitDiffHtml(shikiDiff(["-old", "+new", " same"]));
     expect(out).toEqual([
-      { left: "-old", right: "+new" },
+      { left: "-old", right: "+new", leftKind: "deletion", rightKind: "addition" },
       { left: " same", right: " same" },
     ]);
   });
@@ -191,7 +193,12 @@ describe("splitDiffHtml", () => {
     expect(out).toEqual([
       { left: "--- a/foo.ts", right: "--- a/foo.ts" },
       { left: "+++ b/foo.ts", right: "+++ b/foo.ts" },
-      { left: "-real-del", right: "+real-add" },
+      {
+        left: "-real-del",
+        right: "+real-add",
+        leftKind: "deletion",
+        rightKind: "addition",
+      },
     ]);
   });
 
@@ -201,10 +208,50 @@ describe("splitDiffHtml", () => {
     );
     expect(out).toEqual([
       { left: " unchanged", right: " unchanged" },
-      { left: "-deleted-a", right: "+added-a" },
-      { left: "-deleted-b", right: "" },
+      {
+        left: "-deleted-a",
+        right: "+added-a",
+        leftKind: "deletion",
+        rightKind: "addition",
+      },
+      { left: "-deleted-b", right: "", leftKind: "deletion" },
       { left: " tail", right: " tail" },
     ]);
+  });
+
+  test("changed rows carry per-side change kinds", () => {
+    const out = splitDiffHtml(
+      shikiDiff([" unchanged", "-old", "+new", " tail"]),
+    );
+    expect(out[1]).toEqual({
+      left: "-old",
+      right: "+new",
+      leftKind: "deletion",
+      rightKind: "addition",
+    });
+    // Context rows stay kind-free so renderers can style them as plain code.
+    expect(out[0].leftKind).toBeUndefined();
+    expect(out[0].rightKind).toBeUndefined();
+    expect(out[2].leftKind).toBeUndefined();
+  });
+
+  test("orphan del/add rows mark only the side that carries a line", () => {
+    const dels = splitDiffHtml(shikiDiff(["-one", "-two"]));
+    expect(dels).toEqual([
+      { left: "-one", right: "", leftKind: "deletion" },
+      { left: "-two", right: "", leftKind: "deletion" },
+    ]);
+    const adds = splitDiffHtml(shikiDiff(["+one", "+two"]));
+    expect(adds).toEqual([
+      { left: "", right: "+one", rightKind: "addition" },
+      { left: "", right: "+two", rightKind: "addition" },
+    ]);
+  });
+
+  test("file-header mirrors carry no change kinds", () => {
+    const out = splitDiffHtml(shikiDiff(["--- a/foo.ts", "+++ b/foo.ts"]));
+    expect(out[0].leftKind).toBeUndefined();
+    expect(out[0].rightKind).toBeUndefined();
   });
 });
 

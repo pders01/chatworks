@@ -1,4 +1,4 @@
-import { LitElement, html, css, nothing } from "lit";
+import { LitElement, html, css, nothing, type PropertyValues } from "lit";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import { customElement, property, state } from "lit/decorators.js";
 import { consume } from "@lit/context";
@@ -44,11 +44,14 @@ interface ArgSuggestion {
 @customElement("cw-composer")
 export class GcComposer extends LitElement {
   @consume({ context: repoHostContext, subscribe: true })
+  @state()
   private repoHost?: RepoHost;
   @consume({ context: llmConfigHostContext, subscribe: true })
   private llmConfigHost!: LlmConfigHost;
 
   @property({ type: String }) repoId = "";
+  /** Suppress repository-backed mentions, previews, and path/ref completion reads. */
+  @property({ type: Boolean }) fileMentionsDisabled = false;
   @property({ type: Boolean }) sending = false;
   @property({ type: String }) errorMsg = "";
   // Consumer-overridable placeholder. Empty string falls back to the
@@ -74,6 +77,7 @@ export class GcComposer extends LitElement {
   private dirCache = new Map<string, string[]>();
   private checkMentionSeq = 0;
   private mentionPreviewSeq = 0;
+  private repoScopeSeq = 0;
 
   @state() private slashResults: SlashCommand[] = [];
   @state() private showSlash = false;
@@ -91,6 +95,34 @@ export class GcComposer extends LitElement {
   private modelSuggestionCache: ArgSuggestion[] | null = null;
   private profileSuggestionCache: ArgSuggestion[] | null = null;
   private refSuggestionCache: ArgSuggestion[] | null = null;
+
+  protected override willUpdate(changed: PropertyValues): void {
+    if (changed.has("repoId") || changed.has("repoHost") || changed.has("fileMentionsDisabled")) {
+      this.repoScopeSeq++;
+      this.dirCache.clear();
+      this.refSuggestionCache = null;
+      this.checkMentionSeq++;
+      this.argFetchSeq++;
+      this.mentionResults = [];
+      this.mentionIdx = -1;
+      this.showMentions = false;
+      this.clearMentionPreview();
+      this.argCtx = null;
+      this.argResults = [];
+      this.argIdx = 0;
+      this.showArgs = false;
+    }
+  }
+
+  // Compare properties too: a response can settle before the next Lit update.
+  private repoScopeGuard(): () => boolean {
+    const { repoId, repoHost, fileMentionsDisabled, repoScopeSeq } = this;
+    return () =>
+      repoId === this.repoId &&
+      repoHost === this.repoHost &&
+      fileMentionsDisabled === this.fileMentionsDisabled &&
+      repoScopeSeq === this.repoScopeSeq;
+  }
 
   /** Public: set input text (used by parent for prefill / insert). */
   setInput(value: string) {
@@ -183,12 +215,13 @@ export class GcComposer extends LitElement {
     this.argCtx = ctx;
     const { priorArgs, currentToken } = splitArgPartial(ctx.command.argCompletion, ctx.partial);
     const seq = ++this.argFetchSeq;
+    const isCurrentScope = this.repoScopeGuard();
     const all = await this.loadArgSuggestions(
       ctx.command.command ?? ctx.command.trigger,
       priorArgs,
       currentToken,
     );
-    if (seq !== this.argFetchSeq) return;
+    if (seq !== this.argFetchSeq || !isCurrentScope()) return;
     const q = currentToken.toLowerCase();
     this.argResults = q
       ? all.filter((s) => s.label.toLowerCase().includes(q) || s.value.toLowerCase().includes(q))
@@ -280,6 +313,8 @@ export class GcComposer extends LitElement {
   }
 
   private async loadDiffRefs(): Promise<ArgSuggestion[]> {
+    if (this.fileMentionsDisabled) return [];
+    const isCurrentScope = this.repoScopeGuard();
     if (this.refSuggestionCache) return this.refSuggestionCache;
     const shortcuts: ArgSuggestion[] = [
       { value: "HEAD", label: "HEAD", description: "latest commit" },
@@ -294,6 +329,7 @@ export class GcComposer extends LitElement {
     }
     try {
       const resp = await this.repoHost.listBranches({ repoId: this.repoId });
+      if (!isCurrentScope()) return [];
       const branches: ArgSuggestion[] = (resp.branches ?? []).map((b) => ({
         value: b.name,
         label: b.name,
@@ -319,16 +355,19 @@ export class GcComposer extends LitElement {
   private async loadPathSuggestions(partial: string): Promise<ArgSuggestion[]> {
     const lastSlash = partial.lastIndexOf("/");
     const dirPath = lastSlash >= 0 ? partial.slice(0, lastSlash) : "";
-    if (!this.repoHost) return [];
+    if (this.fileMentionsDisabled || !this.repoHost) return [];
+    const isCurrentScope = this.repoScopeGuard();
     if (!this.dirCache.has(dirPath)) {
       try {
         const resp = await this.repoHost.listTree({ repoId: this.repoId, path: dirPath });
+        if (!isCurrentScope()) return [];
         const prefix = dirPath ? dirPath + "/" : "";
         this.dirCache.set(
           dirPath,
           resp.entries.map((e) => prefix + e.name + (e.type === EntryType.DIR ? "/" : "")),
         );
       } catch {
+        if (!isCurrentScope()) return [];
         this.dirCache.set(dirPath, []);
       }
     }
@@ -497,12 +536,13 @@ export class GcComposer extends LitElement {
 
   private async checkMention() {
     const seq = ++this.checkMentionSeq;
+    const isCurrentScope = this.repoScopeGuard();
     const ta = this.renderRoot.querySelector<HTMLTextAreaElement>("textarea");
     if (!ta) return;
     const pos = ta.selectionStart;
     const before = this.input.slice(0, pos);
     const atMatch = before.match(/@([\w\-./]*)$/);
-    if (!atMatch) {
+    if (this.fileMentionsDisabled || !atMatch) {
       this.showMentions = false;
       this.mentionResults = [];
       this.clearMentionPreview();
@@ -522,17 +562,8 @@ export class GcComposer extends LitElement {
       this.mentionResults = [];
       this.showMentions = false;
       this.clearMentionPreview();
-      try {
-        const resp = await this.repoHost.listTree({ repoId: this.repoId, path: dirPath });
-        const prefix = dirPath ? dirPath + "/" : "";
-        this.dirCache.set(
-          dirPath,
-          resp.entries.map((e) => prefix + e.name + (e.type === EntryType.DIR ? "/" : "")),
-        );
-      } catch {
-        this.dirCache.set(dirPath, []);
-      }
-      if (seq !== this.checkMentionSeq) return;
+      await this.loadPathSuggestions(query);
+      if (seq !== this.checkMentionSeq || !isCurrentScope()) return;
     }
     this.mentionResults = (this.dirCache.get(dirPath) || [])
       .filter((p) => {
@@ -554,33 +585,40 @@ export class GcComposer extends LitElement {
 
   private async loadMentionPreview(path: string): Promise<void> {
     const readPreview = this.repoHost?.getFilePreview;
-    if (!readPreview || path.endsWith("/")) {
+    if (this.fileMentionsDisabled || !readPreview || path.endsWith("/")) {
       this.clearMentionPreview();
       return;
     }
     if (this.mentionPreview?.path === path) return;
     const seq = ++this.mentionPreviewSeq;
+    const isCurrentScope = this.repoScopeGuard();
     this.mentionPreview = null;
     this.mentionPreviewHtml = "";
     this.mentionPreviewError = "";
     this.mentionPreviewLoading = true;
     try {
       const preview = await readPreview.call(this.repoHost, { repoId: this.repoId, path });
-      if (seq === this.mentionPreviewSeq) {
+      if (seq === this.mentionPreviewSeq && isCurrentScope()) {
         this.mentionPreview = preview;
-        if (!preview.binary) void this.highlightMentionPreview(preview, seq);
+        if (!preview.binary) void this.highlightMentionPreview(preview, seq, isCurrentScope);
       }
     } catch (error) {
-      if (seq === this.mentionPreviewSeq) this.mentionPreviewError = messageOf(error);
+      if (seq === this.mentionPreviewSeq && isCurrentScope()) {
+        this.mentionPreviewError = messageOf(error);
+      }
     } finally {
-      if (seq === this.mentionPreviewSeq) this.mentionPreviewLoading = false;
+      if (seq === this.mentionPreviewSeq && isCurrentScope()) this.mentionPreviewLoading = false;
     }
   }
 
-  private async highlightMentionPreview(preview: FilePreview, seq: number): Promise<void> {
+  private async highlightMentionPreview(
+    preview: FilePreview,
+    seq: number,
+    isCurrentScope: () => boolean,
+  ): Promise<void> {
     try {
       const rendered = await highlight(preview.content, previewLanguage(preview.language));
-      if (seq === this.mentionPreviewSeq) this.mentionPreviewHtml = rendered;
+      if (seq === this.mentionPreviewSeq && isCurrentScope()) this.mentionPreviewHtml = rendered;
     } catch {
       // The escaped plain-text preview remains available if highlighting fails.
     }

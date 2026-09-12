@@ -65,6 +65,16 @@ chat dashboard (commit list for suggestion seeding), chat view
 Omitting `RepoHost` is safe — components that need repo data simply
 render without file mentions or commit suggestions.
 
+`cw-composer.fileMentionsDisabled` is a public boolean (default `false`). Set it
+with a Lit property binding to suppress repository-backed `@file` suggestions,
+previews, and `/diff` path/ref completion reads while a draft has no allocated
+workspace. Set it back to `false` and supply the allocated scope through `repoId`
+to resume completion on the next input. Changing `repoId`, the provided `RepoHost`,
+or this flag clears file/ref caches and stale suggestion/preview UI, ignoring
+pending responses from the previous scope without resetting the draft,
+attachments, or textarea focus. Use distinct draft `repoId` values for distinct
+workspace placements; the composer does not interpret their format.
+
 | method | semantics |
 | --- | --- |
 | `listRepos()` | All repos the host exposes. |

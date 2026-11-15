@@ -41,9 +41,7 @@ index 1111111..2222222 100644
   document.body.append(diff);
 
   await settleDiff(diff, ".side");
-  const sides = Array.from(
-    diff.shadowRoot?.querySelectorAll<HTMLTableCellElement>(".side") ?? [],
-  );
+  const sides = Array.from(diff.shadowRoot?.querySelectorAll<HTMLTableCellElement>(".side") ?? []);
   const byPart = (part: string) =>
     sides.filter((cell) => cell.getAttribute("part")?.split(" ").includes(part));
 

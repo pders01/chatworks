@@ -220,9 +220,7 @@ describe("splitDiffHtml", () => {
   });
 
   test("changed rows carry per-side change kinds", () => {
-    const out = splitDiffHtml(
-      shikiDiff([" unchanged", "-old", "+new", " tail"]),
-    );
+    const out = splitDiffHtml(shikiDiff([" unchanged", "-old", "+new", " tail"]));
     expect(out[1]).toEqual({
       left: "-old",
       right: "+new",

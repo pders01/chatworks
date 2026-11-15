@@ -1,0 +1,137 @@
+:root {
+  color-scheme: light;
+  --surface: #fff;
+  --text: #202322;
+  --muted: #646c68;
+  --border: #e2e6e3;
+  --page: #f8f9f8;
+  font:
+    14px/1.6 -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  background: var(--page);
+  color: var(--text);
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --surface: #151716;
+  --text: #ecefed;
+  --muted: #a1aaa4;
+  --border: #343b36;
+  --page: #0d0f0e;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+main {
+  max-width: 1200px;
+  margin: auto;
+  padding: 48px 32px;
+}
+header {
+  margin-bottom: 32px;
+}
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+h1 {
+  font-size: 40px;
+  line-height: 1.15;
+  letter-spacing: -0.045em;
+  margin: 12px 0;
+}
+.intro {
+  font-size: 17px;
+  color: var(--muted);
+  margin: 0;
+}
+form {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+label {
+  color: var(--muted);
+  font-size: 12px;
+}
+select,
+button {
+  font: inherit;
+  min-height: 34px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: inherit;
+  padding: 4px 10px;
+}
+button {
+  cursor: pointer;
+}
+button:focus-visible,
+select:focus-visible {
+  outline: 2px solid #7299bd;
+  outline-offset: 3px;
+}
+#specimen {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface);
+  height: 680px;
+  min-width: 0;
+}
+portable-commits-reader {
+  display: block;
+  height: 100%;
+  --reader-surface: var(--surface);
+  --reader-text: var(--text);
+  --reader-muted: var(--muted);
+  --reader-border: var(--border);
+  --reader-font: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --reader-control: var(--page);
+  --reader-selected: #e8eeea;
+  --reader-focus: #4e7193;
+  --reader-add: #e1f0e4;
+  --reader-del: #f8e7e7;
+  --reader-success: #2f8651;
+  --reader-danger: #b64343;
+}
+:root[data-theme="dark"] portable-commits-reader {
+  --reader-selected: #27352c;
+  --reader-focus: #8db7de;
+  --reader-add: #1d3527;
+  --reader-del: #42272b;
+  --reader-success: #8bc49b;
+  --reader-danger: #ed9898;
+}
+footer {
+  margin-top: 20px;
+  color: var(--muted);
+  font-size: 12px;
+}
+@media (max-width: 600px) {
+  main {
+    padding: 24px 16px;
+  }
+  h1 {
+    font-size: 32px;
+  }
+  #specimen {
+    height: 760px;
+  }
+  form {
+    gap: 8px;
+  }
+  select {
+    max-width: 150px;
+  }
+}

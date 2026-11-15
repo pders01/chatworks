@@ -3,3 +3,7 @@ dist/
 storybook-static/
 .vite/
 *.log
+test-results/
+playwright-report/
+.test-dist/
+check-results.txt

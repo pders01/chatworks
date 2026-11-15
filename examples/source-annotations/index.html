@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Source notes — standalone example</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <header class="intro">
+      <div class="wordmark">
+        <span aria-hidden="true">↳</span> Source notes <span class="badge">Standalone example</span>
+      </div>
+      <h1>A little context.<br />Right where it belongs.</h1>
+      <p>
+        Read the source. Leave the reasoning beside it.<br />A reusable annotation surface, with no
+        backend attached.
+      </p>
+    </header>
+    <main>
+      <form class="demo-controls" method="get" aria-label="Example settings">
+        <label for="theme">Appearance</label>
+        <select name="theme" id="theme">
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </select>
+        <label for="state">Example</label>
+        <select name="state" id="state">
+          <option value="populated">With notes</option>
+          <option value="empty">No notes</option>
+          <option value="edit">Editing</option>
+          <option value="compose">New note</option>
+          <option value="error">Connection error</option>
+          <option value="readonly">Read only</option>
+          <option value="empty-file">Empty file</option>
+          <option value="long">1,205 lines</option>
+        </select>
+        <label class="narrow-control" for="narrow"
+          ><input type="checkbox" name="narrow" value="1" id="narrow" /> Narrow</label
+        >
+        <button type="submit">Preview</button>
+      </form>
+      <div class="specimen" id="specimen"></div>
+      <p class="footnote">
+        Synthetic source and notes only. Changes live in memory and reset on reload.<br />Select a
+        line number, then Shift-click or use Shift + ↑ / ↓ to extend the range.
+      </p>
+    </main>
+    <footer>
+      <code>@jpahd/chatworks/source-annotations</code
+      ><span>Properties in. Semantic events out.</span>
+    </footer>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

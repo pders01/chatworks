@@ -8,9 +8,15 @@
   "sideEffects": [
     "./src/components/*.ts",
     "./src/components/**/*.ts",
+    "./src/source-annotations/*.ts",
+    "./src/commits-reader/*.ts",
+    "./src/repository-ui/*.ts",
     "./src/index.ts",
     "./dist/components/*.js",
     "./dist/components/**/*.js",
+    "./dist/source-annotations/*.js",
+    "./dist/commits-reader/*.js",
+    "./dist/repository-ui/*.js",
     "./dist/index.js",
     "./dist/lib/events.js"
   ],
@@ -21,6 +27,18 @@
     "LICENSE"
   ],
   "exports": {
+    "./source-annotations": {
+      "types": "./dist/source-annotations/index.d.ts",
+      "import": "./dist/source-annotations/index.js"
+    },
+    "./commits-reader": {
+      "types": "./dist/commits-reader/index.d.ts",
+      "import": "./dist/commits-reader/index.js"
+    },
+    "./repository-ui": {
+      "types": "./dist/repository-ui/index.d.ts",
+      "import": "./dist/repository-ui/index.js"
+    },
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
@@ -175,30 +193,46 @@
     "build": "rm -rf dist && tsc -p tsconfig.build.json",
     "build:watch": "tsc -w -p tsconfig.build.json",
     "test": "bun test src/",
-    "test:package": "bun run build && bun scripts/test-packed-package.ts",
+    "dev:artifacts": "node scripts/install-development-artifacts.mjs",
+    "test:tooling": "node --test scripts/*.test.mjs",
+    "test:package": "node scripts/test-repository-package.mjs",
+    "test:repository-package": "node scripts/test-repository-package.mjs",
+    "test:source-annotations": "npm run build && tsc -p tests/source-annotations/tsconfig.json && playwright test -c tests/source-annotations/playwright.config.ts",
+    "test:commits-reader": "npm run build && tsc -p tests/commits-reader/tsconfig.json && playwright test -c tests/commits-reader/playwright.config.ts",
+    "test:repository-ui": "npm run build && tsc --noEmit --strict --skipLibCheck --target ES2022 --module ESNext --moduleResolution bundler --lib ES2022,DOM,DOM.Iterable tests/repository-ui/public-types.ts && playwright test -c tests/repository-ui/playwright.config.ts",
     "test:storybook": "vitest run",
     "lint": "oxlint -c oxlintrc.json src/ stories/ scripts/ .storybook/ vitest.config.ts",
     "fmt": "oxfmt --write src/ stories/ scripts/ .storybook/ vitest.config.ts",
     "fmt:check": "oxfmt --check src/ stories/ scripts/ .storybook/ vitest.config.ts",
     "storybook": "storybook dev -p 6006",
     "storybook:build": "storybook build",
-    "prepublishOnly": "bun run build"
+    "prepublishOnly": "npm run build"
   },
   "peerDependencies": {
+    "@jpahd/git-chat-protocol": "0.0.0",
+    "@jpahd/commits-core": "0.0.0",
+    "@jpahd/source-annotations": "0.1.0",
     "@bufbuild/protobuf": "^2.11.0",
     "@connectrpc/connect": "^2.1.1",
     "@connectrpc/connect-web": "^2.1.1",
     "@lit/context": "^1.1.3",
     "lit": "^3.2.1"
   },
+  "peerDependenciesMeta": {
+    "@jpahd/git-chat-protocol": { "optional": true },
+    "@jpahd/commits-core": { "optional": true },
+    "@jpahd/source-annotations": { "optional": true }
+  },
   "dependencies": {
     "dompurify": "^3.3.3",
     "marked": "^18.0.0"
   },
   "devDependencies": {
-    "@bufbuild/protobuf": "^2.11.0",
-    "@connectrpc/connect": "^2.1.1",
-    "@connectrpc/connect-web": "^2.1.1",
+    "@types/node": "26.2.0",
+    "@playwright/test": "1.62.1",
+    "@bufbuild/protobuf": "2.14.0",
+    "@connectrpc/connect": "2.1.2",
+    "@connectrpc/connect-web": "2.1.2",
     "@happy-dom/global-registrator": "^20.9.0",
     "@lit/context": "^1.1.3",
     "@storybook/addon-a11y": "10.5.8",

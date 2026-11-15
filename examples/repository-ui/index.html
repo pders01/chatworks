@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Repository UI synthetic fixtures</title>
+    <style>
+      :root {
+        font: 16px/1.5 system-ui;
+        color-scheme: light dark;
+        background: Canvas;
+        color: CanvasText;
+      }
+      body {
+        margin: 0 auto;
+        max-width: 72rem;
+        padding: 1rem;
+      }
+      h1 {
+        font-size: 1.5rem;
+      }
+      h2 {
+        font-size: 1.125rem;
+      }
+      .card {
+        margin-block: 1.5rem;
+        min-width: 0;
+      }
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+      button {
+        min-height: 2.75rem;
+        font: inherit;
+      }
+      cw-file-tabs,
+      cw-source-preview,
+      cw-repository-tree {
+        display: block;
+      }
+      #tab-content {
+        padding: 0.75rem;
+      }
+      #intent {
+        overflow-wrap: anywhere;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Repository UI — synthetic, read-only fixtures</h1>
+    <p>
+      Independent library components, not a repository application. All contents below are
+      deterministic in-memory data.
+    </p>
+    <div class="toolbar"><button id="find" type="button">Find file</button></div>
+    <p id="intent" role="status">No host-owned file-open intent yet.</p>
+    <section class="card" id="tabs-card">
+      <h2>Open file navigation</h2>
+      <cw-file-tabs
+        ><div id="tab-content">
+          Host-owned source content. Reordering does not recreate this node.
+        </div></cw-file-tabs
+      >
+    </section>
+    <section class="card" id="tree-card">
+      <h2>Lazy file browser</h2>
+      <cw-repository-tree></cw-repository-tree>
+    </section>
+    <section class="card" id="preview-card">
+      <h2>Scoped source preview</h2>
+      <cw-source-preview></cw-source-preview>
+    </section>
+    <cw-file-picker></cw-file-picker>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

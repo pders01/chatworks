@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Repository history · Chatworks</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <p class="eyebrow">Chatworks / Reader components</p>
+        <h1>Repository history.</h1>
+        <p class="intro">Read the change. Keep the context.</p>
+      </header>
+      <form>
+        <label for="state">Example</label
+        ><select id="state" name="state">
+          <option value="selected">selected</option>
+          <option value="loaded">loaded</option>
+          <option value="unbound">unbound</option>
+          <option value="loading">loading</option>
+          <option value="empty">empty</option>
+          <option value="error">error</option>
+          <option value="incompatible">incompatible</option>
+          <option value="partial">partial</option>
+          <option value="unknown">unknown</option>
+          <option value="clipped">clipped</option>
+          <option value="plain">plain</option>
+          <option value="detail-error">detail error</option></select
+        ><label for="theme">Appearance</label
+        ><select id="theme" name="theme">
+          <option value="light">Light</option>
+          <option value="dark">Dark</option></select
+        ><button type="submit">Preview</button>
+      </form>
+      <div id="specimen"></div>
+      <footer>Synthetic repository. No backend, credentials, or live data.</footer>
+    </main>
+    <script type="module" src="/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,5 @@
+{
+  "extends": "../../tsconfig.json",
+  "include": ["./*.ts", "../../examples/commits-reader/*.ts"],
+  "exclude": ["./test-results"]
+}

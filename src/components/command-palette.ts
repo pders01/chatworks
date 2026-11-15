@@ -147,6 +147,7 @@ export class CwCommandPalette extends LitElement {
           spellcheck="false"
           .value=${this.query}
           placeholder=${this.placeholder}
+          aria-label="Search commands"
           role="combobox"
           aria-autocomplete="list"
           aria-controls=${listId}
@@ -155,32 +156,33 @@ export class CwCommandPalette extends LitElement {
           @input=${this.input}
         />
         <div id=${listId} class="commands" part="commands" role="listbox">
-          ${commands.length
-            ? commands.map(
-                (command, index) => html`
-                  <button
-                    id=${`cw-command-${index}`}
-                    type="button"
-                    role="option"
-                    aria-selected=${index === this.activeIndex ? "true" : "false"}
-                    class=${index === this.activeIndex ? "active" : ""}
-                    part="command ${index === this.activeIndex ? "active" : ""}"
-                    ?disabled=${Boolean(this.running)}
-                    @pointerenter=${() => (this.activeIndex = index)}
-                    @click=${() => void this.execute(command)}
-                  >
-                    <span class="copy" part="copy">
-                      <strong>${command.title}</strong>
-                      ${command.description ? html`<small>${command.description}</small>` : nothing}
-                    </span>
-                    ${command.category
-                      ? html`<span class="category" part="category">${command.category}</span>`
-                      : nothing}
-                  </button>
-                `,
-              )
-            : html`<p class="empty" part="empty">No matching commands</p>`}
+          ${commands.map(
+            (command, index) => html`
+              <button
+                id=${`cw-command-${index}`}
+                type="button"
+                role="option"
+                aria-selected=${index === this.activeIndex ? "true" : "false"}
+                class=${index === this.activeIndex ? "active" : ""}
+                part="command ${index === this.activeIndex ? "active" : ""}"
+                ?disabled=${Boolean(this.running)}
+                @pointerenter=${() => (this.activeIndex = index)}
+                @click=${() => void this.execute(command)}
+              >
+                <span class="copy" part="copy">
+                  <strong>${command.title}</strong>
+                  ${command.description ? html`<small>${command.description}</small>` : nothing}
+                </span>
+                ${command.category
+                  ? html`<span class="category" part="category">${command.category}</span>`
+                  : nothing}
+              </button>
+            `,
+          )}
         </div>
+        ${commands.length
+          ? nothing
+          : html`<p class="empty" part="empty" role="status">No matching commands</p>`}
         ${this.error ? html`<p class="error" part="error" role="alert">${this.error}</p>` : nothing}
       </section>
     `;

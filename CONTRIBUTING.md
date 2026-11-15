@@ -43,6 +43,29 @@ Ordinary replacement errors roll back. Staging is not crash-safe: if a killed
 process leaves node_modules/.chatworks-artifacts.lock, inspect the retained staging
 backups before removing the lock manually.
 
+## CI dependency handoff
+
+[CI](.github/workflows/ci.yml) builds packages from the public
+[`pders01/repokit`](https://github.com/pders01/repokit) repository at the full
+`REPOKIT_REVISION` recorded in that workflow. A separate producer job installs
+Repokit's locked dependencies, runs its verification suite, and uploads all six
+compiled npm tarballs as a current-run artifact. The Chatworks job downloads that
+bundle, validates/stages it with `dev:artifacts`, and builds public exports before
+typechecking stories. It never imports a producer checkout's source files.
+
+No package registry publication, cross-repository token, or manually supplied
+bundle is needed for this public-repository CI path. Only download caches are
+reused; installed private peers and `dist` are prepared afresh. CI also runs the
+packed consumers, tooling/unit checks, static catalog, all three feature-browser
+suites and the Storybook matrix, plus lint/format checks. Browser gates remain
+sequential. Workflow regressions use the pinned Bun runtime's YAML parser.
+
+To adopt a Repokit update, first push its intended commit to GitHub, then change
+`REPOKIT_REVISION` deliberately and verify that its six artifacts still match
+`expectedArtifacts`. Publish amended/rebased Repokit commits before referencing
+them in Chatworks CI. A branch name is not an immutable dependency selection.
+This workflow does not automatically follow Repokit's `main` or publish packages.
+
 ## Catalog and examples
 
 ```sh

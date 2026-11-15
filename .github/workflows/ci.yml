@@ -4,51 +4,149 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: "22.23.4"
+  BUN_VERSION: "1.4.4"
+  # Update this full revision deliberately when adopting new Repokit artifacts.
+  REPOKIT_REPOSITORY: pders01/repokit
+  REPOKIT_REVISION: e693a03e80bc816684dfc5d909bd01f40fc64455
 
 jobs:
+  repokit:
+    name: Produce verified Repokit packages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out pinned Repokit source
+        id: checkout-repokit
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.REPOKIT_REPOSITORY }}
+          ref: ${{ env.REPOKIT_REVISION }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install Repokit dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Verify Repokit
+        id: verify-repokit
+        run: npm run verify
+
+      - name: Pack all six compiled packages
+        id: pack-repokit
+        run: |
+          mkdir -p "$RUNNER_TEMP/repokit-artifacts"
+          npm pack --workspaces --ignore-scripts --offline --pack-destination "$RUNNER_TEMP/repokit-artifacts"
+
+      - name: Upload Repokit bundle
+        id: upload-repokit
+        uses: actions/upload-artifact@v4
+        with:
+          name: repokit-${{ env.REPOKIT_REVISION }}
+          path: ${{ runner.temp }}/repokit-artifacts/*.tgz
+          if-no-files-found: error
+          retention-days: 7
+
   check:
+    name: Verify Chatworks against compiled Repokit packages
+    needs: repokit
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
 
       - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
 
-      - name: Cache Bun dependencies
+      # Cache downloads only: installed peers and dist must be prepared each run.
+      - name: Cache Bun downloads
         uses: actions/cache@v4
         with:
-          path: |
-            node_modules
-            ~/.bun/install/cache
-          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ env.BUN_VERSION }}-${{ hashFiles('bun.lock') }}
           restore-keys: |
-            bun-${{ runner.os }}-
+            bun-${{ runner.os }}-${{ env.BUN_VERSION }}-
 
-      - name: Install
-        run: bun install --frozen-lockfile
+      - name: Install Chatworks dependencies
+        id: install
+        run: bun install --frozen-lockfile --ignore-scripts --no-env-file
 
-      - name: Typecheck
-        run: bun run check
+      - name: Download the current run's Repokit bundle
+        id: download-repokit
+        uses: actions/download-artifact@v4
+        with:
+          name: repokit-${{ env.REPOKIT_REVISION }}
+          path: ${{ runner.temp }}/repokit-artifacts
 
-      - name: Build
-        run: bun run build
+      - name: Validate and stage Repokit artifacts
+        id: stage-repokit
+        run: npm run dev:artifacts -- "$RUNNER_TEMP/repokit-artifacts"
 
-      - name: Test packed package
-        run: bun scripts/test-packed-package.ts
+      - name: Build public exports
+        id: build
+        run: npm run build
 
-      - name: Build Storybook
-        run: bun run storybook:build
+      - name: Typecheck source and public-export stories
+        id: typecheck
+        run: npm run check
 
-      - name: Install Chromium
-        run: bunx playwright install chromium --with-deps
+      - name: Test artifact and workflow tooling
+        id: tooling
+        run: npm run test:tooling
 
-      - name: Test Storybook
-        run: bun run test:storybook
+      - name: Test packed public consumers
+        id: packed
+        run: npm run test:package -- "$RUNNER_TEMP/repokit-artifacts"
 
-      - name: Test
-        run: bun run test
+      - name: Test units
+        id: unit
+        run: npm test
 
       - name: Lint
-        run: bun run lint
+        id: lint
+        run: npm run lint
 
       - name: Format check
-        run: bun run fmt:check
+        id: format
+        run: npm run fmt:check
+
+      - name: Build Storybook
+        id: storybook-build
+        run: npm run storybook:build
+
+      - name: Install Chromium
+        id: chromium
+        run: node_modules/.bin/playwright install chromium --with-deps
+
+      # Each feature runner owns a strict loopback port. Keep these sequential.
+      - name: Test source annotations
+        id: annotations-test
+        run: npm run test:source-annotations
+
+      - name: Test Commits reader
+        id: commits-test
+        run: npm run test:commits-reader
+
+      - name: Test repository UI
+        id: repository-ui-test
+        run: npm run test:repository-ui
+
+      - name: Test Storybook
+        id: storybook-test
+        run: npm run test:storybook

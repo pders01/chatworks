@@ -1,36 +1,34 @@
-# Host contract
+# Host contracts
 
-`chatworks` is a set of Lit web components that render a chat surface
-over a host-injected transport. The components do not own the transport
-or know how to reach a server; they consume four host interfaces via
-[`@lit/context`](https://lit.dev/docs/data/context/). The default
-implementation in `src/adapters/connect-rpc.ts` wraps a Connect-RPC
-client; consumers can supply any object that satisfies the shape (in-
-memory mock, GraphQL adapter, WebSocket bridge, etc.).
+Chat components consume capabilities through
+[`@lit/context`](https://lit.dev/docs/data/context/). Interfaces/contexts live in
+`@jpahd/chatworks/host`. Any object with the same shape can provide an in-memory,
+GraphQL, WebSocket or native bridge; components do not own transport or authority.
 
-This is the v0.2.0 wire-format-agnostic contract. v0.1.x exposed the
-Connect clients (`repoClient`, `chatClient`, `authClient`) as
-singletons; that path is gone from the primary entry. See the
-v0.2.0 [CHANGELOG](../CHANGELOG.md) for migration.
+The optional [repository UI](repository-ui.md), [Commits reader](commits-reader.md)
+and [source annotations](source-annotations.md) use separate explicit client/provider
+contracts. They are not automatically bridged to `RepoHost`.
 
-## Wiring at the app root
+## Wiring at the application root
+
+The optional Connect adapter targets a host-selected server:
 
 ```ts
 import { LitElement, html } from "lit";
 import { provide } from "@lit/context";
 import { customElement } from "lit/decorators.js";
 import {
-  createConnectRpcHosts,
   chatHostContext,
   llmConfigHostContext,
   type ChatHost,
   type LlmConfigHost,
-} from "@jpahd/chatworks";
+} from "@jpahd/chatworks/host";
+import { createConnectRpcHosts } from "@jpahd/chatworks/adapters/connect-rpc";
 import "@jpahd/chatworks/chat-view";
 
 @customElement("my-app")
 export class MyApp extends LitElement {
-  private hosts = createConnectRpcHosts(); // same-origin, cookies included
+  private hosts = createConnectRpcHosts(); // Same-origin; cookies included.
 
   @provide({ context: chatHostContext })
   private chatHost: ChatHost = this.hosts.chatHost;
@@ -44,116 +42,73 @@ export class MyApp extends LitElement {
 }
 ```
 
-`createConnectRpcHosts({ baseUrl: "https://api.example.com" })` overrides
-the transport's base URL. Pass `{ transport }` to supply a fully custom
-Connect transport (interceptors, custom fetch, etc.).
+`createConnectRpcHosts({ baseUrl: "https://api.example.com" })` selects another
+base URL; `{ transport }` accepts a custom Connect transport. This entry needs
+the protocol/Connect peers; a custom host need not use it.
 
-`RepoHost` and `AuthHost` are optional — chatworks components degrade
-gracefully when either context is absent. Provide `RepoHost` when your
-app has a git repo concept (enables `@`-mention autocomplete, commit
-suggestions, and `[[diff]]` markers). Provide `AuthHost` when you have
-an authentication shell (login, pairing, etc.).
+Provide `RepoHost` for repository-backed suggestions/diff markers. `AuthHost` is
+optional and no component consumes it directly. Hosts must enforce authorization,
+bind requests to their original scope and avoid silently changing authority behind
+stable provided objects. UI availability/read-only flags are not security controls.
 
-## The four hosts
+## RepoHost: optional read-only Git access
 
-### `RepoHost` — read-only git access (optional)
+Consumed by the composer (file/ref completion and previews), chat dashboard
+(commit suggestions) and chat view (inline diff markers). Without it, repository
+features are omitted rather than replaced with ambient reads.
 
-Used by: composer (`@`-mention autocomplete, `/diff` ref completion),
-chat dashboard (commit list for suggestion seeding), chat view
-(`[[diff]]` marker expansion).
+| Method                                                | Semantics                                                                                  |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `listRepos({})`                                       | Repositories the host exposes                                                              |
+| `listBranches({ repoId })`                            | Separate branches and tags arrays                                                          |
+| `listCommits({ repoId, ref?, path?, limit, offset })` | Newest-first commits, optional exact-path filter, `hasMore` for paging                     |
+| `listTree({ repoId, ref?, path })`                    | Directory entries plus resolved ref                                                        |
+| `getFilePreview?({ repoId, ref?, path })`             | Host-bounded composer preview, preserving binary/truncated facts                           |
+| `getBlame?({ repoId, ref?, path })`                   | Optional 1-based attribution, short SHA and full SHA when available                        |
+| `getDiff({ repoId, fromRef, toRef, path, … })`        | Unified diff and resolved endpoints; supports explicit rename/full-range/file-list options |
 
-Omitting `RepoHost` is safe — components that need repo data simply
-render without file mentions or commit suggestions.
+Set `cw-composer.fileMentionsDisabled=true` while a draft lacks an allocated
+workspace. It suppresses repository-backed file suggestions/previews and `/diff`
+completion. Supply its allocated `repoId` and clear the flag to resume on input.
+Changing repoId, RepoHost or the flag clears scoped completion/preview caches and
+fences pending responses **without resetting draft, attachments or focus**.
+Use distinct draft repoIds for distinct workspace placements; their format is
+host-owned.
 
-`cw-composer.fileMentionsDisabled` is a public boolean (default `false`). Set it
-with a Lit property binding to suppress repository-backed `@file` suggestions,
-previews, and `/diff` path/ref completion reads while a draft has no allocated
-workspace. Set it back to `false` and supply the allocated scope through `repoId`
-to resume completion on the next input. Changing `repoId`, the provided `RepoHost`,
-or this flag clears file/ref caches and stale suggestion/preview UI, ignoring
-pending responses from the previous scope without resetting the draft,
-attachments, or textarea focus. Use distinct draft `repoId` values for distinct
-workspace placements; the composer does not interpret their format.
+## ChatHost: sessions and streaming
 
-| method | semantics |
-| --- | --- |
-| `listRepos()` | All repos the host exposes. |
-| `listBranches({ repoId })` | Local branches + tags, ordered by committer time. |
-| `listCommits({ repoId, ref?, path?, limit, offset })` | Commits newest-first, optionally filtered to commits that touched `path`. Returns `hasMore` for offset pagination. |
-| `listTree({ repoId, ref?, path })` | Directory entries at `path` under `ref` (or default branch). |
-| `getBlame?({ repoId, ref?, path })` | Optional per-line attribution. Lines are numbered from 1 and expose `shortSha` plus a full `sha` when available. |
-| `getDiff({ repoId, fromRef, toRef, path, … })` | Unified diff for a single file between two refs. Used by inline `[[diff from=X to=Y path=Z]]` markers. |
+Consumed by chat view/session sidebar and the activity dashboard.
 
-### `ChatHost` — sessions, messages, activity summary
+| Method                                | Semantics                                                                                              |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `listSessions({ repoId })`            | Sessions for the selected repository                                                                   |
+| `getSession({ sessionId })`           | Session metadata and full message history                                                              |
+| `sendMessage(req, { signal })`        | Async stream: started/token/thinking/toolCall/toolResult/cardHit and terminal done; honor cancellation |
+| `renameSession({ sessionId, title })` | Rename                                                                                                 |
+| `deleteSession({ sessionId })`        | Remove                                                                                                 |
+| `pinSession({ sessionId, pinned })`   | Pin/unpin                                                                                              |
+| `summarizeActivity({ repoId })`       | Activity summary and suggested prompts                                                                 |
 
-Used by: chat view (session lifecycle + streaming `sendMessage`),
-session sidebar (rename, pin), chat dashboard (`summarizeActivity`).
+`sendMessage` accepts sessionId, repoId, text, optional attachments and optional
+`replaceFromMessageId`. An empty repoId is valid for hosts without a repository
+concept; repository-routing hosts must define its default meaning explicitly.
 
-| method | semantics |
-| --- | --- |
-| `listSessions({ repoId })` | All chat sessions for a repo. |
-| `getSession({ sessionId })` | Session metadata + full message history. |
-| `sendMessage(req, { signal })` | Server stream. Emits `started`, `token`, `thinking`, `toolCall`, `toolResult`, `cardHit`, and a terminal `done` chunk. Streams MUST be cancellable via the passed `AbortSignal`. |
-| `renameSession({ sessionId, title })` | Updates the session title. |
-| `deleteSession({ sessionId })` | Removes the session. |
-| `pinSession({ sessionId, pinned })` | Pin/unpin in the sidebar. |
-| `summarizeActivity({ repoId })` | LLM-generated recap of recent commits + a short list of suggestion prompts. |
-
-### `LlmConfigHost` — runtime LLM configuration
-
-Used by: settings panel (full surface), connection wizard (model
-discovery), composer (`/model` and `/profile` slash-command
-autocomplete), chat view (active-model indicator, pre-send route
-resolution, `checkModelAvailability`).
-
-| method | semantics |
-| --- | --- |
-| `getConfig()` | All registered config entries (effective value + default + description + group). |
-| `updateConfig({ key, value })` | Writes an override. Takes effect on the next `getConfig`. |
-| `listProfiles()` | Saved LLM profiles + the active profile id. |
-| `saveProfile({ profile })` | Create or update a profile. Returns the (possibly server-assigned) id. |
-| `deleteProfile({ id })` | Removes the profile. |
-| `activateProfile({ id })` | Switches the active profile. `id=""` deactivates (use config overrides). |
-| `getProviderCatalog()` | Cached provider/model catalog (no network). |
-| `refreshProviderCatalog()` | Fetches the latest catalog from upstream sources. |
-| `discoverLocalEndpoints()` | Probes loopback for LM-Studio / Ollama / similar endpoints. |
-| `discoverModels({ baseUrl, apiKey })` | Hits `/v1/models` (or similar) at a custom endpoint. Returns model IDs + provider name, or an `error` string. |
-
-### `AuthHost` — session establishment
-
-No chatworks component consumes `AuthHost` directly today, so
-providing it is **optional**: consumers without an auth-aware shell
-(e.g. a local-only demo) can skip the `@provide` for
-`authHostContext` and chatworks renders fine. The interface exists
-so consumer-supplied login/pairing views can route auth through the
-same context plumbing, and so future versions can add components
-that consume it without forcing every consumer to re-wire. The
-shape covers the two flows the Connect-RPC adapter supports
-(solo-local claim, multi-user ssh pairing) but nothing in
-chatworks's component tree requires either.
-
-| method | semantics |
-| --- | --- |
-| `whoami()` | Current principal + auth mode; empty principal means unauthenticated. |
-| `logout()` | Invalidates the session. |
-| `localClaim({ token })` | Trades a local-mode one-time token for a cookie. |
-| `startPairing()` | Mints a pairing session (returns `sid`, short code, expiry). |
-| `watchPairing({ sid })` | Server stream that emits exactly one terminal event (`paired` or `expired`). |
-| `claim({ sid, claimToken })` | Consumes a `Paired` event's claim token to set the session cookie. |
-
-## Custom hosts
-
-Each interface is a plain TS interface — no `$typeName`, no runtime
-classes. Returning the same shape is enough. Example mock for tests:
+A plain mock needs no generated message classes:
 
 ```ts
-import type { ChatHost, MessageChunk } from "@jpahd/chatworks";
+import type { ChatHost, MessageChunk } from "@jpahd/chatworks/host";
 
 const mockChat: ChatHost = {
-  async listSessions() { return { sessions: [] }; },
-  async getSession() { return { session: undefined, messages: [] }; },
-  async *sendMessage(): AsyncIterable<MessageChunk> {
+  async listSessions() {
+    return { sessions: [] };
+  },
+  async getSession() {
+    return { session: undefined, messages: [] };
+  },
+  async *sendMessage(_request, options): AsyncIterable<MessageChunk> {
+    if (options?.signal?.aborted) return;
     yield { kind: { case: "token", value: "hello" } };
+    if (options?.signal?.aborted) return;
     yield {
       kind: {
         case: "done",
@@ -172,21 +127,49 @@ const mockChat: ChatHost = {
   async renameSession() {},
   async deleteSession() {},
   async pinSession() {},
-  async summarizeActivity() { return { summary: "", suggestions: [] }; },
+  async summarizeActivity() {
+    return { summary: "", suggestions: [] };
+  },
 };
 ```
 
-## Internal layering rule
+## LlmConfigHost: configuration and discovery
 
-The chatworks codebase keeps the host seam clean with one
-review-enforced rule:
+Consumed by settings, connection wizard, composer model/profile completion and
+chat view model/route availability checks. The host decides where configuration
+lives and which discovery/network operations are authorized.
 
-> Code under `src/components/*` and `src/host.ts` MUST NOT import from
-> `src/adapters/*` or `src/gen/*`.
+| Method                                | Semantics                                                                           |
+| ------------------------------------- | ----------------------------------------------------------------------------------- |
+| `getConfig({})`                       | Effective config entries, defaults, descriptions and groups                         |
+| `updateConfig({ key, value })`        | Write an override                                                                   |
+| `listProfiles({})`                    | Saved profiles and active ID                                                        |
+| `saveProfile({ profile })`            | Create/update; return its ID                                                        |
+| `deleteProfile({ id })`               | Remove                                                                              |
+| `activateProfile({ id })`             | Select; empty ID deactivates the profile                                            |
+| `getProviderCatalog({})`              | Current cached catalog, without requesting upstream refresh                         |
+| `refreshProviderCatalog({})`          | Request a refreshed provider/model catalog                                          |
+| `discoverLocalEndpoints({})`          | Host-controlled loopback endpoint discovery                                         |
+| `discoverModels({ baseUrl, apiKey })` | Host-controlled endpoint model lookup; returns IDs/provider name or an error string |
 
-`EntryType` and `MessageRole` are the only proto-derived values
-components currently use, and `MessageRole` lives in `src/lib/chat-
-types.ts` as a host-side const. `EntryType` is imported from gen by
-`composer.ts` because it's a runtime enum used to detect directories
-in `listTree` responses — replicating it host-side is on the v0.3+
-list if the proto package is ever renamed.
+## AuthHost: host-owned authentication views
+
+No Chatworks component consumes this context directly. Supply it for your own
+login/pairing shell if useful. The interface covers the Connect adapter's local
+claim and SSH-pairing flows, not an authentication UI implemented by the library.
+
+| Method                       | Semantics                                               |
+| ---------------------------- | ------------------------------------------------------- |
+| `whoami({})`                 | Principal/auth mode; empty principal is unauthenticated |
+| `logout({})`                 | Invalidate session                                      |
+| `localClaim({ token })`      | Exchange a one-time local token for a session           |
+| `startPairing({})`           | Pairing ID, short code and expiry                       |
+| `watchPairing({ sid })`      | Async paired/expired terminal event                     |
+| `claim({ sid, claimToken })` | Establish session from the pairing claim token          |
+
+## Component layering
+
+Components and the host seam do not import adapters or generated protocol modules.
+`EntryType` in `/host` and `MessageRole` in `/chat-types` are plain host-side
+constants. Generated descriptors remain separate compatibility exports; custom
+hosts do not need `$typeName` or generated runtime classes.

@@ -14,10 +14,7 @@ chat message.
 ## Create a host
 
 ```ts
-import {
-  WorkbenchExtensionHost,
-  WorkbenchRegistry,
-} from "@jpahd/chatworks/workbench";
+import { WorkbenchExtensionHost, WorkbenchRegistry } from "@jpahd/chatworks/workbench";
 import "@jpahd/chatworks/workbench-view";
 import "@jpahd/chatworks/workbench-switcher";
 import "@jpahd/chatworks/command-palette";

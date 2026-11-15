@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 import assert from "node:assert/strict";
 import childProcess from "node:child_process";
-import { constants, existsSync, readFileSync, writeFileSync } from "node:fs";
+import { constants, existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import fs, {
   lstat,
   mkdir,
@@ -22,6 +22,7 @@ import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
 import {
   createPackedConsumer,
+  consumerDocumentation,
   expectedArtifacts,
   extractArtifact,
   readArtifactSet,
@@ -516,6 +517,7 @@ function syntheticPackaging(t) {
     version: "0.3.0",
     peerDependencies: { "third-party": "^1.0.0", [names[0]]: "0.0.0" },
     scripts: { prepack: "exit 99", prepare: "exit 99", postpack: "exit 99" },
+    files: ["dist", ...consumerDocumentation.map((name) => `docs/${name}`), "README.md", "LICENSE"],
   });
   const virtual = new Map([
     [join(root, "package.json"), Buffer.from(JSON.stringify(localManifest))],
@@ -525,6 +527,11 @@ function syntheticPackaging(t) {
     [join(root, "docs"), null],
     [join(root, "dist/index.js"), Buffer.from("export const synthetic = true;\n")],
     [join(root, "dist/index.d.ts"), Buffer.from("export declare const synthetic: true;\n")],
+    ...consumerDocumentation.map((name) => [
+      join(root, "docs", name),
+      Buffer.from("Synthetic consumer guide"),
+    ]),
+    [join(root, "docs/unpublished-note.md"), Buffer.from("Synthetic excluded contributor note")],
   ]);
   const original = {
     lstat: fs.lstat,
@@ -557,14 +564,15 @@ function syntheticPackaging(t) {
         )
       : original.readdir(path, ...args),
   );
-  t.mock.method(fs, "open", (path, ...args) =>
-    virtual.has(path)
+  t.mock.method(fs, "open", (path, ...args) => {
+    assert.notEqual(path, join(root, "docs/unpublished-note.md"), "Do not read excluded docs");
+    return virtual.has(path)
       ? Promise.resolve({
           readFile: async () => virtual.get(path),
           close: async () => {},
         })
-      : original.open(path, ...args),
-  );
+      : original.open(path, ...args);
+  });
   t.mock.method(fs, "mkdtemp", async (prefix, ...args) => {
     const path = await original.mkdtemp(prefix, ...args);
     if (prefix.includes("chatworks-artifacts-")) state.owned.push(await realpath(path));
@@ -599,6 +607,7 @@ function syntheticPackaging(t) {
     assert(!existsSync(join(options.cwd, ".npmrc")));
     assert(!existsSync(join(options.cwd, ".env")));
     assert.equal(options.cwd, join(owned, "package"));
+    assert.deepEqual(readdirSync(join(options.cwd, "docs")).sort(), [...consumerDocumentation]);
     const staged = JSON.parse(readFileSync(join(options.cwd, "package.json"), "utf8"));
     assert.equal(staged.name, "@jpahd/chatworks");
     assert.equal(
@@ -664,6 +673,10 @@ test("real offline npm pack accepts the synthetic package without executing life
   t.after(() => consumer.dispose());
   assert.equal(state.calls.length, 1);
   assert.equal(consumer.manifests.at(-1).name, "@jpahd/chatworks");
+  assert.deepEqual(
+    (await readdir(join(consumer.directory, "node_modules/@jpahd/chatworks/docs"))).sort(),
+    [...consumerDocumentation],
+  );
   assert.equal(
     await readFile(join(consumer.directory, "node_modules/@jpahd/chatworks/dist/index.js"), "utf8"),
     "export const synthetic = true;\n",

@@ -1,6 +1,6 @@
 # Commits reader example
 
-From the Chatworks root, follow [explicit artifact setup](../../docs/development-artifacts.md)
+From the Chatworks root, follow [artifact setup](../../CONTRIBUTING.md)
 and run `npm run build`, then:
 
 ```sh

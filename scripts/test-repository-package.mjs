@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 import assert from "node:assert/strict";
-import { rm, writeFile } from "node:fs/promises";
+import { readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
 import { join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { realpathSync } from "node:fs";
 
-import { createPackedConsumer, readArtifactSet } from "./lib/artifacts.mjs";
+import { consumerDocumentation, createPackedConsumer, readArtifactSet } from "./lib/artifacts.mjs";
 
 const args = process.argv.slice(2);
 if (args.length !== 1 || args[0].startsWith("-")) {
@@ -39,6 +39,23 @@ const consumer = await createPackedConsumer(artifactDirectory, root, {
   fixtures: ["@happy-dom/global-registrator", "lit-html"],
 });
 try {
+  const library = join(consumer.directory, "node_modules/@jpahd/chatworks");
+  assert.deepEqual((await readdir(join(library, "docs"))).sort(), [...consumerDocumentation]);
+  // Compile complete API examples from the actual packed docs, never source aliases.
+  let exampleCount = 0;
+  for (const file of [
+    "README.md",
+    "docs/commits-reader.md",
+    "docs/host-contract.md",
+    "docs/source-annotations.md",
+    "docs/repository-ui.md",
+  ]) {
+    const source = await readFile(join(library, file), "utf8");
+    for (const [, code] of source.matchAll(/^```ts\n([\s\S]*?)^```/gm)) {
+      await writeFile(join(consumer.directory, `docs-example-${exampleCount++}.ts`), code);
+    }
+  }
+  assert.equal(exampleCount, 6, "Missing complete consumer API examples");
   const main = `
 import { layoutGraph as barrelGraph, type GraphLayout } from '@jpahd/chatworks';
 import { CwAttachment } from '@jpahd/chatworks/attachment';
@@ -81,8 +98,10 @@ void (undefined as ChatHost|undefined); void (undefined as AnnotationClient|unde
         skipLibCheck: false,
         noEmit: true,
         types: [],
+        experimentalDecorators: true,
+        useDefineForClassFields: false,
       },
-      include: ["main.ts"],
+      include: ["main.ts", "docs-example-*.ts"],
     }),
   );
   consumer.run(process.execPath, [
@@ -90,6 +109,7 @@ void (undefined as ChatHost|undefined); void (undefined as AnnotationClient|unde
     "-p",
     "tsconfig.json",
   ]);
+  console.log("Packed consumer guide allowlist and six public API examples passed");
   const fixtureRequire = createRequire(join(consumer.directory, "package.json"));
   const libraryRequire = createRequire(
     join(consumer.directory, "node_modules/@jpahd/chatworks/package.json"),

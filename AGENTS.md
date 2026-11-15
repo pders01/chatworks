@@ -1,8 +1,7 @@
 # Chatworks
 
-Read README.md and docs/source-reading-architecture.md before changing feature
-ownership. This is the browser UI home, not a repository service or replacement
-Pi workbench.
+Read README.md and CONTRIBUTING.md before changing feature ownership or tooling.
+This is the browser UI home, not a repository service or application shell.
 
 - Keep source-reading features optional under /source-annotations, /commits-reader
   and /repository-ui. Do not silently add them to the default barrel.
@@ -21,7 +20,7 @@ Pi workbench.
   Reuse existing Chatworks styles; do not add a parallel design system.
 - No cross-repository filesystem dependencies, overrides or default checkout
   locations. Peer metadata uses normal versions. Development stages explicitly
-  supplied npm tarballs; follow docs/development-artifacts.md. Restage after a
+  supplied npm tarballs; follow CONTRIBUTING.md. Restage after a
   dependency reinstall or new bundle. Tests/examples use public compiled exports.
 - Check types, existing unit tests, artifact-tooling regressions, real packed
   artifacts (explicit bundle argument) and affected Chromium

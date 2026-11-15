@@ -32,6 +32,16 @@ export const expectedArtifacts = Object.freeze({
   "@jpahd/git-chat-protocol": "0.0.0",
 });
 
+/** Consumer guides only; contributor/process notes never enter packaging staging. */
+export const consumerDocumentation = Object.freeze([
+  "commits-reader.md",
+  "host-contract.md",
+  "repository-ui.md",
+  "source-annotations.md",
+  "styling.md",
+  "workbench.md",
+]);
+
 const MiB = 1024 * 1024;
 const MAX_ARCHIVE = 64 * MiB,
   MAX_SET = 128 * MiB,
@@ -526,13 +536,14 @@ async function stageChatworks(destination) {
   const root = fileURLToPath(new URL("../../", import.meta.url));
   let bytes = 0,
     files = 0;
-  async function copy(source, target) {
+  async function copy(source, target, includedNames) {
     assert(++files <= MAX_MEMBERS, "Too many Chatworks packaging files");
     const info = await lstat(source);
     assert(!info.isSymbolicLink(), "Symlink in Chatworks packaging surface");
+    if (includedNames) assert(info.isDirectory(), "Expected Chatworks packaging directory");
     if (info.isDirectory()) {
       await mkdir(target);
-      for (const name of await readdir(source)) {
+      for (const name of includedNames ?? (await readdir(source))) {
         safePath(name);
         await copy(join(source, name), join(target, name));
       }
@@ -561,7 +572,11 @@ async function stageChatworks(destination) {
     }
   }
   for (const name of ["package.json", "dist", "docs", "README.md", "LICENSE"])
-    await copy(join(root, name), join(destination, name));
+    await copy(
+      join(root, name),
+      join(destination, name),
+      name === "docs" ? consumerDocumentation : undefined,
+    );
 }
 
 /** Pack only Chatworks locally; all six headless packages come from real tarballs. */

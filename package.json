@@ -4,6 +4,17 @@
   "description": "Composable Lit web components and an extension-ready workbench runtime for AI-assisted chat, code, and arbitrary productivity workflows.",
   "license": "MIT",
   "author": "Paul Derscheid",
+  "files": [
+    "dist",
+    "docs/commits-reader.md",
+    "docs/host-contract.md",
+    "docs/repository-ui.md",
+    "docs/source-annotations.md",
+    "docs/styling.md",
+    "docs/workbench.md",
+    "README.md",
+    "LICENSE"
+  ],
   "type": "module",
   "sideEffects": [
     "./src/components/*.ts",
@@ -19,12 +30,6 @@
     "./dist/repository-ui/*.js",
     "./dist/index.js",
     "./dist/lib/events.js"
-  ],
-  "files": [
-    "dist",
-    "docs",
-    "README.md",
-    "LICENSE"
   ],
   "exports": {
     "./source-annotations": {
@@ -208,38 +213,23 @@
     "storybook:build": "npm run build && storybook build",
     "prepublishOnly": "npm run build"
   },
-  "peerDependencies": {
-    "@jpahd/git-chat-protocol": "0.0.0",
-    "@jpahd/commits-core": "0.0.0",
-    "@jpahd/source-annotations": "0.1.0",
-    "@bufbuild/protobuf": "^2.11.0",
-    "@connectrpc/connect": "^2.1.1",
-    "@connectrpc/connect-web": "^2.1.1",
-    "@lit/context": "^1.1.3",
-    "lit": "^3.2.1"
-  },
-  "peerDependenciesMeta": {
-    "@jpahd/git-chat-protocol": { "optional": true },
-    "@jpahd/commits-core": { "optional": true },
-    "@jpahd/source-annotations": { "optional": true }
-  },
   "dependencies": {
     "dompurify": "^3.3.3",
     "marked": "^18.0.0"
   },
   "devDependencies": {
-    "@types/node": "26.2.0",
-    "@playwright/test": "1.62.1",
     "@bufbuild/protobuf": "2.14.0",
     "@connectrpc/connect": "2.1.2",
     "@connectrpc/connect-web": "2.1.2",
     "@happy-dom/global-registrator": "^20.9.0",
     "@lit/context": "^1.1.3",
+    "@playwright/test": "1.62.1",
     "@storybook/addon-a11y": "10.5.8",
     "@storybook/addon-docs": "10.5.8",
     "@storybook/addon-vitest": "10.5.8",
     "@storybook/web-components-vite": "10.5.8",
     "@types/dompurify": "^3.2.0",
+    "@types/node": "26.2.0",
     "@vitest/browser-playwright": "4.1.10",
     "bun-types": "^1.2.0",
     "lit": "^3.2.1",
@@ -249,5 +239,26 @@
     "storybook": "10.5.8",
     "typescript": "^5.7.2",
     "vitest": "4.1.10"
+  },
+  "peerDependencies": {
+    "@bufbuild/protobuf": "^2.11.0",
+    "@connectrpc/connect": "^2.1.1",
+    "@connectrpc/connect-web": "^2.1.1",
+    "@jpahd/commits-core": "0.0.0",
+    "@jpahd/git-chat-protocol": "0.0.0",
+    "@jpahd/source-annotations": "0.1.0",
+    "@lit/context": "^1.1.3",
+    "lit": "^3.2.1"
+  },
+  "peerDependenciesMeta": {
+    "@jpahd/git-chat-protocol": {
+      "optional": true
+    },
+    "@jpahd/commits-core": {
+      "optional": true
+    },
+    "@jpahd/source-annotations": {
+      "optional": true
+    }
   }
 }

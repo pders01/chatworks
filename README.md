@@ -1,226 +1,107 @@
-# chatworks
+# Chatworks
 
-Composable web components and workbench infrastructure for AI-assisted web
-applications. Chatworks ships chat and diff surfaces, lower-level UI primitives,
-and an extension runtime for composing arbitrary productivity workflows such as
-canvases, boards, editors, and project dashboards.
+Composable Lit components for chat, source reading, and extension-based
+workspaces. Use individual components or compose them into a host-owned
+application; Chatworks does not own your backend, repository access, or routing.
 
-Originally extracted from [git-chat](https://github.com/pders01/git-chat), the
-library no longer assumes that chat is the complete application shell. Hosts own
-their transport and domain services; extensions contribute views, commands, and
-host-defined capabilities through browser-native contracts.
+## Install and use
 
-## Install
-
-```bash
-bun add @jpahd/chatworks
-# or
-npm i  @jpahd/chatworks
+```sh
+npm install @jpahd/chatworks
 ```
 
-Peer dependencies: `lit`, `@lit/context`, `@bufbuild/protobuf`,
-`@connectrpc/connect`, and `@connectrpc/connect-web`. Default/proto/transport use
-also requires `@jpahd/git-chat-protocol`; the optional source-reading entries use
-`@jpahd/commits-core` or `@jpahd/source-annotations` contracts. Those peers have
-optional-install metadata so unrelated entries can be installed independently,
-not so imports can work without their required packages. **The new headless
-packages are currently private/unpublished**: supply explicit npm tarballs for
-this checkout; installing an existing registry release does not provide these
-unreleased entries. See [artifact setup](docs/development-artifacts.md) and
-[source-reading architecture](docs/source-reading-architecture.md).
+Lit 3 and `@lit/context` are peers. The default, transport and protocol entries
+also need Protobuf, Connect, and `@jpahd/git-chat-protocol`. The experimental source-reading entries
+use additional peers listed below. A peer marked optional for installation is
+still required by an entry that imports it.
 
-> The npm scope is `@jpahd` even though this repo lives under the
-> `pders01` GitHub org — the npm username is `jpahd`.
+**This checkout contains unreleased source-reading features.** Building it
+currently requires a matching bundle of unpublished Repokit packages; see
+[contributing](https://github.com/pders01/chatworks/blob/main/CONTRIBUTING.md).
+An existing registry release does not necessarily contain these entries.
 
-## Usage
+A standalone chat turn needs no transport:
 
 ```ts
-// main.ts — boot the chat surface
-import "@jpahd/chatworks"; // registers default chat/workbench elements
-import { settings } from "@jpahd/chatworks";
+import "@jpahd/chatworks/chat-turn";
+import { MessageRole } from "@jpahd/chatworks/chat-types";
 
-settings.applyAll(); // apply persisted layout preferences
+const turn = document.createElement("cw-chat-turn");
+turn.turn = { id: "example", role: MessageRole.ASSISTANT, content: "Ready for review." };
+document.body.append(turn);
 ```
 
-```html
-<!-- somewhere in your app shell -->
-<cw-chat-view repo-id="my-repo"></cw-chat-view>
-<cw-settings-panel open></cw-settings-panel>
-<cw-toast></cw-toast>
-```
+Importing a component entry registers its custom element. Pass objects through
+JavaScript properties, not serialized attributes. Components report user actions
+through DOM events; event names and payloads depend on the component.
 
-The existing chat components dispatch typed `gc:*` events that bubble through shadow
-roots (`composed: true`). Consume them with native
-`addEventListener`; the package's `lib/events.ts` augments
-`HTMLElementEventMap` so payload types come through automatically:
+## Entry points
 
-```ts
-window.addEventListener("gc:open-file", (e) => {
-  router.go({ tab: "browse", path: e.detail.path });
-});
-```
+All entries below use the `@jpahd/chatworks` prefix and resolve to compiled ESM
+and TypeScript declarations.
 
-## Public API
+| Entry                                                                       | Purpose                                                                  |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Default entry                                                               | Chat/workbench registrations, host contracts, adapter and common helpers |
+| `/chat-view`, `/composer`, `/message-list`, `/session-sidebar`              | Host-connected chat compositions                                         |
+| `/chat-turn`, `/attachment`, `/thinking-disclosure`, `/tool-event`          | Smaller chat content components                                          |
+| `/repository-ui`                                                            | File tabs, file picker, source preview and lazy repository tree          |
+| `/source-annotations`                                                       | Source selection and private-note presentation with an injected client   |
+| `/commits-reader`                                                           | Commit history and diffs with an injected provider                       |
+| `/diff-view`, `/diff`, `/commit-graph`                                      | Diff component and rendering/graph helpers                               |
+| `/workbench`, `/workbench-view`, `/workbench-switcher`, `/command-palette`  | Extension lifecycle, views and commands                                  |
+| `/host`, `/adapters/connect-rpc`                                            | Host interfaces/contexts and an optional Connect adapter                 |
+| `/settings-panel`, `/settings`, `/combobox`, `/loading-indicator`, `/toast` | Configuration, input and feedback                                        |
+| `/proto/auth`, `/proto/chat`, `/proto/repo`                                 | Canonical GitChat protocol compatibility exports                         |
+| `/events`, `/chat-types`, `/markdown`, `/highlight`                         | Event/data types and text presentation helpers                           |
 
-Subpath exports map to compiled ESM and declarations so apps can pull only the
-pieces they need:
+The `/proto/*` entries forward canonical `@jpahd/git-chat-protocol` descriptors
+without copying/wrapping them; GitChat owns the Go wire schema.
 
-| Subpath                                                       | What it gives you                                                                    |
-| ------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| `@jpahd/chatworks`                                            | Default barrel — registers components, re-exports runtime singletons                 |
-| `.../chat-view`                                               | `<cw-chat-view>` registration                                                        |
-| `.../composer`, `.../message-list`, `.../session-sidebar`     | Compatibility chat compositions for custom shells                                    |
-| `.../attachment`                                              | Small transport-free file/image attachment primitive                                 |
-| `.../tool-event`                                              | Transport-free tool invocation summary and disclosure primitive                      |
-| `.../thinking-disclosure`                                     | Native assistant reasoning/progress disclosure primitive                             |
-| `.../chat-turn`                                               | One transport-free turn with caller-owned action/body slots                          |
-| `.../source-annotations`                                      | Optional injected-client `<source-annotation-panel>`; no storage/backend runtime     |
-| `.../commits-reader`                                          | Optional `<portable-commits-reader>` using headless contracts/state                  |
-| `.../repository-ui`                                           | Optional file tabs, async picker, scoped preview/controller and lazy file navigation |
-| `.../diff-view`                                               | Transport-independent `<cw-diff-view>` unified/split renderer                        |
-| `.../diff`                                                    | Pure diff HTML transforms (line numbers, word and split diff)                        |
-| `.../commit-graph`                                            | Pure newest-first commit lane assignment for custom renderers                        |
-| `.../workbench`                                               | Extension host, view/command registry, services, context, and storage                |
-| `.../workbench-view`, `.../workbench-switcher`                | Registry-driven view mounting and navigation                                         |
-| `.../command-palette`                                         | Searchable workbench command surface                                                 |
-| `.../settings-panel`                                          | `<cw-settings-panel>` registration                                                   |
-| `.../toast`, `.../loading-indicator`, `.../combobox`          | Standalone UI primitives                                                             |
-| `.../transport`                                               | Connect-RPC client singletons (`repoClient`, `chatClient`, `authClient`)             |
-| `.../settings`                                                | Sidebar, content-width, and font-size preference store                               |
-| `.../events`                                                  | Event-payload types + `HTMLElementEventMap` augmentation                             |
-| `.../catalog`                                                 | Model catalog (providers, models, pricing)                                           |
-| `.../slash`                                                   | Slash-command parser + suggestion engine                                             |
-| `.../attachments`                                             | @-mention attachment helpers                                                         |
-| `.../markdown`, `.../highlight`, `.../clipboard`, `.../focus` | Misc helpers; highlighting is host-configured                                        |
-| `.../proto/{auth,chat,repo}`                                  | Compatibility reexports of canonical headless protocol descriptors/types             |
+The three source-reading entries are **experimental and excluded from the
+default barrel**:
 
-## Workbench extensions
+- [`/repository-ui`](docs/repository-ui.md) uses structural clients and has no
+  headless runtime dependency.
+- [`/source-annotations`](docs/source-annotations.md) references
+  `@jpahd/source-annotations/contracts` for types, not its Node service.
+- [`/commits-reader`](docs/commits-reader.md) uses `@jpahd/commits-core` for shared
+  contracts and runtime state.
 
-The workbench API lets a host expose abstract services while extensions register
-arbitrary custom-element views, commands, and host-defined contributions. It has
-no dependency on the Connect-RPC chat contract.
+## Host responsibilities
 
-```ts
-import { WorkbenchExtensionHost, WorkbenchRegistry } from "@jpahd/chatworks/workbench";
+Chat components consume host capabilities through `@lit/context`; source-reading
+components accept explicit clients/providers. Hosts own authentication, repository
+scope, immutable snapshot resolution, persistence and navigation. UI read-only
+state and event provenance do not replace backend authorization or revision checks.
 
-const registry = new WorkbenchRegistry();
-registry.services.provide("my-app.assistant", assistant);
-const extensions = new WorkbenchExtensionHost(registry);
-await extensions.activate(myExtension);
-```
+Repokit owns headless Git/annotation services and neutral contracts/state; its
+packages do not depend on Chatworks or Lit. Native Node libraries and RPC bridges
+are alternative host implementations.
+GitChat is an optional Go backend, not a prerequisite for transport-free UI. Its
+schema supplies the existing auth/chat/repository protocol; it does not currently
+provide annotation RPC. No component automatically uploads private notes.
 
-See [the workbench and extension contract](docs/workbench.md) for lifecycle,
-mounting, state, command-palette, and board-style examples.
+## Guides
 
-## Backend contract
+- [Host contracts](docs/host-contract.md): injecting chat, repository and
+  configuration capabilities.
+- [Workbench](docs/workbench.md): extension-owned views, commands and services.
+- [Styling](docs/styling.md): browser-default presentation, CSS parts and trusted
+  syntax highlighting.
+- [Repository UI](docs/repository-ui.md), [source annotations](docs/source-annotations.md)
+  and [Commits reader](docs/commits-reader.md): optional source-reading APIs.
 
-Chatworks forwards generated descriptors from `@jpahd/git-chat-protocol` for the
-existing Connect-RPC contract:
-
-- `gitchat.v1.AuthService` — pairing / session auth
-- `gitchat.v1.ChatService` — sessions, messages, summaries
-- `gitchat.v1.RepoService` — repo metadata, model catalog, settings
-
-GitChat owns the authoritative Go schema and backend; Chatworks does not rename
-or duplicate that protocol. Its compatibility exports preserve descriptor object
-identity. Connect clients remain separately owned by the existing transport entry.
-The injected-client source-reading entries do not require those singletons or a
-GitChat connection. GitChat currently has **no annotation RPC**; connecting the
-reader to it does not add one.
-
-## Optional source-reading features
-
-The three source-reading entries are opt-in and not included in the default
-barrel. They preserve useful Pi WebUI behavior without recreating its application
-or design system. Treat the APIs as experimental, not stable product surfaces.
-Hosts own clients/providers, repository/auth scope, navigation and persistence.
-
-- [Source annotations](docs/source-annotations.md): exact source selection/copy,
-  inline notes, provenance, scoped drafts and explicit read-only behavior.
-- [Commits reader](docs/commits-reader.md): pinned history/detail/diffs, explicit
-  completeness and bounded presentation.
-- [Repository primitives](docs/repository-ui.md): local tabs/reordering, bounded
-  asynchronous search, scoped plaintext preview and lazy native disclosures.
-- [Preserved interaction lessons](docs/pi-webui-interaction-lessons.md): source
-  restoration, stale responses, focus, scrolling and other reusable decisions;
-  clearly distinguishes implemented behavior from lessons only.
-
-Each feature documents its own semantic events; these are not all `gc:*` events.
-No component automatically uploads private notes, runs an agent, or grants backend
-mutation authority. See [ownership/dependency direction](docs/source-reading-architecture.md)
-and the [scoped verification record](docs/source-reading-verification.md).
-
-## Presentation
-
-Chatworks components use an enhanced browser-default baseline: system fonts and
-colors, readable spacing, native-sized controls, visible focus, and enough
-surface treatment for standalone use. They do not prescribe a brand or product
-shell. Applications can replace the baseline—including layout—through stable CSS
-parts. State-specific tokens such as `active`, `error`, `addition`, and
-`deletion` expose semantic state without coupling consumers to a theme.
-
-```css
-cw-combobox::part(input) {
-  color: var(--app-text);
-  background: var(--app-surface);
-  border: 1px solid var(--app-border);
-}
-
-cw-diff-view::part(addition) {
-  background: var(--app-diff-addition);
-}
-```
-
-Code is escaped and line-wrapped without syntax colors by default. A trusted
-application highlighter is an explicit opt-in:
-
-```ts
-import { setSyntaxHighlighter } from "@jpahd/chatworks/highlight";
-
-setSyntaxHighlighter((code, language) => renderCodeWithParts(code, language));
-```
-
-Optional sidebar, content-width, and font-size preferences remain available
-through the settings module. See [Styling Chatworks](docs/styling.md) for the
-part and syntax-presentation contract.
+Components use an enhanced browser-default baseline, not a product skin. Set an
+appropriate `color-scheme`; customize exposed parts/tokens rather than internal
+selectors. Hosts remain responsible for testing their composed UI.
 
 ## Development
 
-```bash
-# Obtain a matching repokit tarball bundle; its source location is irrelevant.
-ARTIFACTS=/absolute/path/to/repokit-tarballs
-bun install --frozen-lockfile --ignore-scripts --no-env-file
-npm run dev:artifacts -- "$ARTIFACTS"
-bun run storybook        # component catalog on http://localhost:6006
-bun run storybook:build  # static catalog in storybook-static/
-bunx playwright install chromium # once, for browser story tests
-bun run test:storybook   # Chromium render + axe matrix
-bun run check            # tsc --noEmit, including stories
-bun run test             # bun:test (happy-dom harness)
-npm run test:tooling     # synthetic artifact/installer safety regressions
-npm run test:package -- "$ARTIFACTS" # real tarballs, types, registrations and browser graph
-npm run test:source-annotations # public compiled entry, synthetic Chromium behavior
-npm run test:commits-reader     # all fixture states, themes and wide/narrow viewports
-npm run test:repository-ui      # keyboard/focus, scope/budget/copy boundaries and screenshots
-bun run lint             # oxlint
-bun run fmt              # oxfmt
-```
-
-No dependency or tool assumes another repository's location. See
-[development with unpublished artifacts](docs/development-artifacts.md) for bundle
-creation, validation, restaging and entry-specific peer requirements. The artifact
-stager leaves package metadata and the third-party lockfile unchanged. Restage
-after a dependency reinstall or new bundle, then rebuild Chatworks.
-The packed-consumer test extracts real maintained-package tarballs; only installed
-third-party dependencies (including Lit's transitive declarations) are fixtures.
-It is not a registry publication or a fully offline reinstall proof.
-
-Storybook covers the chat, composer, message, session, settings, diff,
-workbench, input, loading, and notification surfaces. Its toolbar switches the
-canvas color scheme without applying a global component-part skin, and its
-accessibility panel inspects the active story. The browser test runs every story
-in Chromium at desktop dark, desktop light, and mobile dark viewports and fails
-on component accessibility violations.
+See [contributing](https://github.com/pders01/chatworks/blob/main/CONTRIBUTING.md)
+for artifact setup, Storybook, and verification commands. Storybook demonstrates
+current components and host-owned compositions using synthetic data, without a
+live backend. The catalog supports light/dark previews and automated axe checks.
 
 ## License
 

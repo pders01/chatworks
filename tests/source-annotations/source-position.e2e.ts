@@ -1,5 +1,8 @@
 import { expect, test, type Page } from "playwright/test";
-import type { AnnotationSourcePosition, SourceAnnotationPanel } from "./dist/index.js";
+import type {
+  AnnotationSourcePosition,
+  SourceAnnotationPanel,
+} from "@jpahd/chatworks/source-annotations";
 
 const REF_A = "a".repeat(40);
 const REF_B = "b".repeat(40);

@@ -1,11 +1,38 @@
 // SPDX-License-Identifier: MIT
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import test from "node:test";
 import { posix } from "node:path";
+import ts from "typescript";
 import { consumerDocumentation, expectedArtifacts } from "./lib/artifacts.mjs";
 
 const root = new URL("../", import.meta.url);
+
+test("feature browser harnesses use public entries, not relative build or source paths", async () => {
+  for (const feature of ["source-annotations", "commits-reader", "repository-ui"]) {
+    const directory = new URL(`tests/${feature}/`, root);
+    for (const entry of await readdir(directory, { withFileTypes: true })) {
+      if (!entry.isFile() || !entry.name.endsWith(".ts")) continue;
+      const file = `tests/${feature}/${entry.name}`;
+      const source = ts.createSourceFile(
+        file,
+        await readFile(new URL(entry.name, directory), "utf8"),
+        ts.ScriptTarget.Latest,
+      );
+      for (const statement of source.statements) {
+        if (!ts.isImportDeclaration(statement) && !ts.isExportDeclaration(statement)) continue;
+        const specifier = statement.moduleSpecifier;
+        if (!specifier || !ts.isStringLiteral(specifier)) continue;
+        if (!specifier.text.startsWith(".")) continue;
+        assert.doesNotMatch(
+          specifier.text,
+          /(?:^|\/)(?:dist|src)(?:\/|$)/,
+          `${file}: import public package exports, not leftover local artifacts`,
+        );
+      }
+    }
+  }
+});
 
 test("package metadata has versioned peers, not filesystem dependencies or layout overrides", async () => {
   const manifest = JSON.parse(await readFile(new URL("package.json", root), "utf8"));

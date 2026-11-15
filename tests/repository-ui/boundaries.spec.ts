@@ -5,19 +5,88 @@ test.beforeEach(async ({ page }) => {
   await page.waitForFunction(() => (window as any).fixtureReady);
 });
 
-test("tab close never steals focus already moved by a host handler", async ({ page }) => {
-  await page.evaluate(() => {
-    const f = (window as any).fixture;
-    f.tabs.addEventListener("cw:file-tabs-change", (event: any) => {
-      if (event.detail.action === "close")
-        document.querySelector<HTMLButtonElement>("#find")!.focus();
-    });
-  });
-  await page.locator("cw-file-tabs").getByRole("tab").first().focus();
-  await page.keyboard.press("Delete");
-  await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())));
-  await expect(page.getByRole("button", { name: "Find file", exact: true })).toBeFocused();
+test("tablist owns only selections while file actions remain separately accessible", async ({
+  page,
+}) => {
+  const tabs = page.locator("cw-file-tabs");
+  const tablist = tabs.getByRole("tablist", { name: "Open files", exact: true });
+  const actions = tabs.getByRole("group", { name: "File actions", exact: true });
+  await expect(tablist.getByRole("tab")).toHaveCount(4);
+  await expect(tablist.locator('button:not([role="tab"])')).toHaveCount(0);
+  await expect(tablist.getByRole("group")).toHaveCount(0);
+  await expect(actions.getByRole("button", { name: /^Close / })).toHaveCount(4);
+  await expect(actions.getByRole("button", { name: /^Move / })).toHaveCount(4);
+  await expect(actions.locator(".file-tab, [data-file-tab-id]")).toHaveCount(0);
+  expect(
+    await tabs.locator(".file-tab").evaluateAll((cells) =>
+      cells.map((cell) => ({
+        id: cell.getAttribute("data-file-tab-id"),
+        tabs: cell.querySelectorAll('[role="tab"]').length,
+      })),
+    ),
+  ).toEqual([
+    { id: "snapshot-001:README.md", tabs: 1 },
+    { id: "snapshot-001:src/index.ts", tabs: 1 },
+    { id: "snapshot-001:src/components/reader.ts", tabs: 1 },
+    { id: "snapshot-001:tests/reader.test.ts", tabs: 1 },
+  ]);
+  const selected = tablist.getByRole("tab", { selected: true });
+  await expect(selected).toHaveAttribute("aria-controls", "file-tab-panel");
+  await expect(tabs.getByRole("tabpanel")).toHaveAttribute(
+    "aria-labelledby",
+    (await selected.getAttribute("id"))!,
+  );
 });
+
+test("native Tab reaches the selected file's close button and keyboard close retains focus", async ({
+  page,
+}) => {
+  const tabs = page.locator("cw-file-tabs");
+  const selected = tabs.getByRole("tab", { selected: true });
+  const actions = tabs.getByRole("group", { name: "File actions", exact: true });
+  await selected.focus();
+  await page.keyboard.press("End");
+  await expect(selected).toHaveAccessibleName("tests/reader.test.ts");
+  for (let remaining = 3; remaining >= 0; remaining--) {
+    await expect(selected).toBeFocused();
+    const description = await selected.getAttribute("aria-label");
+    await page.keyboard.press("Tab");
+    await expect(
+      actions.getByRole("button", { name: `Close ${description}`, exact: true }),
+    ).toBeFocused();
+    await page.keyboard.press(remaining % 2 === 0 ? "Space" : "Enter");
+    await expect(tabs.getByRole("tab")).toHaveCount(remaining);
+    if (remaining > 0) await expect(selected).toBeFocused();
+    else await expect(tabs).toBeFocused();
+  }
+});
+
+for (const key of ["Delete", "Enter"] as const) {
+  test(`tab close (${key}) never steals focus already moved by a host handler`, async ({
+    page,
+  }) => {
+    await page.evaluate(() => {
+      const f = (window as any).fixture;
+      f.tabs.addEventListener("cw:file-tabs-change", (event: any) => {
+        if (event.detail.action === "close")
+          document.querySelector<HTMLButtonElement>("#find")!.focus();
+      });
+    });
+    await page.locator("cw-file-tabs").getByRole("tab").first().focus();
+    if (key === "Enter") {
+      await page.keyboard.press("Tab");
+      await expect(
+        page.locator("cw-file-tabs").getByRole("button", { name: "Close README.md", exact: true }),
+      ).toBeFocused();
+    }
+    await page.keyboard.press(key);
+    await expect(page.locator("cw-file-tabs").getByRole("tab")).toHaveCount(3);
+    await page.evaluate(
+      () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())),
+    );
+    await expect(page.getByRole("button", { name: "Find file", exact: true })).toBeFocused();
+  });
+}
 
 test("same-path directory in another immutable scope never inherits native disclosure state", async ({
   page,

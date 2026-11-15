@@ -1,5 +1,6 @@
 import { css, html, nothing, type TemplateResult } from "lit";
 import { repeat } from "lit/directives/repeat.js";
+import { styleMap } from "lit/directives/style-map.js";
 import type { FileTabDragController } from "./file-tab-drag-controller.js";
 
 /** Review navigation only; editor buffers, drafts and source positions remain host-owned. */
@@ -109,8 +110,8 @@ export function renderFileTabs(
   return html`<div
       class="file-tabs"
       part="tablist"
-      role="tablist"
-      aria-label="Open files"
+      style=${styleMap({ "--_file-tab-count": String(tabs.length) })}
+      data-reorderable=${Boolean(drag)}
       data-drop-end=${drag?.atEnd ?? false}
       @keydown=${(event: KeyboardEvent) => {
         if (event.key === "Escape" && drag?.cancelDrag()) {
@@ -119,64 +120,78 @@ export function renderFileTabs(
         }
       }}
     >
-      ${repeat(
-        tabs,
-        (tab) => tab.id,
-        (tab) => html`<div
-          class="file-tab"
-          part=${tab.id === activeId ? "tab active" : "tab"}
-          role="presentation"
-          data-active=${tab.id === activeId}
-          data-file-tab-id=${tab.id}
-          data-dragging=${drag?.isDragging(tab.id) ?? false}
-          data-drop-before=${drag?.isBefore(tab.id) ?? false}
-        >
-          ${drag
-            ? html`<button
-                class="file-tab-grip"
-                part="grip"
-                type="button"
-                aria-label=${`Move ${tab.description}`}
-                title="Drag to reorder; Alt+Shift+←/→ on a tab"
-                tabindex="-1"
-                @pointerdown=${(event: PointerEvent) => drag.pointerDown(event, tab.id, true)}
-                @click=${() => drag.consumeClick()}
-              >
-                <span aria-hidden="true">⠿</span>
-              </button>`
-            : nothing}
-          <button
-            class="file-tab-select"
-            part="select"
-            type="button"
-            role="tab"
-            id=${fileTabDomId(tab.id)}
-            aria-controls="file-tab-panel"
-            aria-selected=${tab.id === activeId}
-            aria-label=${tab.description}
-            title=${tab.description}
-            tabindex=${tab.id === activeId ? 0 : -1}
-            @pointerdown=${(event: PointerEvent) => drag?.pointerDown(event, tab.id)}
-            @click=${() => {
-              if (!drag?.consumeClick()) select(tab.id);
-            }}
-            @keydown=${(event: KeyboardEvent) => onKeydown(event, tab.id)}
+      <div class="file-tablist" role="tablist" aria-label="Open files">
+        ${repeat(
+          tabs,
+          (tab) => tab.id,
+          (tab) => html`<div
+            class="file-tab"
+            part=${tab.id === activeId ? "tab active" : "tab"}
+            role="presentation"
+            data-active=${tab.id === activeId}
+            data-file-tab-id=${tab.id}
+            data-dragging=${drag?.isDragging(tab.id) ?? false}
+            data-drop-before=${drag?.isBefore(tab.id) ?? false}
           >
-            <span>${tab.label}</span>
-          </button>
-          <button
-            class="file-tab-close"
-            part="close"
-            type="button"
-            aria-label=${`Close ${tab.description}`}
-            title="Close tab (Delete)"
-            tabindex=${tab.id === activeId ? 0 : -1}
-            @click=${(event: Event) => closeTab(event, tab.id)}
+            <button
+              class="file-tab-select"
+              part="select"
+              type="button"
+              role="tab"
+              id=${fileTabDomId(tab.id)}
+              aria-controls="file-tab-panel"
+              aria-selected=${tab.id === activeId}
+              aria-label=${tab.description}
+              title=${tab.description}
+              tabindex=${tab.id === activeId ? 0 : -1}
+              @pointerdown=${(event: PointerEvent) => drag?.pointerDown(event, tab.id)}
+              @click=${() => {
+                if (!drag?.consumeClick()) select(tab.id);
+              }}
+              @keydown=${(event: KeyboardEvent) => onKeydown(event, tab.id)}
+            >
+              <span>${tab.label}</span>
+            </button>
+          </div>`,
+        )}
+      </div>
+      <div class="file-tabs-actions" role="group" aria-label="File actions">
+        ${repeat(
+          tabs,
+          (tab) => tab.id,
+          (tab) => html`<div
+            class="file-tab-actions"
+            data-active=${tab.id === activeId}
+            data-dragging=${drag?.isDragging(tab.id) ?? false}
           >
-            ×
-          </button>
-        </div>`,
-      )}
+            ${drag
+              ? html`<button
+                  class="file-tab-grip"
+                  part="grip"
+                  type="button"
+                  aria-label=${`Move ${tab.description}`}
+                  title="Drag to reorder; Alt+Shift+←/→ on a tab"
+                  tabindex="-1"
+                  @pointerdown=${(event: PointerEvent) => drag.pointerDown(event, tab.id, true)}
+                  @click=${() => drag.consumeClick()}
+                >
+                  <span aria-hidden="true">⠿</span>
+                </button>`
+              : nothing}
+            <button
+              class="file-tab-close"
+              part="close"
+              type="button"
+              aria-label=${`Close ${tab.description}`}
+              title="Close tab (Delete)"
+              tabindex=${tab.id === activeId ? 0 : -1}
+              @click=${(event: Event) => closeTab(event, tab.id)}
+            >
+              ×
+            </button>
+          </div>`,
+        )}
+      </div>
     </div>
     <span class="file-tabs-status" aria-live="polite" aria-atomic="true"
       >${drag?.announcement ?? ""}</span
@@ -185,7 +200,11 @@ export function renderFileTabs(
 
 export const fileTabsStyles = css`
   .file-tabs {
-    display: flex;
+    --_file-tab-grip-width: 0px;
+    --_file-tab-close-width: 2.25rem;
+    display: grid;
+    grid-template-columns: repeat(var(--_file-tab-count), max-content);
+    justify-content: start;
     flex: 0 0 auto;
     min-width: 0;
     max-width: 100%;
@@ -195,13 +214,39 @@ export const fileTabsStyles = css`
     background: var(--surface-1);
     scrollbar-width: thin;
   }
+  .file-tabs[data-reorderable="true"] {
+    --_file-tab-grip-width: 1.5rem;
+  }
+  /* Separate semantic owners, sharing intrinsic tracks without measuring labels.
+     Keep .file-tab's full box for reveal and drag midpoint calculations. */
+  .file-tablist,
+  .file-tabs-actions {
+    display: grid;
+    grid-template-columns: subgrid;
+    grid-column: 1 / -1;
+    grid-row: 1;
+    min-width: 0;
+  }
   .file-tab {
     display: flex;
-    flex: 0 0 auto;
+    box-sizing: border-box;
     min-width: 0;
     max-width: 22rem;
+    padding-inline: var(--_file-tab-grip-width) var(--_file-tab-close-width);
     border-right: 1px solid var(--border-default);
     border-bottom: 2px solid transparent;
+  }
+  .file-tabs-actions {
+    pointer-events: none;
+  }
+  .file-tab-actions {
+    display: flex;
+    min-width: 0;
+    border-right: 1px solid transparent;
+    border-bottom: 2px solid transparent;
+  }
+  .file-tabs-actions button {
+    pointer-events: auto;
   }
   .file-tab[data-active="true"] {
     background: var(--surface-2);
@@ -218,7 +263,7 @@ export const fileTabsStyles = css`
     min-height: 2.5rem;
   }
   .file-tab-grip {
-    flex: 0 0 1.5rem;
+    flex: 0 0 var(--_file-tab-grip-width);
     padding: 0;
     touch-action: none;
     cursor: grab !important;
@@ -226,7 +271,8 @@ export const fileTabsStyles = css`
   .file-tab-grip span {
     pointer-events: none;
   }
-  .file-tab[data-dragging="true"] {
+  .file-tab[data-dragging="true"],
+  .file-tab-actions[data-dragging="true"] {
     opacity: 0.5;
   }
   .file-tab[data-drop-before="true"] {
@@ -245,6 +291,7 @@ export const fileTabsStyles = css`
     white-space: nowrap;
   }
   .file-tab-select {
+    flex: 1 1 auto;
     user-select: none;
     touch-action: pan-x;
     display: flex;
@@ -259,10 +306,13 @@ export const fileTabsStyles = css`
     white-space: nowrap;
   }
   .file-tab-close {
-    flex: 0 0 2.25rem;
+    box-sizing: border-box;
+    flex: 0 0 var(--_file-tab-close-width);
+    margin-inline-start: auto;
     padding: 0.3rem;
   }
-  .file-tab[data-active="true"] button {
+  .file-tab[data-active="true"] button,
+  .file-tab-actions[data-active="true"] button {
     color: var(--text);
   }
   .file-tabs button:hover {
@@ -279,8 +329,8 @@ export const fileTabsStyles = css`
     .file-tabs button {
       min-height: 2.75rem;
     }
-    .file-tab-close {
-      flex-basis: 2.75rem;
+    .file-tabs {
+      --_file-tab-close-width: 2.75rem;
     }
   }
 `;

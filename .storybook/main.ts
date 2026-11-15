@@ -28,6 +28,7 @@ const config: StorybookConfig = {
       "aria-query",
       "lit",
       "lit/directive-helpers.js",
+      "lit/directives/style-map.js",
       "lz-string",
       "pretty-format",
       "lit-html",
@@ -35,6 +36,7 @@ const config: StorybookConfig = {
     ]);
     return {
       ...config,
+      envDir: false,
       resolve: { ...config.resolve, dedupe: [...dedupe] },
       optimizeDeps: { ...config.optimizeDeps, include: [...include] },
     };

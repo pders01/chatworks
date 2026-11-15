@@ -12,6 +12,8 @@ const storybookProject = (
   viewport: { width: number; height: number },
 ) => ({
   extends: true as const,
+  // Each browser project optimizes public ESM independently; never share writes.
+  cacheDir: path.join(dirname, "node_modules/.cache/vite", name),
   plugins: [
     storybookTest({
       configDir: path.join(dirname, ".storybook"),
@@ -30,6 +32,8 @@ const storybookProject = (
 });
 
 export default defineConfig({
+  envDir: false,
+  optimizeDeps: { include: ["lit/directives/style-map.js"] },
   test: {
     projects: [
       storybookProject("storybook-desktop-dark", "dark", { width: 1440, height: 900 }),

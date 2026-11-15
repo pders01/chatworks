@@ -1,17 +1,23 @@
 import type { Meta, StoryObj } from "@storybook/web-components-vite";
-import { html } from "lit";
-import { GcConnectionWizard } from "../src/components/connection-wizard.js";
+import { html, type LitElement } from "lit";
+import "@jpahd/chatworks";
 import { createStoryLlmConfigHost } from "./support/story-host.js";
 import "./support/story-host.js";
 
-void GcConnectionWizard;
+// The default entry registers this tag but does not export its class or tag map.
+// Stories need only the public Lit lifecycle, not a source-only class import.
+declare global {
+  interface HTMLElementTagNameMap {
+    "cw-connection-wizard": LitElement;
+  }
+}
 
 type ConnectionWizardArgs = {
   outcome: "success" | "failure";
 };
 
 const meta = {
-  title: "AI surfaces/Connection wizard",
+  title: "Configuration/Connection wizard",
   component: "cw-connection-wizard",
   parameters: {
     docs: {
@@ -52,7 +58,7 @@ async function openConnectionResult(
   canvasElement: HTMLElement,
   outcome: ConnectionWizardArgs["outcome"],
 ) {
-  const wizard = canvasElement.querySelector<GcConnectionWizard>("cw-connection-wizard");
+  const wizard = canvasElement.querySelector("cw-connection-wizard");
   if (!wizard) throw new Error("Connection wizard did not render");
   await wizard.updateComplete;
 
@@ -84,7 +90,7 @@ function findButton(root: ShadowRoot | null, label: string): HTMLButtonElement {
 }
 
 async function waitForState(
-  wizard: GcConnectionWizard,
+  wizard: HTMLElementTagNameMap["cw-connection-wizard"],
   selector: string,
   matches: (element: Element) => boolean,
 ): Promise<void> {

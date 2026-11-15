@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/web-components-vite";
 import { html } from "lit";
-import { GcCombobox, type ComboboxOption } from "../src/components/combobox.js";
+import { GcCombobox, type ComboboxOption } from "@jpahd/chatworks/combobox";
 
 void GcCombobox;
 
@@ -20,7 +20,7 @@ type ComboboxArgs = {
 };
 
 const meta = {
-  title: "Inputs/Combobox",
+  title: "Primitives/Combobox",
   component: "cw-combobox",
   parameters: {
     docs: {

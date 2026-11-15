@@ -1,35 +1,36 @@
 import { Meta } from "@storybook/addon-docs/blocks";
 
-<Meta title="Introduction/Chatworks" />
+<Meta title="Introduction" />
 
-# Chatworks
+# Chatworks component catalog
 
-Composable web components and workbench infrastructure for AI-assisted web
-applications.
+Composable browser components, not an application shell or backend. These stories
+consume the public compiled package and use synthetic, in-memory fixtures. Nothing
+connects to a repository, provider, account, or private note store.
 
-This Storybook is the executable component catalog. It focuses on public
-properties, state variants, responsive behavior, catalog-owned presentation, and
-composition rather than prescribing complete productivity applications.
+## Find a capability
 
-## Layers
+- **Primitives** — attachments, combobox inputs, loading indicators, and notifications.
+- **Chat** — turns, message lists, composers (including repository-scope regressions),
+  thinking disclosures, tool activity, and session navigation.
+- **Repository** — transport-free diff rendering; **Experimental source reading**
+  contains the optional commits reader, source annotations, and repository primitives.
+  These entries require explicit imports and host-injected clients.
+- **Workbench** — independently inspect view mounting, view switching, and commands.
+- **Configuration** — settings and provider setup with injected host implementations.
+- **Compositions** — chat and a consumer-owned board/canvas workbench. These demonstrate
+  composition contracts, not a prescribed product or roadmap.
 
-- **AI surfaces** — chat, message, composer, session, and model configuration
-  components.
-- **Workflow composition** — extension-owned views, commands, services, context,
-  storage, and arbitrary contribution points.
-- **Data display** — transport-independent diffs and rich assistant output.
-- **Primitives** — inputs, loading states, notifications, and overlays.
+## Inspect states and interactions
 
-Use the color-scheme control in the toolbar to review the enhanced browser
-baseline in light and dark modes. The catalog no longer applies one broad
-wireframe skin to component parts; individual fixtures style only the
-application content they own. The accessibility panel runs axe against the
-rendered canvas.
+Choose a story, then use **Controls** to adjust inputs. Controls labeled **Fixture**
+change synthetic client/registry scenarios, not component properties. Named stories make
+loaded, unbound, empty, loading, error, read-only, and bounded states reproducible
+where relevant. **Interactions** shows the play assertions; **Accessibility** audits
+the actual components, including their shadow roots.
 
-## Extension boundary
-
-A canvas, kanban board, document editor, or project dashboard should be mounted as
-a workbench view. Chatworks owns its lifecycle and navigation; the extension owns
-its domain model and custom-element tree. Open **Workflows / Extension workbench**
-to see board and canvas views composed through the same public API used by
-pi-webui.
+Use the **color scheme** toolbar to inspect light and dark browser defaults and the
+**viewport** toolbar to inspect narrow layouts. Host framing is intentionally modest;
+component CSS parts remain unskinned. The optional commits reader uses its own public
+theme tokens. Hosts own navigation, persistence, authorization, and the meaning of
+semantic events. Fixture event output only reports intent—it grants no authority.

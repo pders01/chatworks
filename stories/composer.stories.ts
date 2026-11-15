@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/web-components-vite";
 import { LitElement, css, html } from "lit";
 import { property } from "lit/decorators.js";
-import { GcComposer } from "../src/components/chat-view/composer.js";
+import { GcComposer } from "@jpahd/chatworks/composer";
 import { createStoryLlmConfigHost, createStoryRepoHost } from "./support/story-host.js";
 import "./support/story-host.js";
 
@@ -59,9 +59,7 @@ class StoryComposerFixture extends LitElement {
       >
         ${this.embeddedControls
           ? html`<span slot="controls" style="display:flex; gap:.4rem; align-items:center">
-              <span style="color:var(--text-muted); font:var(--text-xs) var(--font-mono)"
-                >2 queued</span
-              >
+              <span style="font:.875rem ui-monospace, monospace">2 queued</span>
               <button class="story-button" type="button">steer</button>
             </span>`
           : ""}
@@ -81,7 +79,7 @@ if (!customElements.get("cw-story-composer-fixture")) {
 }
 
 const meta = {
-  title: "Inputs/Composer",
+  title: "Chat/Composer",
   component: "cw-composer",
   parameters: {
     docs: {
@@ -105,7 +103,7 @@ const meta = {
         <section class="story-panel composer-stage">
           <div class="composer-stage-intro">
             <p class="story-label">composer dock</p>
-            <h2>Shape the next assistant turn</h2>
+            <h1>Shape the next assistant turn</h1>
             <p>
               Draft a request, attach workspace context, or discover commands without leaving the
               active workflow.
@@ -140,7 +138,7 @@ export const FileMention: Story = {
 
 export const EmbeddedControls: Story = {
   args: {
-    value: "Prioritize the board layout and preserve keyboard navigation.",
+    value: "Prioritize early planting tasks and include volunteer handovers.",
     embeddedControls: true,
     compact: true,
   },
@@ -148,14 +146,14 @@ export const EmbeddedControls: Story = {
 
 export const Sending: Story = {
   args: {
-    value: "Generate the project board",
+    value: "Draft a seasonal planting plan",
     sending: true,
   },
 };
 
 export const Error: Story = {
   args: {
-    value: "Generate the project board",
+    value: "Draft a seasonal planting plan",
     errorMsg: "The assistant service is unavailable",
   },
 };

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/web-components-vite";
 import { LitElement, css, html } from "lit";
 import { property } from "lit/decorators.js";
-import { GcToast } from "../src/components/toast.js";
+import { GcToast } from "@jpahd/chatworks/toast";
 
 void GcToast;
 
@@ -9,7 +9,7 @@ type ToastKind = "info" | "success" | "warn" | "error";
 
 class StoryToastFixture extends LitElement {
   @property() kind: ToastKind = "success";
-  @property() message = "Extension activated";
+  @property() message = "Garden plan saved";
 
   protected override firstUpdated(): void {
     this.notify();
@@ -43,51 +43,34 @@ class StoryToastFixture extends LitElement {
   static override styles = css`
     :host {
       display: block;
-      min-height: 100vh;
-      color: var(--text);
-      background: var(--surface-0);
-      font-family: var(--font-sans);
+      color: CanvasText;
+      background: Canvas;
+      font: 1rem/1.5 system-ui;
     }
     .story-frame {
       box-sizing: border-box;
       display: grid;
-      min-height: 100vh;
+      min-block-size: 100vh;
       place-items: center;
-      padding: clamp(1rem, 4vw, 3rem);
+      padding: 1rem;
     }
     .panel {
       box-sizing: border-box;
-      width: min(100%, 460px);
-      padding: clamp(1.25rem, 4vw, 2rem);
-      border: 1px solid var(--border-default);
-      border-radius: var(--radius-lg);
-      background: var(--surface-1);
-      box-shadow: var(--shadow-dropdown);
-    }
-    .eyebrow {
-      color: var(--text-muted);
-      font: var(--text-xs) var(--font-mono);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
+      inline-size: min(100%, 460px);
+      padding: 1.5rem;
+      border: 1px solid GrayText;
+      border-radius: 0.5rem;
     }
     h1 {
-      margin: 0.45rem 0;
-      font-size: clamp(1.2rem, 4vw, 1.65rem);
+      margin-block: 0.5rem;
+      font-size: 1.5rem;
     }
     p {
-      margin: 0 0 1.25rem;
-      color: var(--text-secondary);
-      font-size: var(--text-sm);
-      line-height: 1.5;
+      margin-block: 0 1rem;
     }
     button {
-      padding: 0.55rem 0.8rem;
-      border: 1px solid var(--border-strong);
-      border-radius: var(--radius-sm);
-      color: var(--text);
-      background: var(--surface-2);
-      font: 500 var(--text-sm) var(--font-sans);
-      cursor: pointer;
+      min-block-size: 2rem;
+      font: inherit;
     }
   `;
 }
@@ -102,11 +85,11 @@ type ToastArgs = {
 };
 
 const meta = {
-  title: "Feedback/Toast",
+  title: "Primitives/Toast",
   component: "cw-toast",
   args: {
     kind: "success",
-    message: "Project-board extension activated",
+    message: "Garden plan saved",
   },
   argTypes: {
     kind: { control: "inline-radio", options: ["info", "success", "warn", "error"] },
@@ -126,9 +109,9 @@ export const Information: Story = {
 };
 
 export const Warning: Story = {
-  args: { kind: "warn", message: "This extension can access the active workspace" },
+  args: { kind: "warn", message: "The planting schedule has unsaved changes" },
 };
 
 export const Error: Story = {
-  args: { kind: "error", message: "The canvas extension could not be loaded" },
+  args: { kind: "error", message: "The planting schedule could not be saved" },
 };

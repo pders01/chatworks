@@ -1,14 +1,14 @@
 import type { Meta, StoryObj } from "@storybook/web-components-vite";
 import { html } from "lit";
-import { CwToolEvent } from "../src/components/tool-event.js";
-import type { ToolEvent } from "../src/lib/chat-types.js";
+import { CwToolEvent } from "@jpahd/chatworks/tool-event";
+import type { ToolEvent } from "@jpahd/chatworks/chat-types";
 
 void CwToolEvent;
 
 const completed: ToolEvent = {
   id: "read-contract",
   name: "read",
-  argsJson: '{"path":"docs/workbench.md"}',
+  argsJson: '{"path":"docs/garden-plan.md"}',
   state: "done",
   content: "Loaded 148 lines",
 };
@@ -18,7 +18,7 @@ type ToolEventArgs = {
 };
 
 const meta = {
-  title: "AI surfaces/Tool event",
+  title: "Chat/Tool event",
   component: "cw-tool-event",
   parameters: {
     docs: {
@@ -56,7 +56,7 @@ export const Running: Story = {
     toolEvent: {
       id: "inspect-workflow",
       name: "inspect_workflow",
-      argsJson: '{"surface":"board","scope":"project"}',
+      argsJson: '{"season":"spring","scope":"garden"}',
       state: "running",
     },
   },
@@ -67,7 +67,7 @@ export const Failed: Story = {
     toolEvent: {
       id: "write-board",
       name: "write_board",
-      argsJson: '{"project":"chatworks"}',
+      argsJson: '{"project":"community-garden"}',
       state: "error",
       content: "Connection closed",
       expanded: true,

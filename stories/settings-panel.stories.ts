@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/web-components-vite";
 import { html } from "lit";
-import { GcSettingsPanel } from "../src/components/settings-panel.js";
+import { GcSettingsPanel } from "@jpahd/chatworks/settings-panel";
 import { createStoryLlmConfigHost } from "./support/story-host.js";
 import "./support/story-host.js";
 
@@ -12,7 +12,7 @@ type SettingsArgs = {
 };
 
 const meta = {
-  title: "AI surfaces/Settings panel",
+  title: "Configuration/Settings panel",
   component: "cw-settings-panel",
   parameters: {
     docs: {

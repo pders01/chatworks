@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/web-components-vite";
 import { html } from "lit";
-import { CwAttachment } from "../src/components/attachment.js";
-import type { AttachmentInfo } from "../src/lib/chat-types.js";
+import { CwAttachment } from "@jpahd/chatworks/attachment";
+import type { AttachmentInfo } from "@jpahd/chatworks/chat-types";
 
 void CwAttachment;
 
@@ -31,7 +31,7 @@ type AttachmentArgs = {
 };
 
 const meta = {
-  title: "Data display/Attachment",
+  title: "Primitives/Attachment",
   component: "cw-attachment",
   parameters: {
     docs: {

@@ -1,15 +1,15 @@
 import type { Meta, StoryObj } from "@storybook/web-components-vite";
 import { expect, fn, waitFor } from "storybook/test";
 import { html } from "lit";
-import { GcComposer } from "../src/components/chat-view/composer.js";
-import { EntryType, type FilePreview, type RepoHost } from "../src/host.js";
+import { GcComposer } from "@jpahd/chatworks/composer";
+import { EntryType, type FilePreview, type RepoHost } from "@jpahd/chatworks/host";
 import { CwStoryHost, createStoryRepoHost } from "./support/story-host.js";
 
 void GcComposer;
 void CwStoryHost;
 
 const meta = {
-  title: "Inputs/Composer/Repository scope",
+  title: "Chat/Composer/Repository scope",
   component: "cw-composer",
   render: () => html`
     <cw-story-host>

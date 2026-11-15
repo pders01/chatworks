@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/web-components-vite";
 import { html } from "lit";
-import { CwThinkingDisclosure } from "../src/components/thinking-disclosure.js";
+import { CwThinkingDisclosure } from "@jpahd/chatworks/thinking-disclosure";
 
 void CwThinkingDisclosure;
 
@@ -11,7 +11,7 @@ type ThinkingDisclosureArgs = {
 };
 
 const meta = {
-  title: "AI surfaces/Thinking disclosure",
+  title: "Chat/Thinking disclosure",
   component: "cw-thinking-disclosure",
   parameters: {
     docs: {
@@ -23,7 +23,7 @@ const meta = {
   },
   args: {
     thinking:
-      "I should keep ordering, editing, retry, regeneration, and scroll pinning in the message-list owner while extracting display-only boundaries.",
+      "Check the last frost date, group crops by season, and leave time for soil preparation before assigning the planting tasks.",
     expanded: false,
     streaming: false,
   },
@@ -51,7 +51,7 @@ export const Expanded: Story = {
 
 export const Streaming: Story = {
   args: {
-    thinking: "Reviewing the current component boundaries…",
+    thinking: "Reviewing the seasonal planting dates…",
     streaming: true,
   },
 };

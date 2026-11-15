@@ -14,14 +14,14 @@ import {
   type ChatSession,
   type LlmConfigHost,
   type RepoHost,
-} from "../../src/host.js";
-import { MessageRole } from "../../src/lib/chat-types.js";
+} from "@jpahd/chatworks/host";
+import { MessageRole } from "@jpahd/chatworks/chat-types";
 
 export const storySessions: ChatSession[] = [
   {
     id: "session-design",
     repoId: "storybook",
-    title: "Design the extension API",
+    title: "Plan a community garden",
     createdAt: 1_725_000_000n,
     updatedAt: 1_725_400_000n,
     messageCount: 4,
@@ -30,7 +30,7 @@ export const storySessions: ChatSession[] = [
   {
     id: "session-review",
     repoId: "storybook",
-    title: "Review workspace changes",
+    title: "Review planting notes",
     createdAt: 1_724_000_000n,
     updatedAt: 1_724_800_000n,
     messageCount: 9,
@@ -39,7 +39,7 @@ export const storySessions: ChatSession[] = [
   {
     id: "session-tests",
     repoId: "storybook",
-    title: "Plan browser coverage",
+    title: "Schedule the watering rota",
     createdAt: 1_723_000_000n,
     updatedAt: 1_723_900_000n,
     messageCount: 6,
@@ -52,7 +52,7 @@ export const storyMessages: ChatMessage[] = [
     id: "message-user-1",
     sessionId: "session-design",
     role: MessageRole.USER,
-    content: "How should extensions add a project board without coupling it to chat?",
+    content: "How can we organize planting tasks for a small community garden?",
     model: "",
     tokenCountIn: 0,
     tokenCountOut: 0,
@@ -65,7 +65,7 @@ export const storyMessages: ChatMessage[] = [
     sessionId: "session-design",
     role: MessageRole.ASSISTANT,
     content:
-      "Treat the board as a full workbench view. Give it host services for project data and assistant actions, then let it own its custom-element tree.",
+      "Group tasks by planting bed and season. Keep watering and harvest dates visible, and assign one volunteer to each recurring task.",
     model: "claude-sonnet-4",
     tokenCountIn: 612,
     tokenCountOut: 184,
@@ -75,8 +75,8 @@ export const storyMessages: ChatMessage[] = [
       {
         toolCallId: "tool-read",
         name: "read",
-        argsJson: '{"path":"docs/workbench.md"}',
-        resultContent: "Loaded extension contract",
+        argsJson: '{"path":"docs/garden-plan.md"}',
+        resultContent: "Loaded synthetic garden plan",
         isError: false,
         ordinal: 0,
       },
@@ -142,7 +142,7 @@ export function createStoryChatHost(options: { sessions?: ChatSession[] } = {}):
           value: { userMessageId: "story-user", sessionId: id, warnings: [] },
         },
       };
-      yield { kind: { case: "thinking", value: "Mapping the workflow to extension points…" } };
+      yield { kind: { case: "thinking", value: "Grouping the planting tasks by season…" } };
       await pause(180, signal);
       yield {
         kind: {
@@ -156,15 +156,15 @@ export function createStoryChatHost(options: { sessions?: ChatSession[] } = {}):
           case: "toolResult",
           value: {
             id: "story-tool",
-            content: "Found board, canvas, and timeline contexts",
+            content: "Found three planting beds and a weekly watering rota",
             isError: false,
           },
         },
       };
       for (const token of [
-        "Use a host-owned service ",
-        "for domain state, then mount ",
-        "the workflow as an extension view.",
+        "Plant leafy greens in the first bed, ",
+        "herbs in the second, and keep ",
+        "a shared watering rota for volunteers.",
       ]) {
         await pause(120, signal);
         yield { kind: { case: "token", value: token } };
@@ -199,9 +199,8 @@ export function createStoryChatHost(options: { sessions?: ChatSession[] } = {}):
     },
     async summarizeActivity() {
       return {
-        summary:
-          "Recent work established **view**, command, and service seams for user-authored workflows.",
-        suggestions: ["Open the extension API", "Review the latest changes"],
+        summary: "The garden plan covers **planting**, watering, and volunteer handovers.",
+        suggestions: ["Review the planting plan", "Draft a watering rota"],
       };
     },
   };
@@ -214,7 +213,7 @@ export function createStoryRepoHost(): RepoHost {
         repos: [
           {
             id: "storybook",
-            label: "chatworks",
+            label: "community-garden",
             defaultBranch: "main",
             headCommit: "ddab30b",
           },
@@ -230,8 +229,8 @@ export function createStoryRepoHost(): RepoHost {
           {
             sha: "ddab30ba81d8",
             shortSha: "ddab30b",
-            message: "feat(workbench): add extension runtime",
-            authorName: "Chatworks",
+            message: "Add a seasonal planting plan",
+            authorName: "Example Volunteer",
             authorEmail: "story@example.test",
             authorTime: 1_725_000_000n,
             filesChanged: 11,
@@ -247,8 +246,8 @@ export function createStoryRepoHost(): RepoHost {
     async listTree({ path }) {
       const entries = path
         ? [
-            { name: "workbench.ts", type: EntryType.FILE, size: 16_462n, blobSha: "story" },
-            { name: "diff.ts", type: EntryType.FILE, size: 8_120n, blobSha: "story" },
+            { name: "plant.ts", type: EntryType.FILE, size: 180n, blobSha: "story" },
+            { name: "water.ts", type: EntryType.FILE, size: 120n, blobSha: "story" },
           ]
         : [
             { name: "src", type: EntryType.DIR, size: 0n, blobSha: "" },
@@ -257,38 +256,21 @@ export function createStoryRepoHost(): RepoHost {
       return { entries, refResolved: "main" };
     },
     async getFilePreview({ path }) {
-      const content = path.endsWith("workbench.ts")
-        ? `export interface WorkbenchView {
-  id: string;
+      const content = path.endsWith("plant.ts")
+        ? `export interface PlantingBed {
   name: string;
-  region: string;
-  order?: number;
-  mount(container: HTMLElement): DisposableLike;
+  crop: string;
+  season: "spring" | "summer";
 }
 
-export class WorkbenchRegistry {
-  private readonly views = new Map<string, WorkbenchView>();
-
-  registerView(view: WorkbenchView): Disposable {
-    this.views.set(view.id, view);
-    return toDisposable(() => this.views.delete(view.id));
-  }
-}
+export const beds: PlantingBed[] = [
+  { name: "North", crop: "lettuce", season: "spring" },
+  { name: "South", crop: "basil", season: "summer" },
+];
 `
-        : `export function parseUnifiedDiff(source: string): ParsedDiff {
-  const files: ParsedDiffFile[] = [];
-  let current: ParsedDiffFile | undefined;
-
-  for (const line of source.split("\\n")) {
-    if (line.startsWith("diff --git ")) {
-      current = createFile(line);
-      files.push(current);
-      continue;
-    }
-    current?.lines.push(parseLine(line));
-  }
-
-  return { files };
+        : `export function needsWater(lastWatered: number, now: number): boolean {
+  const day = 24 * 60 * 60 * 1000;
+  return now - lastWatered >= day;
 }
 `;
       return {
@@ -305,13 +287,13 @@ export class WorkbenchRegistry {
         lines: [
           {
             lineNumber: 1,
-            text: "export interface WorkbenchView {",
-            authorName: "Chatworks",
+            text: "export interface PlantingBed {",
+            authorName: "Example Volunteer",
             authorEmail: "story@example.test",
             authorTime: 1_725_000_000n,
             sha: "ddab30ba81d8cafe000000000000000000000000",
             shortSha: "ddab30b",
-            message: "feat(workbench): add extension runtime",
+            message: "Add a seasonal planting plan",
           },
         ],
       };

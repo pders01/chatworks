@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/web-components-vite";
 import { html } from "lit";
-import { GcSessionSidebar } from "../src/components/chat-view/session-sidebar.js";
+import { GcSessionSidebar } from "@jpahd/chatworks/session-sidebar";
 import { createStoryChatHost, storySessions } from "./support/story-host.js";
 import "./support/story-host.js";
 
@@ -12,7 +12,7 @@ type SidebarArgs = {
 };
 
 const meta = {
-  title: "AI surfaces/Session sidebar",
+  title: "Chat/Session sidebar",
   component: "cw-session-sidebar",
   args: {
     selected: "session-design",

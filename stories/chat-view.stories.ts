@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/web-components-vite";
 import { html } from "lit";
-import { GcChatView } from "../src/components/chat-view.js";
+import { GcChatView } from "@jpahd/chatworks/chat-view";
 import {
   createStoryChatHost,
   createStoryLlmConfigHost,
@@ -16,7 +16,7 @@ type ChatArgs = {
 };
 
 const meta = {
-  title: "AI surfaces/Chat view",
+  title: "Compositions/Chat view",
   component: "cw-chat-view",
   parameters: {
     docs: {

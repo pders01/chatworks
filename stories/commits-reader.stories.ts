@@ -2,18 +2,21 @@ import type { Meta, StoryObj } from "@storybook/web-components-vite";
 import { expect, userEvent, waitFor } from "storybook/test";
 import { html } from "lit";
 import type { CommitsIntentDetail } from "@jpahd/commits-core/contracts";
-import { PortableCommitsReader } from "../src/commits-reader/index.js";
+import { PortableCommitsReader } from "@jpahd/chatworks/commits-reader";
 import { createCommitsFixture, type CommitsFixtureState } from "./fixtures/commits-reader.js";
 
 void PortableCommitsReader;
 
 type Args = { state: CommitsFixtureState; height: number };
 const meta = {
-  title: "Data display/Commits reader",
+  title: "Repository/Experimental source reading/Commits reader",
   component: "portable-commits-reader",
   args: { state: "selected", height: 680 },
   argTypes: {
     state: {
+      name: "Fixture state",
+      description: "Synthetic injected-client scenario, not a component property.",
+      table: { category: "Fixture" },
       control: "select",
       options: [
         "unbound",
@@ -30,7 +33,11 @@ const meta = {
         "detail-error",
       ],
     },
-    height: { control: { type: "range", min: 320, max: 900, step: 20 } },
+    height: {
+      name: "Frame height",
+      table: { category: "Fixture" },
+      control: { type: "range", min: 320, max: 900, step: 20 },
+    },
   },
   render: (args: Args) => {
     const fixture = createCommitsFixture(args.state, { clippedBy: "bytes" });

@@ -37,7 +37,15 @@ const preview: Preview = {
     },
     options: {
       storySort: {
-        order: ["Introduction", "AI surfaces", "Workflows", "Data display", "Inputs", "Feedback"],
+        order: [
+          "Introduction",
+          "Primitives",
+          "Chat",
+          "Repository",
+          "Workbench",
+          "Configuration",
+          "Compositions",
+        ],
       },
     },
   },

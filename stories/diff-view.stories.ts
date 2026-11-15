@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/web-components-vite";
 import { html } from "lit";
-import { CwDiffView } from "../src/components/diff-view.js";
+import { CwDiffView } from "@jpahd/chatworks/diff-view";
 
 void CwDiffView;
 
@@ -14,48 +14,42 @@ type DiffArgs = {
   height: number;
 };
 
-const patch = `diff --git a/src/workbench.ts b/src/workbench.ts
+const patch = `diff --git a/src/plant.ts b/src/plant.ts
 index 47ac92a..8f3be21 100644
---- a/src/workbench.ts
-+++ b/src/workbench.ts
-@@ -18,8 +18,12 @@ export interface WorkbenchView {
-   id: string;
-   title: string;
--  render(): unknown;
-+  region?: string;
-+  mount(
-+    container: HTMLElement,
-+    context: WorkbenchViewContext,
-+  ): MaybePromise<DisposableLike>;
+--- a/src/plant.ts
++++ b/src/plant.ts
+@@ -1,6 +1,9 @@
+ export interface PlantingBed {
+   name: string;
+-  crop: string;
++  crops: readonly string[];
++  season: "spring" | "summer";
  }
 ${" "}
--export type ViewKind = "chat" | "diff";
-+export type ViewKind = "chat" | "diff" | "workflow";
-@@ -74,4 +78,5 @@ export class WorkbenchRegistry extends EventTarget {
-   openView(id: string): void {
-+    this.assertAvailable(id);
-     this.activeViewId = id;
-   }
-diff --git a/docs/workbench.md b/docs/workbench.md
+-export const wateringDays = ["Monday"];
++export const wateringDays = ["Monday", "Thursday"];
++export const harvestDay = "Saturday";
++export const volunteers = 4;
+diff --git a/docs/garden-plan.md b/docs/garden-plan.md
 new file mode 100644
 index 0000000..84aa012
 --- /dev/null
-+++ b/docs/workbench.md
++++ b/docs/garden-plan.md
 @@ -0,0 +1,4 @@
-+# Workbench extensions
++# Community garden
 +
-+Views can mount a board, canvas, editor, or any other custom-element tree.
-+The host supplies capabilities through abstract services.
++Plant leafy greens in spring and herbs in summer.
++Share the watering rota with volunteers.
 `;
 
 const meta = {
-  title: "Data display/Diff view",
+  title: "Repository/Diff view",
   component: "cw-diff-view",
   parameters: {
     docs: {
       description: {
         component:
-          "Transport-independent patch rendering with semantic gutters, word-level changes, Shiki themes, wrapping, and unified or split layouts.",
+          "Transport-independent patch rendering with semantic gutters, word-level changes, optional host-configured highlighting, wrapping, and unified or split layouts.",
       },
     },
   },

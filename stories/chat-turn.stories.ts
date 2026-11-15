@@ -1,34 +1,33 @@
 import type { Meta, StoryObj } from "@storybook/web-components-vite";
 import { html } from "lit";
-import { CwChatTurn } from "../src/components/chat-turn.js";
-import { MessageRole, type Turn } from "../src/lib/chat-types.js";
+import { CwChatTurn } from "@jpahd/chatworks/chat-turn";
+import { MessageRole, type Turn } from "@jpahd/chatworks/chat-types";
 
 void CwChatTurn;
 
 const assistantTurn: Turn = {
   id: "assistant-boundary",
   role: MessageRole.ASSISTANT,
-  content:
-    "The turn owns display composition while the message list retains ordering and interaction policy.",
-  html: `<p>The turn owns <strong>display composition</strong> while the message list retains ordering and interaction policy.</p>
-<ul><li>Attachments, thinking, and tools stay transport-free.</li><li>Actions and editors are caller-owned slots.</li></ul>`,
+  content: "Plant leafy greens first, then herbs once the weather warms up.",
+  html: `<p>Plant <strong>leafy greens</strong> first, then herbs once the weather warms up.</p>
+<ul><li>Water seedlings in the morning.</li><li>Rotate volunteer duties each week.</li></ul>`,
   model: "claude-sonnet-4",
   tokensIn: 1_284,
   tokensOut: 412,
-  thinking: "Keep wrapper-specific action eligibility out of the primitive API.",
+  thinking: "Match each crop to its planting season.",
   tools: [
     {
       id: "check-boundary",
       name: "bash",
-      argsJson: '{"command":"bun run check"}',
+      argsJson: '{"path":"garden-plan.md"}',
       state: "done",
-      content: "Typecheck passed",
+      content: "Checked the synthetic planting schedule",
     },
   ],
 };
 
 const meta = {
-  title: "AI surfaces/Chat turn",
+  title: "Chat/Turn",
   component: "cw-chat-turn",
   parameters: {
     docs: {
@@ -60,10 +59,10 @@ export const User: Story = {
     turn: {
       id: "user-boundary",
       role: MessageRole.USER,
-      content: "Review the proposed turn boundary.",
+      content: "Review the proposed planting schedule.",
       attachments: [
         {
-          filename: "turn-notes.md",
+          filename: "planting-notes.md",
           mimeType: "text/markdown",
           size: 2_048,
           data: new Uint8Array(),
@@ -91,15 +90,15 @@ export const Streaming: Story = {
     turn: {
       ...assistantTurn,
       id: "assistant-streaming-turn",
-      content: "Extracting the display composition",
+      content: "Grouping the crops by planting season",
       html: undefined,
       streaming: true,
-      thinking: "Reviewing ownership boundaries…",
+      thinking: "Reviewing the planting notes…",
       tools: [
         {
           id: "inspect-turn",
           name: "inspect",
-          argsJson: '{"component":"cw-message-list"}',
+          argsJson: '{"crop":"lettuce"}',
           state: "running",
         },
       ],

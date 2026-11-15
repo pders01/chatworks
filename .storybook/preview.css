@@ -1,123 +1,23 @@
-:root,
-:root[data-color-scheme="dark"] {
-  --surface-0: #111315;
-  --surface-1: #171a1d;
-  --surface-1-alt: #1b1f23;
-  --surface-2: #202429;
-  --surface-3: #292e34;
-  --surface-4: #363d45;
-  --surface-5: #4a535d;
-  --border-default: #343b42;
-  --border-strong: #58636e;
-  --border-accent: #7da7ff;
-  --border-focus: #7da7ff;
-  --text: #eef1f4;
-  --text-default: #eef1f4;
-  --text-secondary: #c1c8cf;
-  --text-muted: #929ca6;
-  --text-strong: #ffffff;
-  --text-accent: #a9c4ff;
-  --accent: #7da7ff;
-  --accent-assistant: #a9c4ff;
-  --accent-user: #7da7ff;
-  --accent-link-dim: #9ab6ef;
-  --success: #74c991;
-  --warning: #e4bd62;
-  --danger: #ff8b8b;
-  --danger-bg: #2a1b1d;
-  --danger-border: #85464c;
-  --action-bg: #202429;
-  --action-bg-hover: #292e34;
-  --border-user-rule: #343b42;
-  --gutter-bg: #171a1d;
-  --line-bg: transparent;
-  --shadow-dropdown: 0 0.75rem 2rem rgb(0 0 0 / 0.32);
-  --shadow-modal: 0 1.25rem 4rem rgb(0 0 0 / 0.4);
-}
-
-:root[data-color-scheme="light"] {
-  --surface-0: #f5f7f8;
-  --surface-1: #ffffff;
-  --surface-1-alt: #fafbfc;
-  --surface-2: #f0f3f5;
-  --surface-3: #e6eaed;
-  --surface-4: #d7dde2;
-  --surface-5: #c1c9d0;
-  --border-default: #d5dbe0;
-  --border-strong: #9ba6af;
-  --border-accent: #315fae;
-  --border-focus: #315fae;
-  --text: #20252a;
-  --text-default: #20252a;
-  --text-secondary: #4c565f;
-  --text-muted: #626d76;
-  --text-strong: #111417;
-  --text-accent: #244f9b;
-  --accent: #315fae;
-  --accent-assistant: #244f9b;
-  --accent-user: #315fae;
-  --accent-link-dim: #496da9;
-  --success: #247a43;
-  --warning: #8a6416;
-  --danger: #b4232c;
-  --danger-bg: #fff1f1;
-  --danger-border: #d99398;
-  --action-bg: #f0f3f5;
-  --action-bg-hover: #e6eaed;
-  --border-user-rule: #d5dbe0;
-  --gutter-bg: #f0f3f5;
-  --line-bg: transparent;
-  --shadow-dropdown: 0 0.75rem 2rem rgb(31 40 48 / 0.14);
-  --shadow-modal: 0 1.25rem 4rem rgb(31 40 48 / 0.18);
-}
-
+/* Host framing only: components retain their enhanced browser defaults.
+   MWG css: "DO NOT use global resets (styles on `*`)".
+   MWG color: "pair it with the `color-scheme` CSS property" (preview.ts). */
 :root {
-  --font-sans:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-  --text-xs: 0.8125rem;
-  --text-sm: 0.875rem;
-  --text-base: 1rem;
-  --text-lg: 1.125rem;
-  --space-1: 0.25rem;
-  --space-2: 0.5rem;
-  --space-3: 0.75rem;
-  --space-4: 1rem;
-  --space-5: 1.5rem;
-  --space-6: 2rem;
-  --space-7: 3rem;
-  --radius-sm: 0.25rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
-  --sidebar-width: 260px;
-  --content-max-width: 820px;
-  --composer-gutter: 1rem;
-  --diff-font-size: 0.76rem;
-  color: var(--text);
-  background: var(--surface-0);
-  font-family: var(--font-sans);
-  line-height: 1.5;
+  color-scheme: light dark;
+  color: CanvasText;
+  background: Canvas;
+  font:
+    1rem/1.5 system-ui,
+    sans-serif;
 }
 
-html,
-body,
-#storybook-root {
-  min-height: 100%;
+body {
   margin: 0;
-  color: var(--text);
-  background: var(--surface-0);
-}
-
-* {
-  box-sizing: border-box;
 }
 
 .story-frame {
-  min-height: 100vh;
+  box-sizing: border-box;
+  min-block-size: 100vh;
   padding: clamp(1rem, 3vw, 2.5rem);
-  color: var(--text);
-  background: var(--surface-0);
 }
 
 .story-frame.constrained {
@@ -130,92 +30,101 @@ body,
 }
 
 .story-panel {
-  width: min(100%, 980px);
+  box-sizing: border-box;
+  inline-size: min(100%, 980px);
+  min-inline-size: 0;
   overflow: hidden;
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-lg);
-  background: var(--surface-1);
-  box-shadow: none;
+  border: 1px solid GrayText;
+  border-radius: 0.5rem;
+  background: Canvas;
 }
 
 .story-label {
-  margin: 0 0 var(--space-3);
-  color: var(--text-muted);
-  font: 650 var(--text-xs)/1.2 var(--font-sans);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
 }
 
-button.story-button {
-  padding: 0.55rem 0.8rem;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-sm);
-  color: var(--text);
-  background: var(--surface-2);
-  font: 500 var(--text-sm)/1 var(--font-sans);
-  cursor: pointer;
+.story-button {
+  min-block-size: 2rem;
+  font: inherit;
 }
 
-button.story-button:hover {
-  border-color: var(--border-accent);
-  background: var(--surface-3);
+.story-stack {
+  display: grid;
+  gap: 1rem;
+  inline-size: min(100%, 980px);
+  min-inline-size: 0;
+}
+
+.story-stack h1,
+.story-stack p {
+  margin: 0;
+}
+
+.story-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.story-controls :where(button, input, select) {
+  min-block-size: 2rem;
+  max-inline-size: 100%;
+  font: inherit;
 }
 
 .composer-stage {
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
-  width: min(100%, 860px);
-  height: min(620px, calc(100vh - 2rem));
-  background: var(--surface-1);
+  inline-size: min(100%, 860px);
+  block-size: min(620px, calc(100dvh - 2rem));
 }
 
 .composer-stage-intro {
   align-self: start;
-  max-width: 34rem;
-  padding: clamp(1.25rem, 4vw, 2rem);
+  max-inline-size: 34rem;
+  padding: clamp(1rem, 4vw, 2rem);
 }
 
-.composer-stage-intro h2 {
+.composer-stage-intro h1 {
   margin: 0;
-  color: var(--text-strong);
   font-size: clamp(1.2rem, 3vw, 1.7rem);
-  letter-spacing: -0.025em;
 }
 
 .composer-stage-intro p:last-child {
-  margin: var(--space-2) 0 0;
-  color: var(--text-secondary);
-  font-size: var(--text-sm);
-  line-height: 1.55;
+  margin-block-end: 0;
 }
 
 .spinner-sample {
   display: flex;
-  min-height: 5.5rem;
+  min-block-size: 5.5rem;
   align-items: center;
   justify-content: center;
-  gap: var(--space-3);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  color: var(--text-secondary);
-  background: var(--surface-0);
-  font-size: var(--text-sm);
+  gap: 0.75rem;
+  border: 1px solid GrayText;
+  border-radius: 0.25rem;
 }
 
-/* Component stories intentionally do not apply a catalog-wide part skin.
-   The components' enhanced browser defaults remain visible here. Individual
-   fixtures style only the application content they own. */
+/* The reader's public theme API predates color-scheme defaults. Keep its
+   intentional tokens local to that element, not a catalog-wide palette. */
+portable-commits-reader {
+  --reader-text: CanvasText;
+  --reader-surface: Canvas;
+  --reader-control: light-dark(#f8faf7, #202620);
+  --reader-muted: light-dark(#58665d, #b6c4ba);
+  --reader-border: GrayText;
+  --reader-selected: light-dark(#eaf0eb, #27332c);
+  --reader-focus: light-dark(#315a78, #a3cef0);
+  --reader-success: light-dark(#23663a, #9ad5a9);
+  --reader-danger: light-dark(#a02b2b, #ffadad);
+  --reader-add: light-dark(#e1f0e4, #183421);
+  --reader-del: light-dark(#f8e7e7, #3d2020);
+}
 
 @media (max-width: 520px) {
   .composer-stage {
-    height: calc(100vh - 2rem);
-  }
-
-  .composer-stage-intro p:last-child {
-    display: none;
-  }
-
-  .spinner-sample {
-    min-height: 4.5rem;
+    block-size: calc(100dvh - 2rem);
   }
 }

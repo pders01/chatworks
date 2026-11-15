@@ -52,11 +52,11 @@ and TypeScript declarations.
 | `/workbench`, `/workbench-view`, `/workbench-switcher`, `/command-palette`  | Extension lifecycle, views and commands                                  |
 | `/host`, `/adapters/connect-rpc`                                            | Host interfaces/contexts and an optional Connect adapter                 |
 | `/settings-panel`, `/settings`, `/combobox`, `/loading-indicator`, `/toast` | Configuration, input and feedback                                        |
-| `/proto/auth`, `/proto/chat`, `/proto/repo`                                 | Canonical GitChat protocol compatibility exports                         |
+| `/proto/auth`, `/proto/chat`, `/proto/repo`                                 | Canonical git-chat protocol compatibility exports                         |
 | `/events`, `/chat-types`, `/markdown`, `/highlight`                         | Event/data types and text presentation helpers                           |
 
 The `/proto/*` entries forward canonical `@jpahd/git-chat-protocol` descriptors
-without copying/wrapping them; GitChat owns the Go wire schema.
+without copying/wrapping them; git-chat owns the Go wire schema.
 
 The three source-reading entries are **experimental and excluded from the
 default barrel**:
@@ -78,7 +78,7 @@ state and event provenance do not replace backend authorization or revision chec
 Repokit owns headless Git/annotation services and neutral contracts/state; its
 packages do not depend on Chatworks or Lit. Native Node libraries and RPC bridges
 are alternative host implementations.
-GitChat is an optional Go backend, not a prerequisite for transport-free UI. Its
+git-chat is an optional Go backend, not a prerequisite for transport-free UI. Its
 schema supplies the existing auth/chat/repository protocol; it does not currently
 provide annotation RPC. No component automatically uploads private notes.
 

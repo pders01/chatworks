@@ -7,9 +7,9 @@ This is the browser UI home, not a repository service or application shell.
   and /repository-ui. Do not silently add them to the default barrel.
 - Headless contracts/state/services belong in the separate repository capability
   workspace. No headless dependency may import Chatworks or Lit.
-- GitChat owns the Go wire schema. src/gen compatibility modules forward canonical
+- git-chat owns the Go wire schema. src/gen compatibility modules forward canonical
   protocol exports; do not duplicate descriptors or rename the wire namespace.
-- Direct Node use and GitChat RPC coexist. GitChat has no annotation RPC; do not
+- Direct Node use and git-chat RPC coexist. git-chat has no annotation RPC; do not
   invent parity or upload private notes automatically.
 - Preserve immutable identities, explicit bounds/refusals, scoped drafts/caches,
   stale-response AND stale-control fencing, revision checks and read-only policy.

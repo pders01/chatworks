@@ -16,4 +16,4 @@ the only integration seam; the fixture is development-only under stories/fixture
 `npm run test:commits-reader` checks all twelve fixture states in both themes and
 desktop/narrow viewports, source escaping, navigation, filtering and split diffs.
 Screenshots are ignored review artifacts, not visual goldens. This does not certify
-native Git/GitChat parity, every browser, or assistive technology.
+native Git/git-chat parity, every browser, or assistive technology.

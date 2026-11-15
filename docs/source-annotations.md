@@ -8,7 +8,7 @@ default barrel. Its only annotation dependency is the **type-only**
 resolve. No Node service, RPC, network or browser storage is imported.
 
 Supply an `AnnotationClient` through a host-owned bridge or RPC implementation.
-GitChat does not currently provide annotation RPC. The UI neither selects a
+git-chat does not currently provide annotation RPC. The UI neither selects a
 backend nor automatically uploads/synchronizes private notes.
 
 ```ts

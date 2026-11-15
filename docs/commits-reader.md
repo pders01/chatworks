@@ -36,11 +36,13 @@ matching scope key. Hosts resolve symbolic refs to immutable full commit SHAs;
 shortened display labels are not identities. Report refused/unavailable reads
 with the portable `RepositoryReadError` categories, not arbitrary backend text.
 
-`@jpahd/commits-adapters` supplies a direct Node facade and an independent GitChat
-adapter. Browser hosts must bridge Node reads through a trusted transport, not
-bundle filesystem/Git services. GitChat support is deliberately conservative:
-first-parent diffs, paging, ancestry and completeness may differ by backend.
-Neither adapter implies feature parity.
+Hosts can implement `CommitsProvider` around native reads from
+`@jpahd/repository-core`, or use the read-only provider exported by
+`@jpahd/commits-adapters/git-chat`. There is no prebuilt native Commits provider
+in the adapter package. Browser hosts must bridge Node reads through a trusted
+transport, not bundle filesystem/Git services. git-chat support is deliberately
+conservative: first-parent diffs, paging, ancestry and completeness may differ
+by backend. A shared provider interface does not imply feature parity.
 
 Inputs are JavaScript properties:
 

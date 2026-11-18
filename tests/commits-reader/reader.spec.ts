@@ -7,7 +7,7 @@ const states = {
   loading: "Loading commits…",
   empty: "No commits for this exact path.",
   error: "Couldn't load commits",
-  incompatible: "No repository read was sent.",
+  incompatible: "then reload this page.",
   partial: "Backend patch is partial:",
   unknown: "Patch completeness is unknown",
   clipped: "Reader display limit:",
@@ -22,6 +22,9 @@ for (const theme of ["light", "dark"])
       await page.goto(`/?theme=${theme}&state=${state}`);
       const reader = page.locator("portable-commits-reader");
       await expect(reader).toContainText(text);
+      if (state === "incompatible") {
+        await expect(reader.getByRole("button", { name: "Retry", exact: true })).toHaveCount(0);
+      }
       const colors = await reader.evaluate((element) => ({
         background: getComputedStyle(element).backgroundColor,
         foreground: getComputedStyle(element).color,
